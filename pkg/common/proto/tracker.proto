@@ -1,0 +1,21 @@
+syntax = "proto3";
+
+package tracker;
+
+option go_package = "./;tracker";
+
+service Tracker {
+
+  rpc RegisterNewPackage(PackageInfo) returns (RegisterResponse) {}
+
+  rpc FindPackageLocation(LocationRequest) returns (stream PackageLocation) {}
+
+}
+
+message PackageInfo {}
+
+message RegisterResponse {}
+
+message LocationRequest {}
+
+message PackageLocation {}

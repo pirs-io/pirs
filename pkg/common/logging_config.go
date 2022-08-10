@@ -1,4 +1,4 @@
-package config
+package common
 
 import (
 	"github.com/rs/zerolog"

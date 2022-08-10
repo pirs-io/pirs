@@ -1,4 +1,4 @@
-module network.pirs.io/tracker
+module pirs.io/pirs
 
 go 1.18
 

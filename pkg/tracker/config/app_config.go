@@ -3,28 +3,29 @@ package config
 import (
 	"fmt"
 	"github.com/spf13/viper"
+	"pirs.io/pirs/common"
 )
 
-var log = GetLoggerFor("config")
+var log = common.GetLoggerFor("config")
 
 type AppConfig struct {
 	RedisURl string `mapstructure:"REDIS_URL"`
 	RedisPwd string `mapstructure:"REDIS_PWD"`
 }
 
-func InitApp() {
+func InitApp(configFilePath string) {
 	log.Info().Msg("Starting application")
-	config, err := GetAppConfig()
+	config, err := GetAppConfig(configFilePath)
 	if err != nil {
 		log.Fatal().Msgf("Unable to load application config! %s", err)
 	}
 	log.Debug().Msgf("%s", config)
 }
 
-func GetAppConfig() (config *AppConfig, err error) {
-	viper.AddConfigPath(".")
-	viper.SetConfigName("app")
+// TODO: move to common
+func GetAppConfig(configFilePath string) (config *AppConfig, err error) {
 	viper.SetConfigType("env")
+	viper.SetConfigFile(configFilePath)
 	viper.AutomaticEnv()
 
 	err = viper.ReadInConfig()
