@@ -20,13 +20,16 @@ func (t TrackerAppConfig) IsConfig() {}
 func InitApp(configFilePath string) (conf *TrackerAppConfig) {
 	// config loading
 	log.Info().Msg("Starting application")
-	conf, err := common.GetAppConfig(configFilePath, &TrackerAppConfig{})
-	if err != nil {
-		log.Fatal().Msgf("Unable to load application config! %s", err)
+	conf, confErr := common.GetAppConfig(configFilePath, &TrackerAppConfig{})
+	if confErr != nil {
+		log.Fatal().Msgf("Unable to load application config! %s", confErr)
 	}
 
 	// start gRpc server
-	grpc.StartGrpc(conf.GrpcPort)
+	grpcErr := grpc.StartGrpc(conf.GrpcPort)
+	if grpcErr != nil {
+		log.Fatal().Msgf("Unable to start grpc server! %s", grpcErr)
+	}
 
 	return conf
 }

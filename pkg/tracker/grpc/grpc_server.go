@@ -23,17 +23,19 @@ func (c *TrackerServer) RegisterNewPackage(ctx context.Context, packageInfo *tra
 	return &trackerProto.RegisterResponse{}, nil
 }
 
-func StartGrpc(grpcPort int) {
+func StartGrpc(grpcPort int) error {
 	flag.Parse()
-	lis, err := net.Listen("tcp", fmt.Sprintf("localhost:%d", grpcPort))
-	if err != nil {
+	lis, networkErr := net.Listen("tcp", fmt.Sprintf("localhost:%d", grpcPort))
+	if networkErr != nil {
+		return networkErr
 	}
 	grpcServer := grpc.NewServer()
 
 	trackerProto.RegisterTrackerServer(grpcServer, &TrackerServer{})
 
 	grpcErr := grpcServer.Serve(lis)
-	if err != nil {
-		panic(grpcErr)
+	if grpcErr != nil {
+		return grpcErr
 	}
+	return nil
 }
