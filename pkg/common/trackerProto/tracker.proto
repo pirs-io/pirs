@@ -3,12 +3,15 @@ syntax = "proto3";
 package trackerProto;
 
 option go_package = "./;trackerProto";
+option java_package = "io.pirs.data.datamgmt.proto";
+option java_multiple_files = true;
+option java_generic_services = true;
 
 service Tracker {
 
   rpc RegisterNewPackage(PackageInfo) returns (RegisterResponse) {}
 
-  rpc FindPackageLocation(LocationRequest) returns (stream PackageLocation) {}
+  rpc FindPackageLocation(LocationRequest) returns (PackageLocation) {}
 
 }
 

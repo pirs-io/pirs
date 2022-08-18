@@ -5,6 +5,8 @@ import (
 	"flag"
 	"fmt"
 	"google.golang.org/grpc"
+	"google.golang.org/grpc/codes"
+	"google.golang.org/grpc/status"
 	"net"
 	"pirs.io/pirs/common"
 	"pirs.io/pirs/common/trackerProto"
@@ -19,8 +21,12 @@ type TrackerServer struct {
 }
 
 func (c *TrackerServer) RegisterNewPackage(ctx context.Context, packageInfo *trackerProto.PackageInfo) (*trackerProto.RegisterResponse, error) {
-	log.Info().Msg("Registering new package")
-	return &trackerProto.RegisterResponse{}, nil
+	return nil, status.Errorf(codes.Unimplemented, "method FindPackageLocation not implemented")
+}
+
+func (c *TrackerServer) FindPackageLocation(ctx context.Context, in *trackerProto.LocationRequest) (*trackerProto.PackageLocation, error) {
+	log.Info().Msgf("Finding package")
+	return &trackerProto.PackageLocation{}, nil
 }
 
 func StartGrpc(grpcPort int) error {
@@ -33,6 +39,7 @@ func StartGrpc(grpcPort int) error {
 
 	trackerProto.RegisterTrackerServer(grpcServer, &TrackerServer{})
 
+	log.Info().Msgf("Running gRPC server on port: %s", grpcPort)
 	grpcErr := grpcServer.Serve(lis)
 	if grpcErr != nil {
 		return grpcErr
