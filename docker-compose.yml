@@ -1,0 +1,10 @@
+version: "3.3"
+
+services:
+  tracker:
+    image: pirs.tracker:latest
+    build:
+      context: ./pkg
+      dockerfile: tracker/Dockerfile.dev
+    ports:
+      - "50004:50004"

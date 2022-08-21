@@ -10,6 +10,7 @@ import (
 	"net"
 	"pirs.io/pirs/common"
 	"pirs.io/pirs/common/trackerProto"
+	"pirs.io/pirs/tracker/config"
 )
 
 var (
@@ -18,9 +19,11 @@ var (
 
 type TrackerServer struct {
 	trackerProto.UnimplementedTrackerServer
+	appContext *config.ApplicationContext
 }
 
 func (c *TrackerServer) RegisterNewPackage(ctx context.Context, packageInfo *trackerProto.PackageInfo) (*trackerProto.RegisterResponse, error) {
+	c.appContext.LocationService.RegisterPackage(packageInfo)
 	return nil, status.Errorf(codes.Unimplemented, "method FindPackageLocation not implemented")
 }
 
@@ -31,13 +34,13 @@ func (c *TrackerServer) FindPackageLocation(ctx context.Context, in *trackerProt
 
 func StartGrpc(grpcPort int) error {
 	flag.Parse()
-	lis, networkErr := net.Listen("tcp", fmt.Sprintf("localhost:%d", grpcPort))
+	lis, networkErr := net.Listen("tcp", fmt.Sprintf("0.0.0.0:%d", grpcPort))
 	if networkErr != nil {
 		return networkErr
 	}
 	grpcServer := grpc.NewServer()
 
-	trackerProto.RegisterTrackerServer(grpcServer, &TrackerServer{})
+	trackerProto.RegisterTrackerServer(grpcServer, &TrackerServer{appContext: config.GetContext()})
 
 	log.Info().Msgf("Running gRPC server on port: %s", grpcPort)
 	grpcErr := grpcServer.Serve(lis)
