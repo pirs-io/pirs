@@ -1,0 +1,31 @@
+FROM golang:1.19-bullseye
+
+## install protoc
+RUN apt-get update
+RUN apt-get install -y protobuf-compiler
+
+# install go protoc deps
+RUN go install google.golang.org/protobuf/cmd/protoc-gen-go@latest
+RUN go install google.golang.org/grpc/cmd/protoc-gen-go-grpc@latest
+RUN go install github.com/envoyproxy/protoc-gen-validate@latest
+
+# copy all application files
+WORKDIR /app
+
+COPY ../tracker.env /app/tracker/
+COPY common/ /app/common
+COPY tracker/ /app/tracker
+COPY ../go.mod /app
+COPY ../go.sum /app
+
+# generate go files from proto
+RUN cd ./common/trackerProto/ && ./generate.sh
+
+WORKDIR /app/tracker
+
+# install deps && build app
+RUN go install
+RUN go build -o build/tracker
+
+EXPOSE 40005
+ENTRYPOINT ["build/tracker"]
