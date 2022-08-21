@@ -32,6 +32,7 @@ func InitApp(configFilePath string) (conf *TrackerAppConfig) {
 		log.Fatal().Msgf("Unable to load application config! %s", confErr)
 	}
 
+	// create app context
 	appCtx, contextErr := createApplicationContext(*conf)
 	if contextErr != nil {
 		log.Fatal().Msgf("Error intializing app context")
@@ -49,7 +50,7 @@ func GetContext() *ApplicationContext {
 func createApplicationContext(conf TrackerAppConfig) (appContext *ApplicationContext, err error) {
 	return &ApplicationContext{
 		LocationService: &service.LocationService{LocationRepository: &db.RedisRepo{
-			Client: db.NewRedisClient(conf.RedisURl, conf.RedisPort, conf.RedisPwd, 0)},
+			Client: common.NewRedisClient(conf.RedisURl, conf.RedisPort, conf.RedisPwd, 0)},
 		},
 	}, nil
 }

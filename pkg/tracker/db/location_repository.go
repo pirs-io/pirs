@@ -9,15 +9,6 @@ type RedisRepo struct {
 	Client *redis.Client
 }
 
-func NewRedisClient(addr string, port string, pwd string, db int) *redis.Client {
-	rdb := redis.NewClient(&redis.Options{
-		Addr:     addr + ":" + port,
-		Password: pwd,
-		DB:       db,
-	})
-	return rdb
-}
-
 func (r *RedisRepo) SavePackage(info *trackerProto.PackageInfo) (trackerProto.PackageInfo, error) {
 	//TODO implement me
 	panic("implement me")
