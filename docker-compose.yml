@@ -8,3 +8,12 @@ services:
       dockerfile: tracker/Dockerfile.dev
     ports:
       - "50004:50004"
+  redis:
+    image: redis:latest
+    restart: always
+    container_name: redis-pirs
+    command: redis-server --save 20 1 --loglevel warning --requirepass pirs.123
+    ports:
+      - "6379:6379"
+    volumes:
+      - ./docker/redis/data:/data
