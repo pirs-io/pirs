@@ -7,7 +7,7 @@ import (
 )
 
 var (
-	log = common.GetLoggerFor("location_service")
+	lsLog = common.GetLoggerFor("location_service")
 )
 
 type LocationService struct {
@@ -17,7 +17,7 @@ type LocationService struct {
 func (locService *LocationService) RegisterPackage(info *trackerProto.PackageInfo) {
 	savePackage, err := locService.LocationRepository.SavePackage(info)
 	if err != nil {
-		log.Fatal().Msgf("Error saving package! %s", err)
+		lsLog.Fatal().Msgf("Error saving package! %s", err)
 	}
-	log.Info().Msgf("Saved package %s", savePackage.String())
+	lsLog.Info().Msgf("Saved package %s", savePackage.String())
 }

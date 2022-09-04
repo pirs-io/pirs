@@ -5,16 +5,16 @@ import (
 	"pirs.io/pirs/common/trackerProto"
 )
 
-type RedisRepo struct {
+type LocationRepo struct {
 	Client *redis.Client
 }
 
-func (r *RedisRepo) SavePackage(info *trackerProto.PackageInfo) (trackerProto.PackageInfo, error) {
+func (r *LocationRepo) SavePackage(info *trackerProto.PackageInfo) (trackerProto.PackageInfo, error) {
 	//TODO implement me
 	panic("implement me")
 }
 
-func (r *RedisRepo) GetPackageById(info *trackerProto.PackageInfo) (trackerProto.PackageInfo, error) {
+func (r *LocationRepo) GetPackageById(info *trackerProto.PackageInfo) (trackerProto.PackageInfo, error) {
 	//TODO implement me
 	panic("implement me")
 }

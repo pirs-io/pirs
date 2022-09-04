@@ -9,7 +9,9 @@ option java_generic_services = true;
 
 service Tracker {
 
-  rpc RegisterNewPackage(PackageInfo) returns (RegisterResponse) {}
+  rpc RegisterTrackerInstance(TrackerInfo) returns (InstanceRegisterResponse) {}
+
+  rpc RegisterNewPackage(PackageInfo) returns (PackageRegisterResponse) {}
 
   rpc FindPackageLocation(LocationRequest) returns (PackageLocation) {}
 
@@ -17,8 +19,25 @@ service Tracker {
 
 message PackageInfo {}
 
-message RegisterResponse {}
+message PackageRegisterResponse {}
 
 message LocationRequest {}
 
 message PackageLocation {}
+
+message TrackerInfo {
+  string organizationId = 1;
+  bool allow_public_access = 2;
+  bool public_register = 3;
+  repeated string partnerOrganizations = 4;
+}
+
+enum InstanceRegisterStatus {
+  SUCCESS = 0;
+  FAILED = 1;
+}
+
+message InstanceRegisterResponse {
+  InstanceRegisterStatus status = 1;
+  string error = 2;
+}
