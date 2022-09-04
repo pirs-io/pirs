@@ -12,16 +12,19 @@ var (
 )
 
 type TrackerAppConfig struct {
-	RedisURl  string `mapstructure:"REDIS_URL"`
-	RedisPort string `mapstructure:"REDIS_PORT"`
-	RedisPwd  string `mapstructure:"REDIS_PWD"`
-	GrpcPort  int    `mapstructure:"GRPC_PORT"`
+	RedisURl     string `mapstructure:"REDIS_URL"`
+	RedisPort    string `mapstructure:"REDIS_PORT"`
+	RedisPwd     string `mapstructure:"REDIS_PWD"`
+	GrpcPort     int    `mapstructure:"GRPC_PORT"`
+	Instance0Url string `mapstructure:"INSTANCE0_URL"`
 }
 
 func (t TrackerAppConfig) IsConfig() {}
 
 type ApplicationContext struct {
-	LocationService *service.LocationService
+	AppConfig                   *TrackerAppConfig
+	LocationService             *service.LocationService
+	InstanceRegistrationService *service.InstanceRegistrationService
 }
 
 func InitApp(configFilePath string) (conf *TrackerAppConfig) {
@@ -40,6 +43,7 @@ func InitApp(configFilePath string) (conf *TrackerAppConfig) {
 	trackerApplicationContext = appCtx
 
 	log.Info().Msg("Application started!")
+	trackerApplicationContext.AppConfig = conf
 	return conf
 }
 
@@ -48,9 +52,13 @@ func GetContext() *ApplicationContext {
 }
 
 func createApplicationContext(conf TrackerAppConfig) (appContext *ApplicationContext, err error) {
+	redisClient := common.NewRedisClient(conf.RedisURl, conf.RedisPort, conf.RedisPwd, 0)
 	return &ApplicationContext{
-		LocationService: &service.LocationService{LocationRepository: &db.RedisRepo{
-			Client: common.NewRedisClient(conf.RedisURl, conf.RedisPort, conf.RedisPwd, 0)},
+		LocationService: &service.LocationService{LocationRepository: &db.LocationRepo{
+			Client: redisClient},
+		},
+		InstanceRegistrationService: &service.InstanceRegistrationService{RegisterRepo: &db.RegisterRepo{
+			Client: redisClient},
 		},
 	}, nil
 }

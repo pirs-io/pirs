@@ -22,7 +22,7 @@ type TrackerServer struct {
 	appContext *config.ApplicationContext
 }
 
-func (c *TrackerServer) RegisterNewPackage(ctx context.Context, packageInfo *trackerProto.PackageInfo) (*trackerProto.RegisterResponse, error) {
+func (c *TrackerServer) RegisterNewPackage(ctx context.Context, packageInfo *trackerProto.PackageInfo) (*trackerProto.PackageRegisterResponse, error) {
 	c.appContext.LocationService.RegisterPackage(packageInfo)
 	return nil, status.Errorf(codes.Unimplemented, "method FindPackageLocation not implemented")
 }
@@ -30,6 +30,10 @@ func (c *TrackerServer) RegisterNewPackage(ctx context.Context, packageInfo *tra
 func (c *TrackerServer) FindPackageLocation(ctx context.Context, in *trackerProto.LocationRequest) (*trackerProto.PackageLocation, error) {
 	log.Info().Msgf("Finding package")
 	return &trackerProto.PackageLocation{}, nil
+}
+
+func (c *TrackerServer) RegisterTrackerInstance(ctx context.Context, in *trackerProto.TrackerInfo) (*trackerProto.InstanceRegisterResponse, error) {
+	return c.appContext.InstanceRegistrationService.RegisterInstance(in)
 }
 
 func StartGrpc(grpcPort int) error {
