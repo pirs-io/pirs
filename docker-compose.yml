@@ -9,11 +9,12 @@ services:
     ports:
       - "50004:50004"
   redis:
-    image: redis:latest
+    image: redislabs/redismod:latest
     restart: always
     container_name: redis-pirs
-    command: redis-server --save 20 1 --loglevel warning --requirepass pirs.123
+    command: redis-server --save 20 1 --loglevel warning --requirepass pirs.123 --loadmodule /usr/lib/redis/modules/rejson.so
     ports:
       - "6379:6379"
     volumes:
       - ./docker/redis/data:/data
+      - ./docker/redis/conf:/data/redis-server

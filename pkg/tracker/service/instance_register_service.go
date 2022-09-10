@@ -23,7 +23,7 @@ func (r *InstanceRegistrationService) RegisterInstance(info *trackerProto.Tracke
 	}
 	log.Debug().Msgf("This instance have: %n registered instances", nil, len(allRegisteredInstances))
 	err = r.RegisterRepo.RegisterInstance(register.TrackerInstance{
-		OrganizationName: "org2",
+		OrganizationName: info.OrganizationId,
 		Url:              "localhost:8081",
 	})
 	if err != nil {
@@ -38,5 +38,8 @@ func (r *InstanceRegistrationService) RegisterInstance(info *trackerProto.Tracke
 			Error:  "",
 		}, nil
 	}
+}
 
+func (r *InstanceRegistrationService) GetAllRegisteredInstances() ([]register.TrackerInstance, error) {
+	return r.RegisterRepo.GetAllRegisteredInstances()
 }
