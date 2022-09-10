@@ -7,9 +7,13 @@ option java_package = "io.pirs.data.datamgmt.proto";
 option java_multiple_files = true;
 option java_generic_services = true;
 
+import "google/protobuf/empty.proto";
+
 service Tracker {
 
   rpc RegisterTrackerInstance(TrackerInfo) returns (InstanceRegisterResponse) {}
+
+  rpc GetAllRegisteredInstances(google.protobuf.Empty) returns (stream TrackerInfo) {}
 
   rpc RegisterNewPackage(PackageInfo) returns (PackageRegisterResponse) {}
 

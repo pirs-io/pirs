@@ -7,6 +7,7 @@ import (
 	"google.golang.org/grpc"
 	"google.golang.org/grpc/codes"
 	"google.golang.org/grpc/status"
+	"google.golang.org/protobuf/types/known/emptypb"
 	"net"
 	"pirs.io/pirs/common"
 	"pirs.io/pirs/common/trackerProto"
@@ -34,6 +35,17 @@ func (c *TrackerServer) FindPackageLocation(ctx context.Context, in *trackerProt
 
 func (c *TrackerServer) RegisterTrackerInstance(ctx context.Context, in *trackerProto.TrackerInfo) (*trackerProto.InstanceRegisterResponse, error) {
 	return c.appContext.InstanceRegistrationService.RegisterInstance(in)
+}
+
+func (c *TrackerServer) GetAllRegisteredInstances(empty *emptypb.Empty, stream trackerProto.Tracker_GetAllRegisteredInstancesServer) error {
+	instances, err := c.appContext.InstanceRegistrationService.GetAllRegisteredInstances()
+	if err != nil {
+		return err
+	}
+	for _ = range instances {
+		stream.Send(nil)
+	}
+	return nil
 }
 
 func StartGrpc(grpcPort int) error {
