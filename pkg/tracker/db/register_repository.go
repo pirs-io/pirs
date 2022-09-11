@@ -2,12 +2,13 @@ package db
 
 import (
 	"context"
-	"encoding/json"
-	"fmt"
-	"github.com/go-redis/redis/v9"
+	"github.com/samber/lo"
 	"pirs.io/pirs/common"
 	"pirs.io/pirs/tracker/domain/register"
-	"strings"
+)
+
+const (
+	keyRegisteredInstances = "INSTANCES"
 )
 
 var (
@@ -16,40 +17,32 @@ var (
 
 type RegisterRepo struct {
 	Context *context.Context
-	Client  *redis.Client
+	Client  *common.CustomRedisClient
 }
 
 func (r *RegisterRepo) GetAllRegisteredInstances() ([]register.TrackerInstance, error) {
-	keys, err := r.Client.Do(*r.Context, "JSON.OBJKEYS", "INSTANCES", "$").Result()
-	if err != nil {
-		return nil, err
-	}
-	parsedKeys := strings.Replace(strings.TrimSuffix(strings.TrimPrefix(fmt.Sprint(keys), "["), "]"), " ", ",", 1)
-	rrLog.Info().Msgf("Found registered organizations: %s", parsedKeys)
-	//existingInstances, err := r.Client.Do(*r.Context, "JSON.GET", register.KEY_REGISTERED_INSTANCES, "$"+"'"+parsedKeys+"'").Result()
-	//instances := &[]register.TrackerInstance{}
-	//err = json.Unmarshal(existingInstances.([]byte), instances)
-	//if err != nil {
-	//	return nil, err
-	//}
-	return nil, nil
+	panic("Not implemented!")
 }
 
 func (r *RegisterRepo) RegisterInstance(peer register.TrackerInstance) error {
-	rrLog.Debug().Msgf("Registering instance: %s", peer.OrganizationName)
-	serialized, err := json.Marshal(peer)
+	// check all existing organizations
+	existingOrganizations, err := r.Client.ObjKeys(keyRegisteredInstances, "$")
 	if err != nil {
-		panic(err)
+		rrLog.Warn().Msg(err.Error())
 	}
-
-	res, err := r.Client.Do(*r.Context, "JSON.OBJKEYS", register.KEY_REGISTERED_INSTANCES, "$").Result()
-	if err != nil {
-		rrLog.Error().Msg(err.Error())
+	if lo.Contains[string](existingOrganizations, peer.OrganizationName) {
+		rrLog.Warn().Msgf("Organization %s already registered!", peer.OrganizationName)
+		return nil
 	}
-	if res == nil {
-		r.Client.Do(*r.Context, "JSON.SET", register.KEY_REGISTERED_INSTANCES, "$", "{}")
+	// if structure for instances is not created - initialize it
+	if existingOrganizations == nil || len(existingOrganizations) == 0 {
+		_, err := r.Client.JsonSetString(keyRegisteredInstances, "$", "{}")
+		if err != nil {
+			return err
+		}
 	}
-	res, err = r.Client.Do(*r.Context, "JSON.SET", register.KEY_REGISTERED_INSTANCES, "$."+peer.OrganizationName, string(serialized)).Result()
+	// set entry for organization registering to this instance
+	_, err = r.Client.JsonSet(keyRegisteredInstances, "$."+peer.OrganizationName, peer)
 	if err != nil {
 		rrLog.Error().Msg(err.Error())
 	}

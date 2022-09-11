@@ -1,10 +1,8 @@
 package register
 
-var (
-	KEY_REGISTERED_INSTANCES = "INSTANCES"
-)
-
 type TrackerInstance struct {
-	OrganizationName string
-	Url              string
+	OrganizationName string `json:"OrganizationName,omitempty"`
+	Url              string `json:"Url,omitempty"`
 }
+
+func (r TrackerInstance) isDocument() {}
