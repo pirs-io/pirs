@@ -17,12 +17,7 @@ type InstanceRegistrationService struct {
 
 func (r *InstanceRegistrationService) RegisterInstance(info *trackerProto.TrackerInfo) (*trackerProto.InstanceRegisterResponse, error) {
 	irLog.Info().Msgf("Registering %s", info.OrganizationId)
-	allRegisteredInstances, err := r.RegisterRepo.GetAllRegisteredInstances()
-	if err != nil {
-		log.Err(err)
-	}
-	log.Debug().Msgf("This instance have: %n registered instances", nil, len(allRegisteredInstances))
-	err = r.RegisterRepo.RegisterInstance(register.TrackerInstance{
+	err := r.RegisterRepo.RegisterInstance(register.TrackerInstance{
 		OrganizationName: info.OrganizationId,
 		Url:              "localhost:8081",
 	})

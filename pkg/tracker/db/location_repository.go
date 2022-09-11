@@ -2,13 +2,13 @@ package db
 
 import (
 	"context"
-	"github.com/go-redis/redis/v9"
+	"pirs.io/pirs/common"
 	"pirs.io/pirs/common/trackerProto"
 )
 
 type LocationRepo struct {
 	Context *context.Context
-	Client  *redis.Client
+	Client  *common.CustomRedisClient
 }
 
 func (r *LocationRepo) SavePackage(info *trackerProto.PackageInfo) (trackerProto.PackageInfo, error) {
