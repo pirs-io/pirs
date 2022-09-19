@@ -1,8 +1,9 @@
 package register
 
-type TrackerInstance struct {
-	OrganizationName string `json:"OrganizationName,omitempty"`
-	Url              string `json:"Url,omitempty"`
-}
+import "pirs.io/pirs/common"
 
-func (r TrackerInstance) isDocument() {}
+type TrackerInstance struct {
+	common.ReJsonDocument `json:"-"`
+	OrganizationName      string `json:"OrganizationName,omitempty"`
+	Url                   string `json:"Url,omitempty"`
+}
