@@ -2,6 +2,7 @@ package db
 
 import (
 	"context"
+	"errors"
 	"github.com/samber/lo"
 	"pirs.io/pirs/common"
 	"pirs.io/pirs/tracker/domain/register"
@@ -32,7 +33,7 @@ func (r *RegisterRepo) RegisterInstance(peer register.TrackerInstance) error {
 	}
 	if lo.Contains[string](existingOrganizations, peer.OrganizationName) {
 		rrLog.Warn().Msgf("Organization %s already registered!", peer.OrganizationName)
-		return nil
+		return errors.New("instance already exists")
 	}
 	// if structure for instances is not created - initialize it
 	if existingOrganizations == nil || len(existingOrganizations) == 0 {
