@@ -23,8 +23,6 @@ go.work
 # idea
 .idea/
 
-*.env
-
 HELP.md
 target/
 !.mvn/wrapper/maven-wrapper.jar

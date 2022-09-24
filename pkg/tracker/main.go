@@ -10,7 +10,7 @@ var log = common.GetLoggerFor("main")
 
 func main() {
 
-	appConfig := config.InitApp("./tracker.env")
+	appConfig := config.InitApp("./tracker-dev.env")
 	// start gRpc server
 	grpc.StartGrpc(appConfig.GrpcPort)
 }

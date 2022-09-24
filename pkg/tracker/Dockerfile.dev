@@ -12,7 +12,7 @@ RUN go install github.com/envoyproxy/protoc-gen-validate@latest
 # copy all application files
 WORKDIR /app
 
-COPY ../tracker.env /app/tracker/
+COPY ../tracker-dev.env /app/tracker/
 COPY common/ /app/common
 COPY tracker/ /app/tracker
 COPY ../go.mod /app
