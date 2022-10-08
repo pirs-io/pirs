@@ -2,9 +2,9 @@ package config
 
 import (
 	"context"
-	"pirs.io/pirs/common"
-	"pirs.io/pirs/tracker/db"
-	"pirs.io/pirs/tracker/service"
+	"pirs.io/common"
+	"pirs.io/tracker/db"
+	"pirs.io/tracker/service"
 )
 
 var (
@@ -24,7 +24,6 @@ func (t TrackerAppConfig) IsConfig() {}
 
 type ApplicationContext struct {
 	AppConfig                   *TrackerAppConfig
-	LocationService             *service.LocationService
 	InstanceRegistrationService *service.InstanceRegistrationService
 }
 
@@ -56,10 +55,6 @@ func createApplicationContext(conf TrackerAppConfig) (appContext *ApplicationCon
 	ctx := context.Background()
 	redisClient := common.NewRedisClient(ctx, conf.RedisURl, conf.RedisPort, conf.RedisPwd, 0)
 	return &ApplicationContext{
-		LocationService: &service.LocationService{LocationRepository: &db.LocationRepo{
-			Context: &ctx,
-			Client:  redisClient},
-		},
 		InstanceRegistrationService: &service.InstanceRegistrationService{RegisterRepo: &db.RegisterRepo{
 			Context: &ctx,
 			Client:  redisClient},
