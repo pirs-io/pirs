@@ -1,11 +1,8 @@
 syntax = "proto3";
 
-package trackerProto;
+package grpc;
 
-option go_package = "./;trackerProto";
-option java_package = "io.pirs.data.datamgmt.proto";
-option java_multiple_files = true;
-option java_generic_services = true;
+option go_package = "./;grpc";
 
 import "google/protobuf/empty.proto";
 

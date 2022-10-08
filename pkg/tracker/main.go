@@ -1,9 +1,9 @@
 package main
 
 import (
-	"pirs.io/pirs/common"
-	"pirs.io/pirs/tracker/config"
-	"pirs.io/pirs/tracker/grpc"
+	"pirs.io/common"
+	"pirs.io/tracker/config"
+	"pirs.io/tracker/grpc"
 )
 
 var log = common.GetLoggerFor("main")
