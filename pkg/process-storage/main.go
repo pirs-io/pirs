@@ -5,7 +5,7 @@ import (
 )
 
 func main() {
-	appConfig := config.InitApp("./process-storage--dev.env")
+	appConfig := config.InitApp("./.env")
 	// start gRpc server
 	defer func(grpcPort int) {
 		err := StartGrpc(grpcPort)

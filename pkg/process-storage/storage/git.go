@@ -49,11 +49,10 @@ func (c *GitClient) InitializeStorage() error {
 		_, err = c.commitInitialFile(worktree, initialFilePath)
 		err = c.push(r, auth)
 		return err
-	} else {
-		_, err = c.commitInitialFile(worktree, initialFilePath)
-		err = c.push(r, auth)
-		return err
 	}
+	//_, err = c.commitInitialFile(worktree, initialFilePath)
+	//err = c.push(r, auth)
+	return err
 }
 
 // Close cleanup cloned repository from FS/**

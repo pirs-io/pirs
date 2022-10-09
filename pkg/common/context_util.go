@@ -12,5 +12,9 @@ const (
 
 func GetSingleValue(ctx context.Context, key string) string {
 	incomingContext, _ := metadata.FromIncomingContext(ctx)
-	return incomingContext.Get(key)[0]
+	values := incomingContext.Get(key)
+	if values == nil {
+		return ""
+	}
+	return values[0]
 }

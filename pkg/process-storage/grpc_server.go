@@ -21,7 +21,10 @@ type processStorage struct {
 }
 
 func (p *processStorage) UploadProcess(stream pb.Storage_UploadProcessServer) error {
-	adapter.MakeStorageAdapter(stream.Context(), config.GetContext().AppConfig.StorageProvider)
+	_, err := adapter.MakeStorageAdapter(stream.Context(), config.GetContext().AppConfig.StorageProvider)
+	if err != nil {
+		return err
+	}
 	for {
 		in, err := stream.Recv()
 		if err == io.EOF {
