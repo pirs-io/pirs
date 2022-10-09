@@ -1,7 +1,6 @@
 syntax = "proto3";
 
 package grpc;
-
 option go_package = "./;grpc";
 
 import "google/protobuf/empty.proto";
