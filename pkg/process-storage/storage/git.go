@@ -5,11 +5,11 @@ import (
 	"github.com/go-git/go-git/v5/config"
 	"github.com/go-git/go-git/v5/plumbing/object"
 	"github.com/go-git/go-git/v5/plumbing/transport/http"
-	"github.com/rs/zerolog/log"
 	"golang.org/x/net/context"
 	"os"
 	"path/filepath"
 	"pirs.io/common"
+	pb "pirs.io/process-storage/grpc"
 	"text/template"
 	"time"
 )
@@ -17,6 +17,10 @@ import (
 const (
 	repoIsEmpty = "remote repository is empty"
 	remoteName  = "origin"
+)
+
+var (
+	log = common.GetLoggerFor("git")
 )
 
 type OrganizationInfo struct {
@@ -29,6 +33,9 @@ type GitClient struct {
 	Username        string
 	Password        string
 	TempRepoDirPath string
+
+	repo *git.Repository
+	auth *http.BasicAuth
 }
 
 func (c *GitClient) InitializeStorage() error {
@@ -37,22 +44,42 @@ func (c *GitClient) InitializeStorage() error {
 		Password: c.Password,
 	}
 	r, err := c.clone(c.TempRepoDirPath, auth)
-	initialFilePath, err := c.createInitialFile(c.TempRepoDirPath)
 	worktree, _ := r.Worktree()
 
+	c.repo = r
+	c.auth = auth
+
 	if err != nil && err.Error() == repoIsEmpty {
+		initialFilePath, err := c.createInitialFile()
 		r, err = git.Init(r.Storer, worktree.Filesystem)
 		_, err = r.CreateRemote(&config.RemoteConfig{
 			Name: remoteName,
 			URLs: []string{c.Url},
 		})
-		_, err = c.commitInitialFile(worktree, initialFilePath)
+		_, err = c.commitFile(worktree, initialFilePath, "Commited initial file")
 		err = c.push(r, auth)
 		return err
 	}
-	//_, err = c.commitInitialFile(worktree, initialFilePath)
-	//err = c.push(r, auth)
 	return err
+}
+
+func (c *GitClient) SaveFile(
+	processMetadata *pb.ProcessMetadata,
+	file []byte) {
+	f, err := os.Create(filepath.FromSlash(c.TempRepoDirPath + "/" + processMetadata.Filename))
+	_, err = f.Write(file)
+	if err != nil {
+		log.Error().Msg(err.Error())
+	}
+	worktree, err := c.repo.Worktree()
+	_, err = c.commitFile(worktree, processMetadata.Filename, "added process: "+processMetadata.ProcessId)
+	if err != nil {
+		log.Error().Msg(err.Error())
+	}
+	err = c.push(c.repo, c.auth)
+	if err != nil {
+		log.Error().Msg(err.Error())
+	}
 }
 
 // Close cleanup cloned repository from FS/**
@@ -85,12 +112,12 @@ func (c *GitClient) push(r *git.Repository, auth *http.BasicAuth) error {
 	return nil
 }
 
-func (c *GitClient) commitInitialFile(tree *git.Worktree, initialFilePath string) (string, error) {
+func (c *GitClient) commitFile(tree *git.Worktree, initialFilePath string, commitMessage string) (string, error) {
 	_, err := tree.Add(initialFilePath)
 	if err != nil {
 		return "", err
 	}
-	commit, err := tree.Commit("added initial file", &git.CommitOptions{
+	commit, err := tree.Commit(commitMessage, &git.CommitOptions{
 		Author: &object.Signature{
 			Name:  common.GetSingleValue(c.Context, common.User),
 			Email: common.GetSingleValue(c.Context, common.UserEmail),
@@ -104,9 +131,9 @@ func (c *GitClient) commitInitialFile(tree *git.Worktree, initialFilePath string
 	return commit.String(), nil
 }
 
-func (c *GitClient) createInitialFile(dir string) (string, error) {
+func (c *GitClient) createInitialFile() (string, error) {
 	var temp *template.Template
-	outFile, err := os.Create(filepath.Join(dir + "/README.md"))
+	outFile, err := os.Create(filepath.Join(c.TempRepoDirPath + "/README.md"))
 	if err != nil {
 		return "", nil
 	}

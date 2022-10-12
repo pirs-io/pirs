@@ -12,7 +12,16 @@ type GitAdapter struct {
 	GitClient storage.GitClient
 }
 
-func (a *GitAdapter) SaveProcess(processMetadata *pb.ProcessMetadata, file *os.File) error {
+func (a *GitAdapter) Close() error {
+	err := os.RemoveAll(a.GitClient.TempRepoDirPath)
+	if err != nil {
+		return err
+	}
+	return nil
+}
+
+func (a *GitAdapter) SaveProcess(processMetadata *pb.ProcessMetadata, file []byte) error {
+	a.GitClient.SaveFile(processMetadata, file)
 	return nil
 }
 

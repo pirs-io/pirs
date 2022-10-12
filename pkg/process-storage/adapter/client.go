@@ -2,7 +2,6 @@ package adapter
 
 import (
 	"golang.org/x/net/context"
-	"io/ioutil"
 	"os"
 	"pirs.io/common"
 	"pirs.io/process-storage/config"
@@ -13,14 +12,15 @@ import (
 var log = common.GetLoggerFor("storage_client")
 
 type IStorageAdapter interface {
-	SaveProcess(processMetadata *pb.ProcessMetadata, file *os.File) error
+	SaveProcess(processMetadata *pb.ProcessMetadata, file []byte) error
 	DownloadProcess(processId string) (*os.File, error)
+	Close() error
 }
 
 func MakeStorageAdapter(ctx context.Context, provider storage.Provider) (IStorageAdapter, error) {
 	switch provider {
 	case storage.GitStorageProvider:
-		dir, err := ioutil.TempDir(".", "repo")
+		dir, err := os.MkdirTemp(".", "repo")
 		gitAdapter := &GitAdapter{
 			ctx: ctx,
 			GitClient: storage.GitClient{
@@ -35,12 +35,7 @@ func MakeStorageAdapter(ctx context.Context, provider storage.Provider) (IStorag
 		if err := common.CheckAndLog(err, log); err != nil {
 			return nil, err
 		}
-		defer func(GitClient *storage.GitClient) {
-			err := GitClient.Close()
-			if err != nil {
-				common.CheckAndLog(err, log)
-			}
-		}(&gitAdapter.GitClient)
+
 		return gitAdapter, nil
 	default:
 		log.Error().Msgf("Unsupported storage provider: %s", provider)

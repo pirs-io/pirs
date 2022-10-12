@@ -21,26 +21,51 @@ type processStorage struct {
 }
 
 func (p *processStorage) UploadProcess(stream pb.Storage_UploadProcessServer) error {
-	_, err := adapter.MakeStorageAdapter(stream.Context(), config.GetContext().AppConfig.StorageProvider)
+	storageAdapter, err := adapter.MakeStorageAdapter(stream.Context(), config.GetContext().AppConfig.StorageProvider)
+	defer func(storageAdapter adapter.IStorageAdapter) {
+		err := storageAdapter.Close()
+		if err != nil {
+			common.CheckAndLog(err, log)
+		}
+	}(storageAdapter)
 	if err != nil {
 		return err
 	}
+	fileBuffer := make([]byte, 0)
+	fileMetadata := &pb.ProcessMetadata{}
+	chunkNum := 0
 	for {
 		in, err := stream.Recv()
+		chunkNum += 1
 		if err == io.EOF {
+			log.Info().Msg("EOF! File upload done")
+
 			stream.Send(&pb.ProcessUploadResponse{Status: pb.UploadStatus_SUCCESS})
-			return nil
+			break
 		}
 		if err != nil {
+			log.Error().Msg(err.Error())
 			stream.Send(&pb.ProcessUploadResponse{Status: pb.UploadStatus_FAILED})
-			return nil
-		}
-		log.Info().Msg(in.String())
-		err = stream.Send(&pb.ProcessUploadResponse{Status: pb.UploadStatus_IN_PROGRESS})
-		if err != nil {
 			return err
 		}
+		if chunkNum == 1 {
+			fileMetadata = in.Data.GetMetadata()
+			log.Info().Msgf("Got first chunk containing file metadata: %s", fileMetadata.String())
+			err = stream.Send(&pb.ProcessUploadResponse{Status: pb.UploadStatus_IN_PROGRESS})
+			if err != nil {
+				return err
+			}
+		} else {
+			log.Info().Msgf("Got file chunk %s", in.GetData().GetChunk())
+			err = stream.Send(&pb.ProcessUploadResponse{Status: pb.UploadStatus_IN_PROGRESS})
+			fileBuffer = append(fileBuffer, in.GetData().GetChunk()...)
+		}
 	}
+	err = storageAdapter.SaveProcess(fileMetadata, fileBuffer)
+	if err != nil {
+		return err
+	}
+	return nil
 }
 
 func (p *processStorage) DownloadProcess(req *pb.ProcessDownloadRequest, stream pb.Storage_DownloadProcessServer) error {
