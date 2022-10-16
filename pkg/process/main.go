@@ -1,5 +1,13 @@
-package process
+package main
+
+import (
+	"pirs.io/process/grpc"
+)
 
 func main() {
-	panic("Implement me")
+	//appConfig := config.InitApp("./tracker-dev.env")
+	err := grpc.StartGrpc(8090)
+	if err != nil {
+		return
+	}
 }
