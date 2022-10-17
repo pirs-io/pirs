@@ -1,12 +1,12 @@
 package service
 
 import (
-	"pirs.io/common"
+	"pirs.io/commons"
 	"pirs.io/tracker/domain/register"
 )
 
 var (
-	irLog = common.GetLoggerFor("location_service")
+	irLog = commons.GetLoggerFor("location_service")
 )
 
 type InstanceRegistrationService struct {
