@@ -14,7 +14,7 @@ import (
 )
 
 var (
-	log = commons.GetLoggerFor("trackerGrpc")
+	log = commons.GetLoggerFor("processGrpc")
 )
 
 type processServer struct {
@@ -40,7 +40,7 @@ func (c *processServer) DownloadProcess(ctx context.Context, req *DownloadProces
 
 func StartGrpc(grpcIp string, grpcPort int, isReflection bool) error {
 	flag.Parse()
-	log.Info().Msgf("Starting Process service on %s:%d...", grpcIp, grpcPort)
+	log.Info().Msgf("Starting Process service listening on %s:%d...", grpcIp, grpcPort)
 	lis, networkErr := net.Listen("tcp", fmt.Sprintf("%s:%d", grpcIp, grpcPort))
 	if networkErr != nil {
 		return networkErr
