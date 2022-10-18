@@ -9,7 +9,12 @@ import (
 	"google.golang.org/grpc/reflection"
 	"google.golang.org/grpc/status"
 	"net"
+	"pirs.io/commons"
 	"pirs.io/process/config"
+)
+
+var (
+	log = commons.GetLoggerFor("trackerGrpc")
 )
 
 type processServer struct {
@@ -33,16 +38,19 @@ func (c *processServer) DownloadProcess(ctx context.Context, req *DownloadProces
 	return nil, status.Errorf(codes.Unimplemented, "method DownloadProcess not implemented")
 }
 
-func StartGrpc(grpcPort int) error {
+func StartGrpc(grpcIp string, grpcPort int, isReflection bool) error {
 	flag.Parse()
-	lis, networkErr := net.Listen("tcp", fmt.Sprintf("0.0.0.0:%d", grpcPort))
+	log.Info().Msgf("Starting Process service on %s:%d...", grpcIp, grpcPort)
+	lis, networkErr := net.Listen("tcp", fmt.Sprintf("%s:%d", grpcIp, grpcPort))
 	if networkErr != nil {
 		return networkErr
 	}
 	grpcServer := grpc.NewServer()
 
-	// todo implement dev switch
-	reflection.Register(grpcServer)
+	if isReflection {
+		log.Info().Msg("Using GRPC reflection for Process service.")
+		reflection.Register(grpcServer)
+	}
 
 	RegisterProcessServer(grpcServer, &processServer{appContext: config.GetContext()})
 
