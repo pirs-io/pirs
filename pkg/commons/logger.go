@@ -1,4 +1,4 @@
-package common
+package commons
 
 import (
 	"github.com/rs/zerolog"
