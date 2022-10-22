@@ -2,6 +2,7 @@ package grpc
 
 import (
 	"context"
+	"errors"
 	"flag"
 	"fmt"
 	"google.golang.org/grpc"
@@ -11,6 +12,8 @@ import (
 	"net"
 	"pirs.io/commons"
 	"pirs.io/process/config"
+	"pirs.io/process/mock"
+	"pirs.io/process/service"
 )
 
 var (
@@ -22,8 +25,36 @@ type processServer struct {
 	appContext *config.ApplicationContext
 }
 
-func (c *processServer) ImportProcess(ctx context.Context, req *ImportProcessRequest) (*ImportProcessResponse, error) {
-	return nil, status.Errorf(codes.Unimplemented, "method ImportProcess not implemented")
+func (ps *processServer) ImportProcess(ctx context.Context, req *ImportProcessRequest) (*ImportProcessResponse, error) {
+	// authorization
+	// todo mock
+	userRoles := ctx.Value("ROLES").(string)
+	authorize := mock.CheckAuthorization(userRoles, []string{service.IMPORT_PROCESS_ROLE})
+	if !authorize {
+		return nil, errors.New("could not authorize with roles: " + userRoles)
+	}
+	// extract req
+	// todo mock
+	myMockFilePath := "awd.txt"
+	reqFilePtr, err := mock.FindOrCreateFile(myMockFilePath)
+	if err != nil {
+		return nil, errors.New("could not find or create file: " + myMockFilePath)
+	}
+	reqData := service.ImportProcessRequestData{
+		ProcessFile: reqFilePtr,
+	}
+	// handle request
+	response, err := ps.appContext.ImportService.ImportProcess(&reqData)
+	if err != nil {
+		return nil, err
+	}
+	// handle response
+	importProcessResponse := ImportProcessResponse{}
+	if response.Status == 0 {
+		log.Info().Msg("Process was successfully imported.")
+		// initialize response based on state
+	}
+	return &importProcessResponse, nil
 }
 
 func (c *processServer) ImportPackage(ctx context.Context, req *ImportPackageRequest) (*ImportPackageResponse, error) {

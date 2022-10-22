@@ -2,6 +2,7 @@ package config
 
 import (
 	"pirs.io/commons"
+	"pirs.io/process/service"
 )
 
 var (
@@ -18,7 +19,8 @@ type ProcessAppConfig struct {
 func (p ProcessAppConfig) IsConfig() {}
 
 type ApplicationContext struct {
-	AppConfig *ProcessAppConfig
+	AppConfig     *ProcessAppConfig
+	ImportService *service.ImportService
 }
 
 func GetContext() *ApplicationContext {
@@ -46,5 +48,7 @@ func InitApp(configFilePath string) (conf *ProcessAppConfig) {
 }
 
 func createApplicationContext(conf ProcessAppConfig) (appContext *ApplicationContext, err error) {
-	return &ApplicationContext{}, nil
+	return &ApplicationContext{
+		ImportService: &service.ImportService{},
+	}, nil
 }
