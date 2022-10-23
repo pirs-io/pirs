@@ -22,7 +22,7 @@ const _ = grpc.SupportPackageIsVersion7
 //
 // For semantics around ctx use and closing/ending streaming RPCs, please refer to https://pkg.go.dev/google.golang.org/grpc/?tab=doc#ClientConn.NewStream.
 type ProcessClient interface {
-	ImportProcess(ctx context.Context, in *ImportProcessRequest, opts ...grpc.CallOption) (*ImportProcessResponse, error)
+	ImportProcess(ctx context.Context, opts ...grpc.CallOption) (Process_ImportProcessClient, error)
 	ImportPackage(ctx context.Context, in *ImportPackageRequest, opts ...grpc.CallOption) (*ImportPackageResponse, error)
 	RemoveProcess(ctx context.Context, in *RemoveProcessRequest, opts ...grpc.CallOption) (*RemoveProcessResponse, error)
 	DownloadProcess(ctx context.Context, in *DownloadProcessRequest, opts ...grpc.CallOption) (*DownloadProcessResponse, error)
@@ -36,13 +36,38 @@ func NewProcessClient(cc grpc.ClientConnInterface) ProcessClient {
 	return &processClient{cc}
 }
 
-func (c *processClient) ImportProcess(ctx context.Context, in *ImportProcessRequest, opts ...grpc.CallOption) (*ImportProcessResponse, error) {
-	out := new(ImportProcessResponse)
-	err := c.cc.Invoke(ctx, "/grpc.Process/ImportProcess", in, out, opts...)
+func (c *processClient) ImportProcess(ctx context.Context, opts ...grpc.CallOption) (Process_ImportProcessClient, error) {
+	stream, err := c.cc.NewStream(ctx, &Process_ServiceDesc.Streams[0], "/grpc.Process/ImportProcess", opts...)
 	if err != nil {
 		return nil, err
 	}
-	return out, nil
+	x := &processImportProcessClient{stream}
+	return x, nil
+}
+
+type Process_ImportProcessClient interface {
+	Send(*ImportProcessRequest) error
+	CloseAndRecv() (*ImportProcessResponse, error)
+	grpc.ClientStream
+}
+
+type processImportProcessClient struct {
+	grpc.ClientStream
+}
+
+func (x *processImportProcessClient) Send(m *ImportProcessRequest) error {
+	return x.ClientStream.SendMsg(m)
+}
+
+func (x *processImportProcessClient) CloseAndRecv() (*ImportProcessResponse, error) {
+	if err := x.ClientStream.CloseSend(); err != nil {
+		return nil, err
+	}
+	m := new(ImportProcessResponse)
+	if err := x.ClientStream.RecvMsg(m); err != nil {
+		return nil, err
+	}
+	return m, nil
 }
 
 func (c *processClient) ImportPackage(ctx context.Context, in *ImportPackageRequest, opts ...grpc.CallOption) (*ImportPackageResponse, error) {
@@ -76,7 +101,7 @@ func (c *processClient) DownloadProcess(ctx context.Context, in *DownloadProcess
 // All implementations must embed UnimplementedProcessServer
 // for forward compatibility
 type ProcessServer interface {
-	ImportProcess(context.Context, *ImportProcessRequest) (*ImportProcessResponse, error)
+	ImportProcess(Process_ImportProcessServer) error
 	ImportPackage(context.Context, *ImportPackageRequest) (*ImportPackageResponse, error)
 	RemoveProcess(context.Context, *RemoveProcessRequest) (*RemoveProcessResponse, error)
 	DownloadProcess(context.Context, *DownloadProcessRequest) (*DownloadProcessResponse, error)
@@ -87,8 +112,8 @@ type ProcessServer interface {
 type UnimplementedProcessServer struct {
 }
 
-func (UnimplementedProcessServer) ImportProcess(context.Context, *ImportProcessRequest) (*ImportProcessResponse, error) {
-	return nil, status.Errorf(codes.Unimplemented, "method ImportProcess not implemented")
+func (UnimplementedProcessServer) ImportProcess(Process_ImportProcessServer) error {
+	return status.Errorf(codes.Unimplemented, "method ImportProcess not implemented")
 }
 func (UnimplementedProcessServer) ImportPackage(context.Context, *ImportPackageRequest) (*ImportPackageResponse, error) {
 	return nil, status.Errorf(codes.Unimplemented, "method ImportPackage not implemented")
@@ -112,22 +137,30 @@ func RegisterProcessServer(s grpc.ServiceRegistrar, srv ProcessServer) {
 	s.RegisterService(&Process_ServiceDesc, srv)
 }
 
-func _Process_ImportProcess_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
-	in := new(ImportProcessRequest)
-	if err := dec(in); err != nil {
+func _Process_ImportProcess_Handler(srv interface{}, stream grpc.ServerStream) error {
+	return srv.(ProcessServer).ImportProcess(&processImportProcessServer{stream})
+}
+
+type Process_ImportProcessServer interface {
+	SendAndClose(*ImportProcessResponse) error
+	Recv() (*ImportProcessRequest, error)
+	grpc.ServerStream
+}
+
+type processImportProcessServer struct {
+	grpc.ServerStream
+}
+
+func (x *processImportProcessServer) SendAndClose(m *ImportProcessResponse) error {
+	return x.ServerStream.SendMsg(m)
+}
+
+func (x *processImportProcessServer) Recv() (*ImportProcessRequest, error) {
+	m := new(ImportProcessRequest)
+	if err := x.ServerStream.RecvMsg(m); err != nil {
 		return nil, err
 	}
-	if interceptor == nil {
-		return srv.(ProcessServer).ImportProcess(ctx, in)
-	}
-	info := &grpc.UnaryServerInfo{
-		Server:     srv,
-		FullMethod: "/grpc.Process/ImportProcess",
-	}
-	handler := func(ctx context.Context, req interface{}) (interface{}, error) {
-		return srv.(ProcessServer).ImportProcess(ctx, req.(*ImportProcessRequest))
-	}
-	return interceptor(ctx, in, info, handler)
+	return m, nil
 }
 
 func _Process_ImportPackage_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
@@ -192,10 +225,6 @@ var Process_ServiceDesc = grpc.ServiceDesc{
 	HandlerType: (*ProcessServer)(nil),
 	Methods: []grpc.MethodDesc{
 		{
-			MethodName: "ImportProcess",
-			Handler:    _Process_ImportProcess_Handler,
-		},
-		{
 			MethodName: "ImportPackage",
 			Handler:    _Process_ImportPackage_Handler,
 		},
@@ -208,6 +237,12 @@ var Process_ServiceDesc = grpc.ServiceDesc{
 			Handler:    _Process_DownloadProcess_Handler,
 		},
 	},
-	Streams:  []grpc.StreamDesc{},
+	Streams: []grpc.StreamDesc{
+		{
+			StreamName:    "ImportProcess",
+			Handler:       _Process_ImportProcess_Handler,
+			ClientStreams: true,
+		},
+	},
 	Metadata: "process.proto",
 }

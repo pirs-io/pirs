@@ -2,6 +2,7 @@ package config
 
 import (
 	"pirs.io/commons"
+	"pirs.io/process/mock"
 	"pirs.io/process/service"
 )
 
@@ -14,6 +15,7 @@ type ProcessAppConfig struct {
 	GrpcIp            string `mapstructure:"GRPC_IP"`
 	GrpcPort          int    `mapstructure:"GRPC_PORT"`
 	UseGrpcReflection bool   `mapstructure:"USE_GRPC_REFLECTION"`
+	UploadFileMaxSize int    `mapstructure:"UPLOAD_FILE_MAX_SIZE"`
 }
 
 func (p ProcessAppConfig) IsConfig() {}
@@ -49,6 +51,9 @@ func InitApp(configFilePath string) (conf *ProcessAppConfig) {
 
 func createApplicationContext(conf ProcessAppConfig) (appContext *ApplicationContext, err error) {
 	return &ApplicationContext{
-		ImportService: &service.ImportService{},
+		ImportService: &service.ImportService{
+			// todo mockup
+			ProcessStorageClient: mock.NewDiskProcessStore("./pkg/process/imported-files"),
+		},
 	}, nil
 }

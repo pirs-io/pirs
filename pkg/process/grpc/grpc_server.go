@@ -1,6 +1,7 @@
 package grpc
 
 import (
+	"bytes"
 	"context"
 	"errors"
 	"flag"
@@ -9,10 +10,10 @@ import (
 	"google.golang.org/grpc/codes"
 	"google.golang.org/grpc/reflection"
 	"google.golang.org/grpc/status"
+	"io"
 	"net"
 	"pirs.io/commons"
 	"pirs.io/process/config"
-	"pirs.io/process/mock"
 	"pirs.io/process/service"
 )
 
@@ -25,36 +26,67 @@ type processServer struct {
 	appContext *config.ApplicationContext
 }
 
-func (ps *processServer) ImportProcess(ctx context.Context, req *ImportProcessRequest) (*ImportProcessResponse, error) {
+func (ps *processServer) ImportProcess(stream Process_ImportProcessServer) error {
+	// receive request
+	req, err := stream.Recv()
+	if err != nil {
+		log.Error().Msg(status.Errorf(codes.Unknown, "cannot receive process info").Error())
+		return err
+	}
 	// authorization
 	// todo mock
-	userRoles := ctx.Value("ROLES").(string)
-	authorize := mock.CheckAuthorization(userRoles, []string{service.IMPORT_PROCESS_ROLE})
-	if !authorize {
-		return nil, errors.New("could not authorize with roles: " + userRoles)
-	}
+	//userRoles := ctx.Value("ROLES").(string)
+	//authorize := mock.CheckAuthorization(userRoles, []string{service.IMPORT_PROCESS_ROLE})
+	//if !authorize {
+	//	return nil, errors.New("could not authorize with roles: " + userRoles)
+	//}
 	// extract req
-	// todo mock
-	myMockFilePath := "awd.txt"
-	reqFilePtr, err := mock.FindOrCreateFile(myMockFilePath)
-	if err != nil {
-		return nil, errors.New("could not find or create file: " + myMockFilePath)
+	processData := bytes.Buffer{}
+	processSize := 0
+	for {
+		req, err = stream.Recv()
+		if err == io.EOF {
+			break
+		} else if err != nil {
+			log.Error().Msg(status.Errorf(codes.Unknown, "cannot receive chunk data: %v", err).Error())
+			return err
+		}
+		chunk := req.GetChunkData()
+		size := len(chunk)
+
+		processSize += size
+		if processSize > ps.appContext.AppConfig.UploadFileMaxSize*1024 {
+			err = errors.New(status.Errorf(codes.ResourceExhausted, "file exceeds max size: %d kB",
+				ps.appContext.AppConfig.UploadFileMaxSize).Error())
+			log.Error().Msg(err.Error())
+			return err
+		}
+		_, err = processData.Write(chunk)
+		if err != nil {
+			log.Error().Msg(status.Errorf(codes.Internal, "cannot write chunk data: %v", err).Error())
+			return err
+		}
 	}
 	reqData := service.ImportProcessRequestData{
-		ProcessFile: reqFilePtr,
+		ProcessData: processData,
+		ProcessSize: processSize,
 	}
 	// handle request
-	response, err := ps.appContext.ImportService.ImportProcess(&reqData)
+	responseData, err := ps.appContext.ImportService.ImportProcess(&reqData)
 	if err != nil {
-		return nil, err
+		return err
 	}
 	// handle response
 	importProcessResponse := ImportProcessResponse{}
-	if response.Status == 0 {
-		log.Info().Msg("Process was successfully imported.")
-		// initialize response based on state
+	if responseData.Status == 0 {
+		importProcessResponse.Message = "successfully uploaded file"
+		importProcessResponse.TotalSize = int32(processSize)
 	}
-	return &importProcessResponse, nil
+	err = stream.SendAndClose(&importProcessResponse)
+	if err != nil {
+		return err
+	}
+	return nil
 }
 
 func (c *processServer) ImportPackage(ctx context.Context, req *ImportPackageRequest) (*ImportPackageResponse, error) {

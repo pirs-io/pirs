@@ -2,17 +2,29 @@ syntax = "proto3";
 
 package grpc;
 
-option go_package = "./";
+option go_package = ".";
 
 service Process {
-  rpc ImportProcess(ImportProcessRequest) returns (ImportProcessResponse) {}
+  rpc ImportProcess(stream ImportProcessRequest) returns (ImportProcessResponse) {}
   rpc ImportPackage(ImportPackageRequest) returns (ImportPackageResponse) {}
   rpc RemoveProcess(RemoveProcessRequest) returns (RemoveProcessResponse) {}
   rpc DownloadProcess(DownloadProcessRequest) returns (DownloadProcessResponse) {}
 }
 
-message ImportProcessRequest {}
-message ImportProcessResponse {}
+message ImportProcessRequest {
+  oneof data {
+    FileInfo file_info = 1;
+    bytes chunk_data = 2;
+  };
+}
+message ImportProcessResponse {
+  string message = 1;
+  int32 totalSize = 2;
+}
+
+message FileInfo {
+  string fileName = 1;
+}
 
 message ImportPackageRequest {}
 message ImportPackageResponse {}

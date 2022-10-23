@@ -1,16 +1,30 @@
 package service
 
-import "os"
+import (
+	"bytes"
+	"google.golang.org/grpc/codes"
+	"google.golang.org/grpc/status"
+	"pirs.io/commons"
+	"pirs.io/process/mock"
+)
+
+var (
+	log = commons.GetLoggerFor("processGrpc")
+)
 
 const (
 	IMPORT_PROCESS_ROLE = "PROCESS_WRITE"
 )
 
 type ImportService struct {
+	// todo mockup
+	ProcessStorageClient *mock.DiskProcessStore
+	ValidationService    *ValidationService
 }
 
 type ImportProcessRequestData struct {
-	ProcessFile *os.File
+	ProcessData bytes.Buffer
+	ProcessSize int
 }
 
 type ImportProcessResponseData struct {
@@ -30,6 +44,11 @@ func (is *ImportService) ImportProcess(req *ImportProcessRequestData) (*ImportPr
 	// create metadata
 	// resolve deps
 	// save file in storage
+	_, err := is.ProcessStorageClient.SaveProcessFile(req.ProcessData)
+	if err != nil {
+		log.Error().Msg(status.Errorf(codes.Internal, "cannot store the process: %v", err).Error())
+		return nil, err
+	}
 	// save metadata
 	// apply grace period
 	// create response
