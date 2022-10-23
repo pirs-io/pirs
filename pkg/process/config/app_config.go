@@ -12,17 +12,19 @@ var (
 )
 
 type ProcessAppConfig struct {
-	GrpcIp            string `mapstructure:"GRPC_IP"`
-	GrpcPort          int    `mapstructure:"GRPC_PORT"`
-	UseGrpcReflection bool   `mapstructure:"USE_GRPC_REFLECTION"`
-	UploadFileMaxSize int    `mapstructure:"UPLOAD_FILE_MAX_SIZE"`
+	GrpcIp                string `mapstructure:"GRPC_IP"`
+	GrpcPort              int    `mapstructure:"GRPC_PORT"`
+	UseGrpcReflection     bool   `mapstructure:"USE_GRPC_REFLECTION"`
+	UploadFileMaxSize     int    `mapstructure:"UPLOAD_FILE_MAX_SIZE"`
+	AllowedFileExtensions string `mapstructure:"ALLOWED_FILE_EXTENSIONS"`
 }
 
 func (p ProcessAppConfig) IsConfig() {}
 
 type ApplicationContext struct {
-	AppConfig     *ProcessAppConfig
-	ImportService *service.ImportService
+	AppConfig         *ProcessAppConfig
+	ImportService     *service.ImportService
+	ValidationService *service.ValidationService
 }
 
 func GetContext() *ApplicationContext {
@@ -54,6 +56,7 @@ func createApplicationContext(conf ProcessAppConfig) (appContext *ApplicationCon
 		ImportService: &service.ImportService{
 			// todo mockup
 			ProcessStorageClient: mock.NewDiskProcessStore("./pkg/process/imported-files"),
+			ValidationService:    service.NewValidationService(conf.AllowedFileExtensions),
 		},
 	}, nil
 }

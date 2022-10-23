@@ -20,20 +20,18 @@ var (
 const (
 	IP              = "localhost"
 	PORT            = "8080"
-	UPLOAD_FILENAME = "uvod.pdf"
+	UPLOAD_FILENAME = "car.xml"
 	CHUNK_SIZE      = 1024
 )
 
 func main() {
 	serverAddress := flag.String("address", IP+":"+PORT, "the server address")
 	flag.Parse()
-
 	conn, err := grpc.Dial(*serverAddress, grpc.WithTransportCredentials(insecure.NewCredentials()))
 	if err != nil {
 		log2.Fatal().Msgf("cannot dial process server: ", err)
 		return
 	}
-
 	processClient := mygrpc.NewProcessClient(conn)
 
 	// Call endpoints here

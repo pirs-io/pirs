@@ -33,6 +33,7 @@ func (ps *processServer) ImportProcess(stream Process_ImportProcessServer) error
 		log.Error().Msg(status.Errorf(codes.Unknown, "cannot receive process info").Error())
 		return err
 	}
+	filename := req.GetFileInfo().GetFileName()
 	// authorization
 	// todo mock
 	//userRoles := ctx.Value("ROLES").(string)
@@ -68,8 +69,9 @@ func (ps *processServer) ImportProcess(stream Process_ImportProcessServer) error
 		}
 	}
 	reqData := service.ImportProcessRequestData{
-		ProcessData: processData,
-		ProcessSize: processSize,
+		ProcessFileName: filename,
+		ProcessData:     processData,
+		ProcessSize:     processSize,
 	}
 	// handle request
 	responseData, err := ps.appContext.ImportService.ImportProcess(&reqData)
@@ -78,9 +80,12 @@ func (ps *processServer) ImportProcess(stream Process_ImportProcessServer) error
 	}
 	// handle response
 	importProcessResponse := ImportProcessResponse{}
-	if responseData.Status == 0 {
-		importProcessResponse.Message = "successfully uploaded file"
+	if responseData.Status == codes.OK {
+		importProcessResponse.Message = "successfully uploaded file: " + filename
 		importProcessResponse.TotalSize = int32(processSize)
+	} else {
+		importProcessResponse.Message = "failed to upload file: " + filename
+		importProcessResponse.TotalSize = 0
 	}
 	err = stream.SendAndClose(&importProcessResponse)
 	if err != nil {

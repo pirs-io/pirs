@@ -23,28 +23,40 @@ type ImportService struct {
 }
 
 type ImportProcessRequestData struct {
-	ProcessData bytes.Buffer
-	ProcessSize int
+	ProcessFileName string
+	ProcessData     bytes.Buffer
+	ProcessSize     int
 }
 
 type ImportProcessResponseData struct {
-	Status int8
+	Status codes.Code
 }
 
 type ImportPackageRequestData struct {
 }
 
 type ImportPackageResponseData struct {
-	Status int8
+	Status codes.Code
 }
 
 func (is *ImportService) ImportProcess(req *ImportProcessRequestData) (*ImportProcessResponseData, error) {
-	// validate process file
+	// validate process data
+	isValid, err := is.ValidationService.ValidateProcessData(*req)
+	if err != nil {
+		return &ImportProcessResponseData{
+			Status: codes.Internal,
+		}, err
+	}
+	if !isValid {
+		return &ImportProcessResponseData{
+			Status: codes.InvalidArgument,
+		}, nil
+	}
 	// file pre-processing
 	// create metadata
 	// resolve deps
 	// save file in storage
-	_, err := is.ProcessStorageClient.SaveProcessFile(req.ProcessData)
+	_, err = is.ProcessStorageClient.SaveProcessFile(req.ProcessData)
 	if err != nil {
 		log.Error().Msg(status.Errorf(codes.Internal, "cannot store the process: %v", err).Error())
 		return nil, err
@@ -52,7 +64,9 @@ func (is *ImportService) ImportProcess(req *ImportProcessRequestData) (*ImportPr
 	// save metadata
 	// apply grace period
 	// create response
-	return &ImportProcessResponseData{Status: 0}, nil
+	return &ImportProcessResponseData{
+		Status: codes.OK,
+	}, nil
 }
 
 func (is *ImportService) ImportPackage() (*ImportPackageResponseData, error) {
