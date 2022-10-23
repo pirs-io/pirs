@@ -18,3 +18,9 @@ services:
     volumes:
       - ./docker/redis/data:/data
       - ./docker/redis/conf:/data/redis-server
+  mongo:
+    container_name: pirs-mongo
+    image: mongo:latest
+    restart: always
+    ports:
+      - "27017:27017"

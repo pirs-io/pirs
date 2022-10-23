@@ -8,7 +8,7 @@ import (
 	"golang.org/x/net/context"
 	"os"
 	"path/filepath"
-	"pirs.io/common"
+	"pirs.io/commons"
 	pb "pirs.io/process-storage/grpc"
 	"text/template"
 	"time"
@@ -20,7 +20,7 @@ const (
 )
 
 var (
-	log = common.GetLoggerFor("git")
+	log = commons.GetLoggerFor("git")
 )
 
 type OrganizationInfo struct {
@@ -119,8 +119,8 @@ func (c *GitClient) commitFile(tree *git.Worktree, initialFilePath string, commi
 	}
 	commit, err := tree.Commit(commitMessage, &git.CommitOptions{
 		Author: &object.Signature{
-			Name:  common.GetSingleValue(c.Context, common.User),
-			Email: common.GetSingleValue(c.Context, common.UserEmail),
+			Name:  commons.GetSingleValue(c.Context, commons.User),
+			Email: commons.GetSingleValue(c.Context, commons.UserEmail),
 			When:  time.Now(),
 		},
 	})

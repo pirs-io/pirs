@@ -3,13 +3,13 @@ package adapter
 import (
 	"golang.org/x/net/context"
 	"os"
-	"pirs.io/common"
+	"pirs.io/commons"
 	"pirs.io/process-storage/config"
 	pb "pirs.io/process-storage/grpc"
 	"pirs.io/process-storage/storage"
 )
 
-var log = common.GetLoggerFor("storage_client")
+var log = commons.GetLoggerFor("storage_client")
 
 type IStorageAdapter interface {
 	SaveProcess(processMetadata *pb.ProcessMetadata, file []byte) error
@@ -32,7 +32,7 @@ func MakeStorageAdapter(ctx context.Context, provider storage.Provider) (IStorag
 			},
 		}
 		err = gitAdapter.GitClient.InitializeStorage()
-		if err := common.CheckAndLog(err, log); err != nil {
+		if err := commons.CheckAndLog(err, log); err != nil {
 			return nil, err
 		}
 

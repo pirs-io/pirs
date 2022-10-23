@@ -13,13 +13,13 @@ RUN go install github.com/envoyproxy/protoc-gen-validate@latest
 WORKDIR /app
 
 COPY ../tracker-dev.env /app/tracker/
-COPY ../process-storage/common/ /app/common
+COPY commons/ /app/commons
 COPY tracker/ /app/tracker
 COPY go.mod /app
 COPY go.sum /app
 
 # generate go files from proto
-RUN cd ./common/trackerProto/ && ./generate.sh
+RUN cd ./commons/trackerProto/ && ./generate.sh
 
 WORKDIR /app/tracker
 

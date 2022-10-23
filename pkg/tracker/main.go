@@ -1,20 +1,16 @@
 package main
 
 import (
-	"pirs.io/common"
+	"pirs.io/commons"
 	"pirs.io/tracker/config"
+	"pirs.io/tracker/grpc"
 )
 
-var log = common.GetLoggerFor("main")
+var log = commons.GetLoggerFor("main")
 
 func main() {
 
-	appConfig := config.InitApp("./tracker-dev.env")
+	appConfig := config.InitApp("./dev.env")
 	// start gRpc server
-	defer func(grpcPort int) {
-		err := StartGrpc(grpcPort)
-		if err != nil {
-			panic(err)
-		}
-	}(appConfig.GrpcPort)
+	grpc.StartGrpc(appConfig.GrpcPort)
 }

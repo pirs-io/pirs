@@ -1,12 +1,12 @@
 package config
 
 import (
-	"pirs.io/common"
+	"pirs.io/commons"
 	"pirs.io/process-storage/storage"
 )
 
 var (
-	log                                           = common.GetLoggerFor("config")
+	log                                           = commons.GetLoggerFor("config")
 	trackerApplicationContext *ApplicationContext = nil
 )
 
@@ -27,7 +27,7 @@ type ApplicationContext struct {
 func InitApp(configFilePath string) (conf *TrackerAppConfig) {
 	// config loading
 	log.Info().Msg("Starting application")
-	conf, confErr := common.GetAppConfig(configFilePath, &TrackerAppConfig{})
+	conf, confErr := commons.GetAppConfig(configFilePath, &TrackerAppConfig{})
 	if confErr != nil {
 		log.Fatal().Msgf("Unable to load application config! %s", confErr)
 	}

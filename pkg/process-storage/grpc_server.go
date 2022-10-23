@@ -6,14 +6,14 @@ import (
 	"google.golang.org/grpc"
 	"io"
 	"net"
-	"pirs.io/common"
+	"pirs.io/commons"
 	"pirs.io/process-storage/adapter"
 	"pirs.io/process-storage/config"
 	pb "pirs.io/process-storage/grpc"
 )
 
 var (
-	log = common.GetLoggerFor("processStorageGrpc")
+	log = commons.GetLoggerFor("processStorageGrpc")
 )
 
 type processStorage struct {
@@ -25,7 +25,7 @@ func (p *processStorage) UploadProcess(stream pb.Storage_UploadProcessServer) er
 	defer func(storageAdapter adapter.IStorageAdapter) {
 		err := storageAdapter.Close()
 		if err != nil {
-			common.CheckAndLog(err, log)
+			commons.CheckAndLog(err, log)
 		}
 	}(storageAdapter)
 	if err != nil {
