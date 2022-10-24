@@ -7,6 +7,6 @@ import (
 type TrackerInstance struct {
 	redis.ReJsonDocument `json:"-"`
 	OrganizationName     string   `json:"OrganizationName,omitempty"`
-	Url                  string   `json:"Url,omitempty"`
+	Url                  string   `json:"RepoRootPath,omitempty"`
 	RegisteredInstances  []string `json:"RegisteredInstances,omitempty"`
 }

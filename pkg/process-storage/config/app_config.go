@@ -10,24 +10,24 @@ var (
 	trackerApplicationContext *ApplicationContext = nil
 )
 
-type TrackerAppConfig struct {
+type ProcessStorageAppConfig struct {
 	GrpcPort        int              `mapstructure:"GRPC_PORT"`
 	StorageProvider storage.Provider `mapstructure:"STORAGE_PROVIDER"`
-	GitUrl          string           `mapstructure:"GIT_URL"`
+	RepoRootPath    string           `mapstructure:"GIT_ROOT"`
 	GitUsername     string           `mapstructure:"GIT_USERNAME"`
 	GitPassword     string           `mapstructure:"GIT_PASSWORD"`
 }
 
-func (t TrackerAppConfig) IsConfig() {}
+func (t ProcessStorageAppConfig) IsConfig() {}
 
 type ApplicationContext struct {
-	AppConfig TrackerAppConfig
+	AppConfig ProcessStorageAppConfig
 }
 
-func InitApp(configFilePath string) (conf *TrackerAppConfig) {
+func InitApp(configFilePath string) (conf *ProcessStorageAppConfig) {
 	// config loading
 	log.Info().Msg("Starting application")
-	conf, confErr := commons.GetAppConfig(configFilePath, &TrackerAppConfig{})
+	conf, confErr := commons.GetAppConfig(configFilePath, &ProcessStorageAppConfig{})
 	if confErr != nil {
 		log.Fatal().Msgf("Unable to load application config! %s", confErr)
 	}
@@ -48,6 +48,6 @@ func GetContext() *ApplicationContext {
 	return trackerApplicationContext
 }
 
-func createApplicationContext(conf TrackerAppConfig) (appContext *ApplicationContext, err error) {
+func createApplicationContext(conf ProcessStorageAppConfig) (appContext *ApplicationContext, err error) {
 	return &ApplicationContext{conf}, nil
 }

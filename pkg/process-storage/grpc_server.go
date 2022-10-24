@@ -22,12 +22,6 @@ type processStorage struct {
 
 func (p *processStorage) UploadProcess(stream pb.Storage_UploadProcessServer) error {
 	storageAdapter, err := adapter.MakeStorageAdapter(stream.Context(), config.GetContext().AppConfig.StorageProvider)
-	defer func(storageAdapter adapter.IStorageAdapter) {
-		err := storageAdapter.Close()
-		if err != nil {
-			commons.CheckAndLog(err, log)
-		}
-	}(storageAdapter)
 	if err != nil {
 		return err
 	}
