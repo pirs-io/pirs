@@ -4,6 +4,7 @@ import (
 	"pirs.io/commons"
 	"pirs.io/process/mock"
 	"pirs.io/process/service"
+	"pirs.io/process/validation"
 )
 
 var (
@@ -24,7 +25,7 @@ func (p ProcessAppConfig) IsConfig() {}
 type ApplicationContext struct {
 	AppConfig         *ProcessAppConfig
 	ImportService     *service.ImportService
-	ValidationService *service.ValidationService
+	ValidationService *validation.ValidationService
 }
 
 func GetContext() *ApplicationContext {
@@ -56,7 +57,7 @@ func createApplicationContext(conf ProcessAppConfig) (appContext *ApplicationCon
 		ImportService: &service.ImportService{
 			// todo mockup
 			ProcessStorageClient: mock.NewDiskProcessStore("./pkg/process/imported-files"),
-			ValidationService:    service.NewValidationService(conf.AllowedFileExtensions),
+			ValidationService:    validation.NewValidationService(conf.AllowedFileExtensions),
 		},
 	}, nil
 }

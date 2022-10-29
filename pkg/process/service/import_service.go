@@ -1,11 +1,13 @@
 package service
 
 import (
-	"bytes"
 	"google.golang.org/grpc/codes"
 	"google.golang.org/grpc/status"
 	"pirs.io/commons"
 	"pirs.io/process/mock"
+	"pirs.io/process/service/models"
+	"pirs.io/process/validation"
+	valModels "pirs.io/process/validation/models"
 )
 
 var (
@@ -19,36 +21,20 @@ const (
 type ImportService struct {
 	// todo mockup
 	ProcessStorageClient *mock.DiskProcessStore
-	ValidationService    *ValidationService
+	ValidationService    *validation.ValidationService
 }
 
-type ImportProcessRequestData struct {
-	ProcessFileName string
-	ProcessData     bytes.Buffer
-	ProcessSize     int
-}
-
-type ImportProcessResponseData struct {
-	Status codes.Code
-}
-
-type ImportPackageRequestData struct {
-}
-
-type ImportPackageResponseData struct {
-	Status codes.Code
-}
-
-func (is *ImportService) ImportProcess(req *ImportProcessRequestData) (*ImportProcessResponseData, error) {
+func (is *ImportService) ImportProcess(req *models.ImportProcessRequestData) (*models.ImportProcessResponseData, error) {
 	// validate process data
-	isValid, err := is.ValidationService.ValidateProcessData(*req)
+	valData := transformRequestDataToValidationData(*req)
+	isValid, err := is.ValidationService.ValidateProcessData(valData)
 	if err != nil {
-		return &ImportProcessResponseData{
+		return &models.ImportProcessResponseData{
 			Status: codes.Internal,
 		}, err
 	}
 	if !isValid {
-		return &ImportProcessResponseData{
+		return &models.ImportProcessResponseData{
 			Status: codes.InvalidArgument,
 		}, nil
 	}
@@ -64,11 +50,18 @@ func (is *ImportService) ImportProcess(req *ImportProcessRequestData) (*ImportPr
 	// save metadata
 	// apply grace period
 	// create response
-	return &ImportProcessResponseData{
+	return &models.ImportProcessResponseData{
 		Status: codes.OK,
 	}, nil
 }
 
-func (is *ImportService) ImportPackage() (*ImportPackageResponseData, error) {
+func transformRequestDataToValidationData(reqData models.ImportProcessRequestData) *valModels.ImportProcessValidationData {
+	return &valModels.ImportProcessValidationData{
+		ReqData:         reqData,
+		ValidationFlags: valModels.ValidationFlags{},
+	}
+}
+
+func (is *ImportService) ImportPackage() (*models.ImportPackageResponseData, error) {
 	panic("Not implemented")
 }

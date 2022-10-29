@@ -14,7 +14,7 @@ import (
 	"net"
 	"pirs.io/commons"
 	"pirs.io/process/config"
-	"pirs.io/process/service"
+	"pirs.io/process/service/models"
 )
 
 var (
@@ -68,7 +68,7 @@ func (ps *processServer) ImportProcess(stream Process_ImportProcessServer) error
 			return err
 		}
 	}
-	reqData := service.ImportProcessRequestData{
+	reqData := models.ImportProcessRequestData{
 		ProcessFileName: filename,
 		ProcessData:     processData,
 		ProcessSize:     processSize,
