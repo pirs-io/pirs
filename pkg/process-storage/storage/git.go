@@ -42,9 +42,7 @@ func (c *GitClient) InitializeStorage() error {
 	return err
 }
 
-func (c *GitClient) SaveFile(
-	processMetadata *pb.ProcessMetadata,
-	file []byte) {
+func (c *GitClient) SaveFile(processMetadata *pb.ProcessMetadata, file []byte) {
 	f, err := os.Create(filepath.FromSlash(c.RepoRootPath + "/" + processMetadata.Filename))
 	_, err = f.Write(file)
 	if err != nil {

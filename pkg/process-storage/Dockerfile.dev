@@ -1,7 +1,18 @@
-FROM golang:1.19-bullseye
+FROM golang:1.19-bullseye as builder
+
+RUN adduser \
+  --disabled-password \
+  --gecos "" \
+  --home "/nonexistent" \
+  --shell "/sbin/nologin" \
+  --no-create-home \
+  --uid 65532 \
+  app-user
 
 ARG APP_NAME=process-storage
-ARG APP_DIR=/process-storage
+ARG APP_DIR=$APP_NAME
+
+WORKDIR /app
 
 ## install protoc
 RUN apt-get update
@@ -11,17 +22,36 @@ RUN apt-get install -y protobuf-compiler
 RUN go install google.golang.org/protobuf/cmd/protoc-gen-go@latest
 RUN go install google.golang.org/grpc/cmd/protoc-gen-go-grpc@latest
 RUN go install github.com/envoyproxy/protoc-gen-validate@latest
-
 # copy all application files
-WORKDIR /$APP_DIR
 
-COPY . ./
+COPY ./process-storage $APP_DIR
+COPY ./process-storage/.env $APP_DIR
+COPY ./commons /commons
+COPY ./process-storage/go.work-template .
+RUN mv go.work-template go.work
+RUN go work sync
+
+WORKDIR /app/$APP_DIR
 
 # generate go files from proto
 RUN cd ./grpc && ./generate.sh
+
+RUN cd ../
+RUN go work use .
 # install deps && build app
 RUN go install
-RUN go build -o bin/$APP_NAME
+RUN CGO_ENABLED=0 GOOS=linux GOARCH=amd64 go build -o bin/$APP_NAME .
 
-EXPOSE 40005
-ENTRYPOINT ["bin/${APP_NAME}"]
+FROM scratch
+
+COPY --from=builder /usr/share/zoneinfo /usr/share/zoneinfo
+COPY --from=builder /etc/ssl/certs/ca-certificates.crt /etc/ssl/certs/
+COPY --from=builder /etc/passwd /etc/passwd
+COPY --from=builder /etc/group /etc/group
+
+COPY --from=builder /app/process-storage/bin/process-storage .
+COPY --from=builder /app/process-storage/.env .
+
+USER app-user:app-user
+
+CMD ["./process-storage"]

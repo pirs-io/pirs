@@ -5,6 +5,8 @@ go 1.19
 require (
 	github.com/rs/zerolog v1.28.0
 	github.com/spf13/viper v1.13.0
+	golang.org/x/net v0.0.0-20220722155237-a158d28d115b
+	google.golang.org/grpc v1.46.2
 )
 
 require (

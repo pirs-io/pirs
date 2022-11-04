@@ -8,6 +8,24 @@ services:
       dockerfile: tracker/Dockerfile.dev
     ports:
       - "50004:50004"
+  process-storage:
+    image: pirs.process-storage:latest
+    build:
+      context: ./pkg
+      dockerfile: ./process-storage/Dockerfile.dev
+    ports:
+      - "8080:8080"
+    volumes:
+      - git-shared:/data/pirs/git
+
+  git:
+    image: pirs.storage-git:latest
+    build:
+      context: ./docker/git
+      dockerfile: Dockerfile
+    volumes:
+      - git-shared:/data/pirs
+
   redis:
     image: redislabs/redismod:latest
     restart: always
@@ -24,3 +42,7 @@ services:
     restart: always
     ports:
       - "27017:27017"
+networks:
+  git:
+volumes:
+  git-shared:
