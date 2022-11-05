@@ -16,15 +16,7 @@ services:
     ports:
       - "8080:8080"
     volumes:
-      - git-shared:/data/pirs/git
-
-  git:
-    image: pirs.storage-git:latest
-    build:
-      context: ./docker/git
-      dockerfile: Dockerfile
-    volumes:
-      - git-shared:/data/pirs
+      - ./data/pirs/git:/data/pirs/git
 
   redis:
     image: redislabs/redismod:latest
@@ -44,5 +36,3 @@ services:
       - "27017:27017"
 networks:
   git:
-volumes:
-  git-shared:

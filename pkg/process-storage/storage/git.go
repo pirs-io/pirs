@@ -3,7 +3,6 @@ package storage
 import (
 	"github.com/go-git/go-git/v5"
 	"github.com/go-git/go-git/v5/plumbing/object"
-	"github.com/go-git/go-git/v5/plumbing/transport/http"
 	"golang.org/x/net/context"
 	"os"
 	"path/filepath"
@@ -16,47 +15,55 @@ var (
 	log = commons.GetLoggerFor("git")
 )
 
-type OrganizationInfo struct {
-	OrganizationId string
-}
-
 type GitClient struct {
 	Context      context.Context
 	RepoRootPath string
-	Username     string
-	Password     string
+	Tenant       string
 
-	repo *git.Repository
-	auth *http.BasicAuth
+	repo              *git.Repository
+	tenantGitRepoPath string
 }
 
 func (c *GitClient) InitializeStorage() error {
-	auth := &http.BasicAuth{
-		Username: c.Username,
-		Password: c.Password,
+	c.tenantGitRepoPath = filepath.Join(c.RepoRootPath, c.Tenant)
+	r, err := git.PlainOpen(c.tenantGitRepoPath)
+	if err != nil {
+		if err == git.ErrRepositoryNotExists {
+			log.Info().Msgf("Git storage folder is empty, creating repository for tenant: %s", c.Tenant)
+			r, err = c.createRepository()
+		}
 	}
-	r, err := git.PlainOpen(c.RepoRootPath)
 	c.repo = r
-	c.auth = auth
-
 	return err
 }
 
-func (c *GitClient) SaveFile(processMetadata *pb.ProcessMetadata, file []byte) {
-	f, err := os.Create(filepath.FromSlash(c.RepoRootPath + "/" + processMetadata.Filename))
+func (c *GitClient) SaveFile(processMetadata *pb.ProcessMetadata, file []byte) error {
+	filePath := filepath.Join(c.tenantGitRepoPath, processMetadata.Filename)
+	f, err := os.Create(filePath)
+	if err != nil {
+		log.Error().Msg(err.Error())
+		return err
+	}
 	_, err = f.Write(file)
 	if err != nil {
 		log.Error().Msg(err.Error())
+		return err
 	}
 	worktree, err := c.repo.Worktree()
 	_, err = c.commitFile(worktree, processMetadata.Filename, "added process: "+processMetadata.ProcessId)
 	if err != nil {
 		log.Error().Msg(err.Error())
+		return err
 	}
+	return nil
 }
 
-func (c *GitClient) commitFile(tree *git.Worktree, initialFilePath string, commitMessage string) (string, error) {
-	_, err := tree.Add(initialFilePath)
+func (c *GitClient) createRepository() (*git.Repository, error) {
+	return git.PlainInit(c.tenantGitRepoPath, false)
+}
+
+func (c *GitClient) commitFile(tree *git.Worktree, filePath string, commitMessage string) (string, error) {
+	_, err := tree.Add(filePath)
 	if err != nil {
 		return "", err
 	}

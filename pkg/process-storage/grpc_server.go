@@ -50,7 +50,7 @@ func (p *processStorage) UploadProcess(stream pb.Storage_UploadProcessServer) er
 				return err
 			}
 		} else {
-			log.Info().Msgf("Got file chunk %s", in.GetData().GetChunk())
+			log.Info().Msgf("Got file chunk")
 			err = stream.Send(&pb.ProcessUploadResponse{Status: pb.UploadStatus_IN_PROGRESS})
 			fileBuffer = append(fileBuffer, in.GetData().GetChunk()...)
 		}

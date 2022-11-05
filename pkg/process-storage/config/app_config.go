@@ -14,8 +14,7 @@ type ProcessStorageAppConfig struct {
 	GrpcPort        int              `mapstructure:"GRPC_PORT"`
 	StorageProvider storage.Provider `mapstructure:"STORAGE_PROVIDER"`
 	RepoRootPath    string           `mapstructure:"GIT_ROOT"`
-	GitUsername     string           `mapstructure:"GIT_USERNAME"`
-	GitPassword     string           `mapstructure:"GIT_PASSWORD"`
+	Tenant          string           `mapstructure:"TENANT"`
 }
 
 func (t ProcessStorageAppConfig) IsConfig() {}

@@ -24,8 +24,7 @@ func MakeStorageAdapter(ctx context.Context, provider storage.Provider) (IStorag
 			GitClient: storage.GitClient{
 				Context:      ctx,
 				RepoRootPath: config.GetContext().AppConfig.RepoRootPath,
-				Username:     config.GetContext().AppConfig.GitUsername,
-				Password:     config.GetContext().AppConfig.GitPassword,
+				Tenant:       config.GetContext().AppConfig.Tenant,
 			},
 		}
 		err := gitAdapter.GitClient.InitializeStorage()

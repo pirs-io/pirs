@@ -13,7 +13,7 @@ type GitAdapter struct {
 }
 
 func (a *GitAdapter) SaveProcess(processMetadata *pb.ProcessMetadata, file []byte) error {
-	return nil
+	return a.GitClient.SaveFile(processMetadata, file)
 }
 
 func (a *GitAdapter) DownloadProcess(processId string) (*os.File, error) {

@@ -21,8 +21,9 @@ message ProcessUploadResponse {
 message ProcessMetadata {
   string process_id = 1;
   string filename = 2;
-  Encoding encoding = 3;
-  ProcessType type = 4;
+  string project_id = 3;
+  Encoding encoding = 4;
+  ProcessType type = 5;
 }
 message ProcessFileData {
   oneof data {
