@@ -19,6 +19,7 @@ func main() {
 	client := createClient()
 	var processId string
 	var processFilePath string
+	var processProject string
 	app := cli.NewApp()
 	app.Name = "Process file cli uploader"
 
@@ -33,6 +34,11 @@ func main() {
 			Value:       "",
 			Destination: &processFilePath,
 		},
+		&cli.StringFlag{
+			Name:        "processProject",
+			Value:       "",
+			Destination: &processProject,
+		},
 	}
 	app.Commands = []*cli.Command{
 		{
@@ -44,7 +50,7 @@ func main() {
 				if err != nil {
 					return err
 				}
-				uploadFile(client, processId, f)
+				uploadFile(client, processId, processProject, f)
 				return nil
 			},
 		},
@@ -56,10 +62,10 @@ func main() {
 	}
 }
 
-func uploadFile(client pb.StorageClient, processId string, file *os.File) {
+func uploadFile(client pb.StorageClient, processId string, project string, file *os.File) {
 	data := &pb.ProcessFileData_Metadata{
 		Metadata: &pb.ProcessMetadata{
-			ProcessId: processId,
+			ProcessId: "company." + "dudak." + project + "." + processId,
 			Filename:  filepath.Base(file.Name()),
 			Encoding:  0,
 			Type:      0,

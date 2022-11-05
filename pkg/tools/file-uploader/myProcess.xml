@@ -4,7 +4,6 @@
     <id>new_model</id>
     <initials>NEW</initials>
     <title>New Model</title>
-    <defaultRole>true</defaultRole>
     <transitionRole>false</transitionRole>
     <!-- TRANSACTIONS -->
     <!-- ROLES -->
