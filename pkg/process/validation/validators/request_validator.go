@@ -3,7 +3,6 @@ package validators
 import (
 	"pirs.io/process/validation/models"
 	"regexp"
-	"sync"
 )
 
 const (
@@ -18,43 +17,34 @@ type ImportPackageRequestValidator struct {
 	next models.Validator
 }
 
-func (rq *ImportProcessRequestValidator) Validate(data *models.ImportProcessValidationData) {
-	var wg sync.WaitGroup
-	wg.Add(2)
-	data.ValidationFlags.IsRequestValid = true
+func (rv *ImportProcessRequestValidator) Validate(data *models.ImportProcessValidationData) {
+	var isValid bool
+	defer rv.ExecuteNextIfPresent(data)
+	defer func() { data.ValidationFlags.IsRequestValid = isValid }()
 
-	go func(dataLen int, dataLenFromReq int) {
-		defer wg.Done()
-		if dataLen == 0 {
-			data.ValidationFlags.IsRequestValid = false
-		} else if dataLen != dataLenFromReq {
-			data.ValidationFlags.IsRequestValid = false
-		}
-	}(data.ReqData.ProcessData.Len(), data.ReqData.ProcessSize)
-
-	go func(fileName string) {
-		defer wg.Done()
-		if !isValidFileName(fileName) {
-			data.ValidationFlags.IsRequestValid = false
-		}
-	}(data.ReqData.ProcessFileName)
-
-	wg.Wait()
-	if rq.next != nil {
-		rq.next.Validate(data)
+	if !isValidDataLength(data.ReqData.ProcessData.Len(), data.ReqData.ProcessSize) {
+	} else if !isValidFileName(data.ReqData.ProcessFileName) {
+	} else {
+		isValid = true
 	}
 }
 
-func (rq *ImportProcessRequestValidator) SetNext(validator models.Validator) {
-	rq.next = validator
+func (rv *ImportProcessRequestValidator) ExecuteNextIfPresent(data *models.ImportProcessValidationData) {
+	if rv.next != nil {
+		rv.next.Validate(data)
+	}
 }
 
-func (rq *ImportPackageRequestValidator) Validate(data *models.ImportPackageValidationData) {
+func (rv *ImportProcessRequestValidator) SetNext(validator models.Validator) {
+	rv.next = validator
+}
+
+func (rv *ImportPackageRequestValidator) Validate(data *models.ImportPackageValidationData) {
 	panic("not implemented")
 }
 
-func (rq *ImportPackageRequestValidator) SetNext(validator models.Validator) {
-	rq.next = validator
+func (rv *ImportPackageRequestValidator) SetNext(validator models.Validator) {
+	rv.next = validator
 }
 
 func isValidFileName(fileName string) bool {
@@ -63,4 +53,7 @@ func isValidFileName(fileName string) bool {
 		return false
 	}
 	return isValid
+}
+func isValidDataLength(dataLen int, dataLenFromReq int) bool {
+	return dataLen != 0 && dataLen == dataLenFromReq
 }

@@ -3,6 +3,7 @@ module pirs.io/process
 go 1.19
 
 require (
+	github.com/gabriel-vasile/mimetype v1.4.1 // indirect
 	github.com/golang/protobuf v1.5.2 // indirect
 	github.com/google/uuid v1.3.0 // indirect
 	github.com/lestrrat-go/libxml2 v0.0.0-20201123224832-e6d9de61b80d // indirect

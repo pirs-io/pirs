@@ -18,9 +18,11 @@ func NewValidationService(rawExtensions string) *ValidationService {
 func buildValidationChains(rawExtensions string) models.Validator {
 	// define validators
 	requestValidator := &validators.ImportProcessRequestValidator{}
-	extensionValidator := validators.NewExtensionValidator(rawExtensions)
+	fileTypeValidator := validators.NewFileTypeValidator(rawExtensions)
+	schemaValidator := &validators.SchemaValidator{}
 	// create chain
-	requestValidator.SetNext(extensionValidator)
+	requestValidator.SetNext(fileTypeValidator)
+	fileTypeValidator.SetNext(schemaValidator)
 
 	return requestValidator
 }
