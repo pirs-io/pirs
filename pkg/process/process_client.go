@@ -99,5 +99,5 @@ func uploadFile(processClient mygrpc.ProcessClient, processPath string) {
 		log2.Fatal().Msgf("cannot receive response: ", err)
 	}
 
-	log2.Debug().Msgf("response with msg: %s, size: %d", res.GetMessage(), res.GetTotalSize())
+	log2.Debug().Msgf("response with msg: %s, size: %dB", res.GetMessage(), res.GetTotalSize())
 }

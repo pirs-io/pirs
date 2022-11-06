@@ -4,7 +4,10 @@ import (
 	"google.golang.org/grpc/codes"
 	"google.golang.org/grpc/status"
 	"pirs.io/commons"
-	"pirs.io/process/mock"
+	"pirs.io/commons/mongo"
+	"pirs.io/process/enums"
+	"pirs.io/process/metadata"
+	"pirs.io/process/mocks"
 	"pirs.io/process/service/models"
 	"pirs.io/process/validation"
 	valModels "pirs.io/process/validation/models"
@@ -20,8 +23,10 @@ const (
 
 type ImportService struct {
 	// todo mockup
-	ProcessStorageClient *mock.DiskProcessStore
+	ProcessStorageClient *mocks.DiskProcessStore
+	MongoClient          *mongo.Client
 	ValidationService    *validation.ValidationService
+	MetadataService      *metadata.MetadataService
 }
 
 func (is *ImportService) ImportProcess(req *models.ImportProcessRequestData) (*models.ImportProcessResponseData, error) {
@@ -39,8 +44,11 @@ func (is *ImportService) ImportProcess(req *models.ImportProcessRequestData) (*m
 		}, nil
 	}
 	// file pre-processing
+	// todo determine new or update (version,...)(by uri)
 	// create metadata
+	m, _ := is.MetadataService.CreateMetadata(enums.Petriflow, 0, *req)
 	// resolve deps
+	// todo insert deps into metadata
 	// save file in storage
 	_, err = is.ProcessStorageClient.SaveProcessFile(req.ProcessData)
 	if err != nil {
@@ -48,6 +56,10 @@ func (is *ImportService) ImportProcess(req *models.ImportProcessRequestData) (*m
 		return nil, err
 	}
 	// save metadata
+	_, err = is.MetadataService.InsertOne(req.Ctx, &m)
+	if err != nil {
+		return nil, err
+	}
 	// apply grace period
 	// create response
 	return &models.ImportProcessResponseData{

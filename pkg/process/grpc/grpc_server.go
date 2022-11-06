@@ -35,9 +35,9 @@ func (ps *processServer) ImportProcess(stream Process_ImportProcessServer) error
 	}
 	filename := req.GetFileInfo().GetFileName()
 	// authorization
-	// todo mock
+	// todo mocks
 	//userRoles := ctx.Value("ROLES").(string)
-	//authorize := mock.CheckAuthorization(userRoles, []string{service.IMPORT_PROCESS_ROLE})
+	//authorize := mocks.CheckAuthorization(userRoles, []string{service.IMPORT_PROCESS_ROLE})
 	//if !authorize {
 	//	return nil, errors.New("could not authorize with roles: " + userRoles)
 	//}
@@ -68,7 +68,12 @@ func (ps *processServer) ImportProcess(stream Process_ImportProcessServer) error
 			return err
 		}
 	}
+	ctx := stream.Context()
+	if ctx == nil {
+		ctx = context.Background()
+	}
 	reqData := models.ImportProcessRequestData{
+		Ctx:             ctx,
 		ProcessFileName: filename,
 		ProcessData:     processData,
 		ProcessSize:     processSize,
