@@ -24,6 +24,7 @@ const _ = grpc.SupportPackageIsVersion7
 type StorageClient interface {
 	UploadProcess(ctx context.Context, opts ...grpc.CallOption) (Storage_UploadProcessClient, error)
 	DownloadProcess(ctx context.Context, in *ProcessDownloadRequest, opts ...grpc.CallOption) (Storage_DownloadProcessClient, error)
+	ProcessHistory(ctx context.Context, in *ProcessHistoryRequest, opts ...grpc.CallOption) (*ProcessHistoryResponse, error)
 }
 
 type storageClient struct {
@@ -97,12 +98,22 @@ func (x *storageDownloadProcessClient) Recv() (*ProcessDownloadResponse, error) 
 	return m, nil
 }
 
+func (c *storageClient) ProcessHistory(ctx context.Context, in *ProcessHistoryRequest, opts ...grpc.CallOption) (*ProcessHistoryResponse, error) {
+	out := new(ProcessHistoryResponse)
+	err := c.cc.Invoke(ctx, "/grpc.Storage/ProcessHistory", in, out, opts...)
+	if err != nil {
+		return nil, err
+	}
+	return out, nil
+}
+
 // StorageServer is the server API for Storage service.
 // All implementations must embed UnimplementedStorageServer
 // for forward compatibility
 type StorageServer interface {
 	UploadProcess(Storage_UploadProcessServer) error
 	DownloadProcess(*ProcessDownloadRequest, Storage_DownloadProcessServer) error
+	ProcessHistory(context.Context, *ProcessHistoryRequest) (*ProcessHistoryResponse, error)
 	mustEmbedUnimplementedStorageServer()
 }
 
@@ -115,6 +126,9 @@ func (UnimplementedStorageServer) UploadProcess(Storage_UploadProcessServer) err
 }
 func (UnimplementedStorageServer) DownloadProcess(*ProcessDownloadRequest, Storage_DownloadProcessServer) error {
 	return status.Errorf(codes.Unimplemented, "method DownloadProcess not implemented")
+}
+func (UnimplementedStorageServer) ProcessHistory(context.Context, *ProcessHistoryRequest) (*ProcessHistoryResponse, error) {
+	return nil, status.Errorf(codes.Unimplemented, "method ProcessHistory not implemented")
 }
 func (UnimplementedStorageServer) mustEmbedUnimplementedStorageServer() {}
 
@@ -176,13 +190,36 @@ func (x *storageDownloadProcessServer) Send(m *ProcessDownloadResponse) error {
 	return x.ServerStream.SendMsg(m)
 }
 
+func _Storage_ProcessHistory_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
+	in := new(ProcessHistoryRequest)
+	if err := dec(in); err != nil {
+		return nil, err
+	}
+	if interceptor == nil {
+		return srv.(StorageServer).ProcessHistory(ctx, in)
+	}
+	info := &grpc.UnaryServerInfo{
+		Server:     srv,
+		FullMethod: "/grpc.Storage/ProcessHistory",
+	}
+	handler := func(ctx context.Context, req interface{}) (interface{}, error) {
+		return srv.(StorageServer).ProcessHistory(ctx, req.(*ProcessHistoryRequest))
+	}
+	return interceptor(ctx, in, info, handler)
+}
+
 // Storage_ServiceDesc is the grpc.ServiceDesc for Storage service.
 // It's only intended for direct use with grpc.RegisterService,
 // and not to be introspected or modified (even as a copy)
 var Storage_ServiceDesc = grpc.ServiceDesc{
 	ServiceName: "grpc.Storage",
 	HandlerType: (*StorageServer)(nil),
-	Methods:     []grpc.MethodDesc{},
+	Methods: []grpc.MethodDesc{
+		{
+			MethodName: "ProcessHistory",
+			Handler:    _Storage_ProcessHistory_Handler,
+		},
+	},
 	Streams: []grpc.StreamDesc{
 		{
 			StreamName:    "UploadProcess",

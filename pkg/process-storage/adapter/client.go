@@ -2,7 +2,6 @@ package adapter
 
 import (
 	"golang.org/x/net/context"
-	"os"
 	"pirs.io/commons"
 	"pirs.io/process-storage/config"
 	pb "pirs.io/process-storage/grpc"
@@ -13,7 +12,7 @@ var log = commons.GetLoggerFor("storage_client")
 
 type IStorageAdapter interface {
 	SaveProcess(processMetadata *pb.ProcessMetadata, file []byte) error
-	DownloadProcess(processId string) (*os.File, error)
+	DownloadProcess(downloadRequest *pb.ProcessDownloadRequest) (*pb.ProcessFileData, error)
 }
 
 func MakeStorageAdapter(ctx context.Context, provider storage.Provider) (IStorageAdapter, error) {

@@ -1,9 +1,12 @@
 package main
 
 import (
+	"context"
 	"flag"
 	"fmt"
 	"google.golang.org/grpc"
+	"google.golang.org/grpc/codes"
+	"google.golang.org/grpc/status"
 	"io"
 	"net"
 	"pirs.io/commons"
@@ -63,7 +66,17 @@ func (p *processStorage) UploadProcess(stream pb.Storage_UploadProcessServer) er
 }
 
 func (p *processStorage) DownloadProcess(req *pb.ProcessDownloadRequest, stream pb.Storage_DownloadProcessServer) error {
+	storageAdapter, err := adapter.MakeStorageAdapter(stream.Context(), config.GetContext().AppConfig.StorageProvider)
+	if err != nil {
+		log.Error().Msg(err.Error())
+		return err
+	}
+	_, err = storageAdapter.DownloadProcess(req)
 	return nil
+}
+
+func (p *processStorage) ProcessHistory(context.Context, *pb.ProcessHistoryRequest) (*pb.ProcessHistoryResponse, error) {
+	return nil, status.Errorf(codes.Unimplemented, "method ProcessHistory not implemented")
 }
 
 func StartGrpc(grpcPort int) error {

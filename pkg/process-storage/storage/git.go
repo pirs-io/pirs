@@ -10,6 +10,7 @@ import (
 	"path/filepath"
 	"pirs.io/commons"
 	pb "pirs.io/process-storage/grpc"
+	"sort"
 	"time"
 )
 
@@ -98,11 +99,21 @@ func (c *GitClient) SaveFile(processMetadata *pb.ProcessMetadata, file []byte) e
 	return nil
 }
 
-func (c *GitClient) GetProcessHistory(processId *pb.ProcessId) []CommitMessage {
-	processPath := filepath.Join(processId.Project, processId.Process)
-	fileHistory, err := c.repo.Log(&git.LogOptions{
-		FileName: &processPath,
+func (c *GitClient) DownloadProcess(request *pb.ProcessDownloadRequest) (*pb.ProcessFileData, error) {
+	processId, err := pb.ParseProcessId(request.ProcessId)
+	if err != nil {
+		log.Error().Msg(err.Error())
+	}
+	processCommits, err := c.getProcessCommits(processId)
+	commits := commitIterToSlice(processCommits)
+	sort.Slice(commits, func(i, j int) bool {
+		return commits[i].Author.When.After(commits[j].Author.When)
 	})
+	return nil, nil
+}
+
+func (c *GitClient) GetProcessHistory(processId *pb.ProcessId) []CommitMessage {
+	fileHistory, err := c.getProcessCommits(processId)
 	if err != nil {
 		return nil
 	}
@@ -122,6 +133,14 @@ func (c *GitClient) GetProcessHistory(processId *pb.ProcessId) []CommitMessage {
 	}
 
 	return commits
+}
+
+func (c *GitClient) getProcessCommits(processId *pb.ProcessId) (object.CommitIter, error) {
+	processPath := filepath.Join(processId.Project, processId.Process)
+	fileHistory, err := c.repo.Log(&git.LogOptions{
+		FileName: &processPath,
+	})
+	return fileHistory, err
 }
 
 func (c *GitClient) createRepository() (*git.Repository, error) {
@@ -150,6 +169,15 @@ func (c *GitClient) commitFile(tree *git.Worktree, file string, commitMessage Co
 	}
 
 	return commit.String(), nil
+}
+
+func commitIterToSlice(iter object.CommitIter) []object.Commit {
+	var res = make([]object.Commit, 0)
+	iter.ForEach(func(commit *object.Commit) error {
+		res = append(res, *commit)
+		return nil
+	})
+	return res
 }
 
 func createCommitMessageForNewProcess(
