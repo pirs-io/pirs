@@ -55,7 +55,7 @@ func (p *processStorage) UploadProcess(stream pb.Storage_UploadProcessServer) er
 		} else {
 			log.Info().Msgf("Got file chunk")
 			err = stream.Send(&pb.ProcessUploadResponse{Status: pb.UploadStatus_IN_PROGRESS})
-			fileBuffer = append(fileBuffer, in.GetData().GetChunk()...)
+			fileBuffer = append(fileBuffer, in.Data.GetChunk()...)
 		}
 	}
 	err = storageAdapter.SaveProcess(fileMetadata, fileBuffer)
@@ -71,8 +71,18 @@ func (p *processStorage) DownloadProcess(req *pb.ProcessDownloadRequest, stream 
 		log.Error().Msg(err.Error())
 		return err
 	}
-	_, err = storageAdapter.DownloadProcess(req)
-	return nil
+	metadata, file, err := storageAdapter.DownloadProcess(req)
+	err = stream.Send(&pb.ProcessDownloadResponse{
+		Data: &pb.ProcessFileData{
+			Data: &pb.ProcessFileData_Metadata{Metadata: metadata},
+		},
+	})
+	err = stream.Send(&pb.ProcessDownloadResponse{
+		Data: &pb.ProcessFileData{
+			Data: &pb.ProcessFileData_Chunk{Chunk: file},
+		},
+	})
+	return err
 }
 
 func (p *processStorage) ProcessHistory(context.Context, *pb.ProcessHistoryRequest) (*pb.ProcessHistoryResponse, error) {

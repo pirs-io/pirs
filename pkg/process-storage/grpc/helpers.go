@@ -28,3 +28,12 @@ func ParseProcessId(processId string) (*ProcessId, error) {
 		Process:      splitted[3],
 	}, nil
 }
+
+func (r *ProcessId) ProcessWithinProject() *string {
+	var res = r.Project + "/" + r.Process
+	return &res
+}
+
+func (r *ProcessId) FullProcessId() string {
+	return strings.Join([]string{r.Organization, r.Tenant, r.Project, r.Process}, ".")
+}

@@ -15,6 +15,6 @@ func (a *GitAdapter) SaveProcess(processMetadata *pb.ProcessMetadata, file []byt
 	return a.GitClient.SaveFile(processMetadata, file)
 }
 
-func (a *GitAdapter) DownloadProcess(downloadRequest *pb.ProcessDownloadRequest) (*pb.ProcessFileData, error) {
+func (a *GitAdapter) DownloadProcess(downloadRequest *pb.ProcessDownloadRequest) (*pb.ProcessMetadata, []byte, error) {
 	return a.GitClient.DownloadProcess(downloadRequest)
 }

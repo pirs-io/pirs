@@ -12,7 +12,7 @@ var log = commons.GetLoggerFor("storage_client")
 
 type IStorageAdapter interface {
 	SaveProcess(processMetadata *pb.ProcessMetadata, file []byte) error
-	DownloadProcess(downloadRequest *pb.ProcessDownloadRequest) (*pb.ProcessFileData, error)
+	DownloadProcess(downloadRequest *pb.ProcessDownloadRequest) (*pb.ProcessMetadata, []byte, error)
 }
 
 func MakeStorageAdapter(ctx context.Context, provider storage.Provider) (IStorageAdapter, error) {

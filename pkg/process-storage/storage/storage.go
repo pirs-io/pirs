@@ -6,7 +6,7 @@ const (
 	GitStorageProvider Provider = 1
 )
 
-type CommitMessage struct {
+type UploadActionSummary struct {
 	AddedFiles    []ProcessFile
 	DeletedFiles  []ProcessFile
 	ModifiedFiled []ProcessFile
