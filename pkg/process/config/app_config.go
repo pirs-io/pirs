@@ -33,7 +33,10 @@ type ProcessAppConfig struct {
 	MongoDrop             bool   `mapstructure:"MONGO_DROP"`
 	ContextTimeout        int    `mapstructure:"CONTEXT_TIMEOUT"`
 	MetadataCollection    string `mapstructure:"METADATA_COLLECTION"`
-	CustomMetadataCsv     string `mapstructure:"CUSTOM_METADATA_CSV"`
+	BasicMetadataCsv      string `mapstructure:"BASIC_METADATA_CSV"`
+	PetriflowMetadataCsv  string `mapstructure:"PETRIFLOW_METADATA_CSV"`
+	BPMNMetadataCsv       string `mapstructure:"BPMN_METADATA_CSV"`
+	IgnoreWrongExtension  bool   `mapstructure:"IGNORE_WRONG_EXTENSION"`
 }
 
 func (p ProcessAppConfig) IsConfig() {}
