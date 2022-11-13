@@ -18,11 +18,12 @@ var (
 )
 
 const (
-	IP              = "localhost"
-	PORT            = "8080"
-	UPLOAD_FILENAME = "diagram.bpmn"
-	CHUNK_SIZE      = 1024
-	PARTIAL_URI     = "stu.fei.myproject2"
+	IP               = "localhost"
+	PORT             = "8080"
+	UPLOAD_FILENAME1 = "diagram.bpmn"
+	UPLOAD_FILENAME2 = "car.xml"
+	CHUNK_SIZE       = 1024
+	PARTIAL_URI      = "stu.fei.myproject2"
 )
 
 func main() {
@@ -36,10 +37,15 @@ func main() {
 	processClient := mygrpc.NewProcessClient(conn)
 
 	// Call endpoints here
-	uploadFile(processClient, "./pkg/process/"+UPLOAD_FILENAME)
+	uploadFile(processClient, "./pkg/process/"+UPLOAD_FILENAME1, UPLOAD_FILENAME1)
+	uploadFile(processClient, "./pkg/process/"+UPLOAD_FILENAME1, UPLOAD_FILENAME1)
+	uploadFile(processClient, "./pkg/process/"+UPLOAD_FILENAME1, UPLOAD_FILENAME1)
+	uploadFile(processClient, "./pkg/process/"+UPLOAD_FILENAME2, UPLOAD_FILENAME2)
+	uploadFile(processClient, "./pkg/process/"+UPLOAD_FILENAME2, UPLOAD_FILENAME2)
+	uploadFile(processClient, "./pkg/process/"+UPLOAD_FILENAME2, UPLOAD_FILENAME2)
 }
 
-func uploadFile(processClient mygrpc.ProcessClient, processPath string) {
+func uploadFile(processClient mygrpc.ProcessClient, processPath string, filename string) {
 	file, err := os.Open(processPath)
 	if err != nil {
 		log2.Fatal().Msgf("cannot open file: ", err)
@@ -62,7 +68,7 @@ func uploadFile(processClient mygrpc.ProcessClient, processPath string) {
 	req := &mygrpc.ImportProcessRequest{
 		Data: &mygrpc.ImportProcessRequest_FileInfo{
 			FileInfo: &mygrpc.FileInfo{
-				FileName: UPLOAD_FILENAME,
+				FileName: filename,
 			},
 		},
 		PartialUri: PARTIAL_URI,

@@ -5,7 +5,6 @@ import (
 	"google.golang.org/grpc/status"
 	"pirs.io/commons"
 	"pirs.io/commons/mongo"
-	"pirs.io/process/enums"
 	"pirs.io/process/metadata"
 	"pirs.io/process/mocks"
 	"pirs.io/process/service/models"
@@ -40,7 +39,7 @@ func (is *ImportService) ImportProcess(req *models.ImportProcessRequestData) (*m
 		}, nil
 	}
 	// create metadata
-	m, _ := is.MetadataService.CreateMetadata(enums.Petriflow, 0, *req)
+	m, _ := is.MetadataService.CreateMetadata(*req)
 	// resolve and save deps
 	// save file in storage
 	_, err = is.ProcessStorageClient.SaveProcessFile(req.ProcessData)
@@ -49,12 +48,12 @@ func (is *ImportService) ImportProcess(req *models.ImportProcessRequestData) (*m
 		return nil, err
 	}
 	// check version
-	foundMetadata, err := is.MetadataService.FindNewestByURI(req.Ctx, m.URIWithoutVersion)
+	foundVersion, err := is.MetadataService.FindNewestVersionByURI(req.Ctx, m.URIWithoutVersion)
 	if err != nil {
 		return nil, err
 	}
-	if foundMetadata != nil {
-		m.UpdateVersion(foundMetadata.Version + 1)
+	if foundVersion != 0 {
+		m.UpdateVersion(foundVersion + 1)
 	}
 	// save metadata
 	_, err = is.MetadataService.InsertOne(req.Ctx, &m)

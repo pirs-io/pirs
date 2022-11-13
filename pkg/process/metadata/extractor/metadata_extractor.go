@@ -6,11 +6,15 @@ import (
 	"github.com/antchfx/xmlquery"
 	"pirs.io/process/domain"
 	"pirs.io/process/enums"
+	"pirs.io/process/metadata/determiner"
 	"pirs.io/process/service/models"
 	"reflect"
 	"regexp"
-	"strconv"
 	"strings"
+)
+
+const (
+	DEFAULT_VERSION = 1
 )
 
 type MetadataExtractor struct {
@@ -19,35 +23,43 @@ type MetadataExtractor struct {
 	BPMNCustomDataMapping      map[string]string
 }
 
-func (me *MetadataExtractor) ExtractMetadata(pt enums.ProcessType, v uint32, req models.ImportProcessRequestData) (domain.Metadata, error) {
+func (me *MetadataExtractor) ExtractMetadata(req models.ImportProcessRequestData) (domain.Metadata, error) {
 	data := req.ProcessData.Bytes()
 	doc, err := xmlquery.Parse(bytes.NewReader(data))
 	if err != nil {
-		return domain.Metadata{}, err
+		return *domain.NewMetadata(), err
 	}
 	m := domain.NewMetadata()
 
 	// extracted basic data
 	m.Encoding = me.extractEncodingFromHeaders(&data)
 	me.setValuesUsingReflection(reflect.ValueOf(m), me.BasicDataMapping, doc)
+
 	// not extracted basic data
-	newVersion := v + 1
-	m.URI = req.PartialUri + "." + m.ProcessIdentifier + ":" + strconv.FormatUint(uint64(newVersion), 10)
-	m.URIWithoutVersion = req.PartialUri + "." + m.ProcessIdentifier
+	splitPartialUri := strings.Split(req.PartialUri, ".")
+	for idx, part := range splitPartialUri {
+		m.SplitURI[idx] = part
+	}
 	m.FileName = req.ProcessFileName
 	m.FileSize = req.ProcessSize
-	m.Version = newVersion
 	m.Publisher = "not implemented"
-	m.ProcessType = pt
+	m.ProcessType = determiner.DetermineProcessType(doc)
+	m.UpdateVersion(DEFAULT_VERSION)
 
 	// dependency data
-	dd := domain.NewDependencyMetadata()
-	// todo
+	dd := &domain.DependencyMetadata{}
 	m.DependencyData = *dd
+
 	// custom data
-	// todo based on type send mapping
-	customData := me.extractCustomData(pt, data, me.PetriflowCustomDataMapping, doc)
-	m.CustomData = customData
+	if m.ProcessType == enums.Petriflow {
+		customData := me.extractCustomData(m.ProcessType, data, me.PetriflowCustomDataMapping, doc).(*domain.PetriflowMetadata)
+		m.CustomData = customData
+		m.UpdateProcessIdentifier(customData.ProcessIdentifier)
+	} else if m.ProcessType == enums.BPMN {
+		customData := me.extractCustomData(m.ProcessType, data, me.BPMNCustomDataMapping, doc).(*domain.BPMNMetadata)
+		m.CustomData = customData
+		m.UpdateProcessIdentifier(customData.ProcessIdentifier)
+	}
 
 	return *m, nil
 }
@@ -82,12 +94,12 @@ func (me *MetadataExtractor) extractCustomData(pt enums.ProcessType, data []byte
 		}
 	}
 	if pt == enums.Petriflow {
-		customMetadata := domain.NewPetriflowMetadata()
+		customMetadata := &domain.PetriflowMetadata{}
 		me.setValuesUsingReflection(reflect.ValueOf(customMetadata), mapping, doc)
 		return customMetadata
 	} else if pt == enums.BPMN {
-		customMetadata := domain.NewBPMNMetadata()
-		me.setValuesUsingReflection(reflect.ValueOf(&customMetadata), mapping, doc)
+		customMetadata := &domain.BPMNMetadata{}
+		me.setValuesUsingReflection(reflect.ValueOf(customMetadata), mapping, doc)
 		return customMetadata
 	} else {
 		return nil
@@ -113,6 +125,11 @@ func (me *MetadataExtractor) getValueByXPath(doc *xmlquery.Node, expr string) st
 		return ""
 	}
 	return me.extractValueFromNodes(nodes)
+}
+
+func (me *MetadataExtractor) countByXpath(doc *xmlquery.Node, expr string) int {
+	nodes := xmlquery.Find(doc, expr)
+	return len(nodes)
 }
 
 func (me *MetadataExtractor) extractValueFromNodes(n []*xmlquery.Node) string {

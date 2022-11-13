@@ -26,8 +26,8 @@ func (m *MetadataRepository) InsertOne(ctx context.Context, metadata *domain.Met
 	return metadata, nil
 }
 
-func (m *MetadataRepository) FindNewestByUri(ctx context.Context, uri string) (*domain.Metadata, error) {
-	var metadata []domain.Metadata
+func (m *MetadataRepository) FindNewestVersionByURI(ctx context.Context, uri string) (uint32, error) {
+	var data []domain.Metadata
 	opts := options.MergeFindOptions(
 		options.Find().SetLimit(1),
 		options.Find().SetSkip(0),
@@ -36,20 +36,20 @@ func (m *MetadataRepository) FindNewestByUri(ctx context.Context, uri string) (*
 
 	cursor, err := m.Collection.Find(ctx, bson.M{"uri_without_version": uri}, opts)
 	if err != nil {
-		return nil, err
+		return uint32(0), err
 	}
 	if cursor == nil {
-		return nil, fmt.Errorf("nil cursor value")
+		return uint32(0), fmt.Errorf("nil cursor value")
 	}
 
-	err = cursor.All(ctx, &metadata)
+	err = cursor.All(ctx, &data)
 	if err != nil {
-		return nil, err
+		return uint32(0), err
 	}
 
-	if len(metadata) == 0 {
-		return nil, nil
+	if len(data) == 0 {
+		return uint32(0), nil
 	} else {
-		return &metadata[0], nil
+		return data[0].Version, nil
 	}
 }

@@ -1,10 +1,8 @@
 package metadata
 
 import (
-	"go.mongodb.org/mongo-driver/bson/primitive"
 	"golang.org/x/net/context"
 	"pirs.io/process/domain"
-	"pirs.io/process/enums"
 	"pirs.io/process/metadata/extractor"
 	"pirs.io/process/metadata/repository/mongo"
 	"pirs.io/process/service/models"
@@ -29,17 +27,13 @@ func NewMetadataService(r mongo.MetadataRepository, t time.Duration, bMapping ma
 	}
 }
 
-func (ms *MetadataService) CreateMetadata(pt enums.ProcessType, v uint32, req models.ImportProcessRequestData) (domain.Metadata, error) {
-	return ms.extractor.ExtractMetadata(pt, v, req)
+func (ms *MetadataService) CreateMetadata(req models.ImportProcessRequestData) (domain.Metadata, error) {
+	return ms.extractor.ExtractMetadata(req)
 }
 
 func (ms *MetadataService) InsertOne(c context.Context, m *domain.Metadata) (*domain.Metadata, error) {
 	ctx, cancel := context.WithTimeout(c, ms.contextTimeout)
 	defer cancel()
-
-	m.ID = primitive.NewObjectID()
-	m.CreatedAt = time.Now()
-	m.UpdatedAt = time.Now()
 
 	res, err := ms.repository.InsertOne(ctx, m)
 	if err != nil {
@@ -48,13 +42,13 @@ func (ms *MetadataService) InsertOne(c context.Context, m *domain.Metadata) (*do
 	return res, nil
 }
 
-func (ms *MetadataService) FindNewestByURI(ctx context.Context, uri string) (*domain.Metadata, error) {
+func (ms *MetadataService) FindNewestVersionByURI(ctx context.Context, uri string) (uint32, error) {
 	newCtx, cancel := context.WithTimeout(ctx, ms.contextTimeout)
 	defer cancel()
 
-	res, err := ms.repository.FindNewestByUri(newCtx, uri)
+	ver, err := ms.repository.FindNewestVersionByURI(newCtx, uri)
 	if err != nil {
-		return res, err
+		return ver, err
 	}
-	return res, nil
+	return ver, nil
 }

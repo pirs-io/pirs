@@ -5,6 +5,7 @@ type ProcessType int
 const (
 	Petriflow ProcessType = iota
 	BPMN
+	UNKNOWN
 )
 
 func (pt ProcessType) String() string {
