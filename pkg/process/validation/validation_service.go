@@ -10,15 +10,17 @@ type ValidationService struct {
 	chainStart models.Validator
 }
 
-func NewValidationService(rawExtensions string) *ValidationService {
-	chainStart := buildValidationChains(rawExtensions)
-	return &ValidationService{chainStart: chainStart}
+func NewValidationService(rawExtensions string, ignoreWrongExtension bool) *ValidationService {
+	chainStart := buildValidationChains(rawExtensions, ignoreWrongExtension)
+	return &ValidationService{
+		chainStart: chainStart,
+	}
 }
 
-func buildValidationChains(rawExtensions string) models.Validator {
+func buildValidationChains(rawExtensions string, ignoreWrongExtension bool) models.Validator {
 	// define validators
 	requestValidator := &validators.ImportProcessRequestValidator{}
-	fileTypeValidator := validators.NewFileTypeValidator(rawExtensions)
+	fileTypeValidator := validators.NewFileTypeValidator(rawExtensions, ignoreWrongExtension)
 	schemaValidator := &validators.SchemaValidator{}
 	// create chain
 	requestValidator.SetNext(fileTypeValidator)

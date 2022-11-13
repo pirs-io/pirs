@@ -7,16 +7,20 @@ import (
 )
 
 type FileTypeValidator struct {
-	allowedExtensions []string
-	next              models.Validator
+	allowedExtensions    []string
+	ignoreWrongExtension bool
+	next                 models.Validator
 }
 
-func NewFileTypeValidator(rawExtensions string) *FileTypeValidator {
+func NewFileTypeValidator(rawExtensions string, ignoreWrongExtension bool) *FileTypeValidator {
 	parsedExtensions := strings.Split(rawExtensions, ",")
 	for i, extension := range parsedExtensions {
 		parsedExtensions[i] = strings.TrimSpace(extension)
 	}
-	return &FileTypeValidator{allowedExtensions: parsedExtensions}
+	return &FileTypeValidator{
+		allowedExtensions:    parsedExtensions,
+		ignoreWrongExtension: ignoreWrongExtension,
+	}
 }
 
 func (ft *FileTypeValidator) Validate(data *models.ImportProcessValidationData) {
@@ -26,7 +30,7 @@ func (ft *FileTypeValidator) Validate(data *models.ImportProcessValidationData) 
 
 	fileType := mimetype.Detect(data.ReqData.ProcessData.Bytes())
 	if !ft.isAllowedType(fileType.Extension()) {
-	} else if fileType.Extension() != ft.parseExtensionFromFileName(data.ReqData.ProcessFileName) {
+	} else if !ft.ignoreWrongExtension && fileType.Extension() != ft.parseExtensionFromFileName(data.ReqData.ProcessFileName) {
 	} else {
 		isValid = true
 	}

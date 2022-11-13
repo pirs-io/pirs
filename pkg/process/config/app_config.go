@@ -120,7 +120,10 @@ func createApplicationContext(conf ProcessAppConfig) (appContext *ApplicationCon
 			// todo mockup
 			ProcessStorageClient: mocks.NewDiskProcessStore("./pkg/process/imported-files"),
 			MongoClient:          &mongoClient,
-			ValidationService:    validation.NewValidationService(conf.AllowedFileExtensions),
+			ValidationService: validation.NewValidationService(
+				conf.AllowedFileExtensions,
+				conf.IgnoreWrongExtension,
+			),
 			MetadataService: metadata.NewMetadataService(
 				*metadataRepo,
 				time.Duration(conf.ContextTimeout)*time.Second,
