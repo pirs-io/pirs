@@ -17,18 +17,19 @@ type MetadataService struct {
 	contextTimeout time.Duration
 }
 
-func NewMetadataService(r mongo.MetadataRepository, t time.Duration, customXpaths [][]string) *MetadataService {
+func NewMetadataService(r mongo.MetadataRepository, t time.Duration, bMapping map[string]string, pfMapping map[string]string, bpmnMapping map[string]string) *MetadataService {
 	return &MetadataService{
 		extractor: extractor.MetadataExtractor{
-			PetriflowCustomDataXpaths: customXpaths[0][1:],
-			BPMNCustomDataXpaths:      customXpaths[1][1:],
+			BasicDataMapping:           bMapping,
+			PetriflowCustomDataMapping: pfMapping,
+			BPMNCustomDataMapping:      bpmnMapping,
 		},
 		repository:     r,
 		contextTimeout: t,
 	}
 }
 
-func (ms *MetadataService) CreateMetadata(pt enums.ProcessType, v int64, req models.ImportProcessRequestData) (domain.Metadata, error) {
+func (ms *MetadataService) CreateMetadata(pt enums.ProcessType, v uint32, req models.ImportProcessRequestData) (domain.Metadata, error) {
 	return ms.extractor.ExtractMetadata(pt, v, req)
 }
 
@@ -44,6 +45,8 @@ func (ms *MetadataService) InsertOne(c context.Context, m *domain.Metadata) (*do
 	if err != nil {
 		return res, err
 	}
+	return res, nil
+}
 
 	return res, nil
 }

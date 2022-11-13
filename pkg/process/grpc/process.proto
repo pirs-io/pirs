@@ -12,14 +12,15 @@ service Process {
 }
 
 message ImportProcessRequest {
+  string partial_uri = 1;
   oneof data {
-    FileInfo file_info = 1;
-    bytes chunk_data = 2;
+    FileInfo file_info = 2;
+    bytes chunk_data = 3;
   };
 }
 message ImportProcessResponse {
   string message = 1;
-  int32 totalSize = 2;
+  uint32 totalSize = 2;
 }
 
 message FileInfo {

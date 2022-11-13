@@ -17,10 +17,6 @@ var (
 	log = commons.GetLoggerFor("processGrpc")
 )
 
-const (
-	IMPORT_PROCESS_ROLE = "PROCESS_WRITE"
-)
-
 type ImportService struct {
 	// todo mockup
 	ProcessStorageClient *mocks.DiskProcessStore
@@ -47,8 +43,7 @@ func (is *ImportService) ImportProcess(req *models.ImportProcessRequestData) (*m
 	// todo determine new or update (version,...)(by uri)
 	// create metadata
 	m, _ := is.MetadataService.CreateMetadata(enums.Petriflow, 0, *req)
-	// resolve deps
-	// todo insert deps into metadata
+	// resolve and save deps
 	// save file in storage
 	_, err = is.ProcessStorageClient.SaveProcessFile(req.ProcessData)
 	if err != nil {

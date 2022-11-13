@@ -42,9 +42,8 @@ type ProcessAppConfig struct {
 func (p ProcessAppConfig) IsConfig() {}
 
 type ApplicationContext struct {
-	AppConfig         *ProcessAppConfig
-	ImportService     *service.ImportService
-	ValidationService *validation.ValidationService
+	AppConfig     *ProcessAppConfig
+	ImportService *service.ImportService
 }
 
 func GetContext() *ApplicationContext {
@@ -104,8 +103,13 @@ func initMongoDatabase(conf ProcessAppConfig) mongo.Client {
 	return client
 }
 
-func parseCustomMetadataXpathsFromCsv(csvPath string) [][]string {
-	return parsers.ReadCsvFile(csvPath)
+func parseCustomMetadataMappingFromCsv(csvPath string) map[string]string {
+	csv := parsers.ReadCsvFile(csvPath)
+	mapping := map[string]string{}
+	for _, row := range csv {
+		mapping[row[0]] = row[1]
+	}
+	return mapping
 }
 
 func createApplicationContext(conf ProcessAppConfig) (appContext *ApplicationContext, err error) {
@@ -120,7 +124,9 @@ func createApplicationContext(conf ProcessAppConfig) (appContext *ApplicationCon
 			MetadataService: metadata.NewMetadataService(
 				*metadataRepo,
 				time.Duration(conf.ContextTimeout)*time.Second,
-				parseCustomMetadataXpathsFromCsv(conf.CustomMetadataCsv),
+				parseCustomMetadataMappingFromCsv(conf.BasicMetadataCsv),
+				parseCustomMetadataMappingFromCsv(conf.PetriflowMetadataCsv),
+				parseCustomMetadataMappingFromCsv(conf.BPMNMetadataCsv),
 			),
 		},
 	}, nil

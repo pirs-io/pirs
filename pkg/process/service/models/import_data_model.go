@@ -8,6 +8,7 @@ import (
 
 type ImportProcessRequestData struct {
 	Ctx             context.Context
+	PartialUri      string
 	ProcessFileName string
 	ProcessData     bytes.Buffer
 	ProcessSize     int

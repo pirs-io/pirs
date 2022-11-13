@@ -33,15 +33,10 @@ func (ps *processServer) ImportProcess(stream Process_ImportProcessServer) error
 		log.Error().Msg(status.Errorf(codes.Unknown, "cannot receive process info").Error())
 		return err
 	}
-	filename := req.GetFileInfo().GetFileName()
 	// authorization
-	// todo mocks
-	//userRoles := ctx.Value("ROLES").(string)
-	//authorize := mocks.CheckAuthorization(userRoles, []string{service.IMPORT_PROCESS_ROLE})
-	//if !authorize {
-	//	return nil, errors.New("could not authorize with roles: " + userRoles)
-	//}
 	// extract req
+	filename := req.GetFileInfo().GetFileName()
+	partialUri := req.GetPartialUri()
 	processData := bytes.Buffer{}
 	processSize := 0
 	for {
@@ -74,6 +69,7 @@ func (ps *processServer) ImportProcess(stream Process_ImportProcessServer) error
 	}
 	reqData := models.ImportProcessRequestData{
 		Ctx:             ctx,
+		PartialUri:      partialUri,
 		ProcessFileName: filename,
 		ProcessData:     processData,
 		ProcessSize:     processSize,
@@ -87,7 +83,7 @@ func (ps *processServer) ImportProcess(stream Process_ImportProcessServer) error
 	importProcessResponse := ImportProcessResponse{}
 	if responseData.Status == codes.OK {
 		importProcessResponse.Message = "successfully uploaded file: " + filename
-		importProcessResponse.TotalSize = int32(processSize)
+		importProcessResponse.TotalSize = uint32(processSize)
 	} else {
 		importProcessResponse.Message = "failed to upload file: " + filename
 		importProcessResponse.TotalSize = 0
