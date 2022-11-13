@@ -1,4 +1,4 @@
-package metadata
+package service
 
 import (
 	"golang.org/x/net/context"

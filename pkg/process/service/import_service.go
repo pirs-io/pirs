@@ -4,12 +4,12 @@ import (
 	"google.golang.org/grpc/codes"
 	"google.golang.org/grpc/status"
 	"pirs.io/commons"
-	"pirs.io/commons/mongo"
-	"pirs.io/process/metadata"
+	"pirs.io/process/db/mongo"
+	metadata "pirs.io/process/metadata/service"
 	"pirs.io/process/mocks"
 	"pirs.io/process/service/models"
-	"pirs.io/process/validation"
 	valModels "pirs.io/process/validation/models"
+	validation "pirs.io/process/validation/service"
 )
 
 var (

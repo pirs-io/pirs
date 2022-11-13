@@ -4,13 +4,13 @@ import (
 	"fmt"
 	"golang.org/x/net/context"
 	"pirs.io/commons"
-	"pirs.io/commons/mongo"
 	"pirs.io/commons/parsers"
-	"pirs.io/process/metadata"
+	"pirs.io/process/db/mongo"
 	metadataMongo "pirs.io/process/metadata/repository/mongo"
+	metadata "pirs.io/process/metadata/service"
 	"pirs.io/process/mocks"
 	"pirs.io/process/service"
-	"pirs.io/process/validation"
+	validation "pirs.io/process/validation/service"
 	"time"
 )
 

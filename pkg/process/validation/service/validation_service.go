@@ -1,4 +1,4 @@
-package validation
+package service
 
 import (
 	"pirs.io/process/validation/models"
