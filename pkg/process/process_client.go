@@ -20,8 +20,9 @@ var (
 const (
 	IP              = "localhost"
 	PORT            = "8080"
-	UPLOAD_FILENAME = "car.xml"
+	UPLOAD_FILENAME = "diagram.bpmn"
 	CHUNK_SIZE      = 1024
+	PARTIAL_URI     = "stu.fei.myproject2"
 )
 
 func main() {
@@ -64,6 +65,7 @@ func uploadFile(processClient mygrpc.ProcessClient, processPath string) {
 				FileName: UPLOAD_FILENAME,
 			},
 		},
+		PartialUri: PARTIAL_URI,
 	}
 
 	err = stream.Send(req)

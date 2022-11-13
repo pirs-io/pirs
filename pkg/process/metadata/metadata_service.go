@@ -48,5 +48,13 @@ func (ms *MetadataService) InsertOne(c context.Context, m *domain.Metadata) (*do
 	return res, nil
 }
 
+func (ms *MetadataService) FindNewestByURI(ctx context.Context, uri string) (*domain.Metadata, error) {
+	newCtx, cancel := context.WithTimeout(ctx, ms.contextTimeout)
+	defer cancel()
+
+	res, err := ms.repository.FindNewestByUri(newCtx, uri)
+	if err != nil {
+		return res, err
+	}
 	return res, nil
 }

@@ -39,8 +39,6 @@ func (is *ImportService) ImportProcess(req *models.ImportProcessRequestData) (*m
 			Status: codes.InvalidArgument,
 		}, nil
 	}
-	// file pre-processing
-	// todo determine new or update (version,...)(by uri)
 	// create metadata
 	m, _ := is.MetadataService.CreateMetadata(enums.Petriflow, 0, *req)
 	// resolve and save deps
@@ -49,6 +47,14 @@ func (is *ImportService) ImportProcess(req *models.ImportProcessRequestData) (*m
 	if err != nil {
 		log.Error().Msg(status.Errorf(codes.Internal, "cannot store the process: %v", err).Error())
 		return nil, err
+	}
+	// check version
+	foundMetadata, err := is.MetadataService.FindNewestByURI(req.Ctx, m.URIWithoutVersion)
+	if err != nil {
+		return nil, err
+	}
+	if foundMetadata != nil {
+		m.UpdateVersion(foundMetadata.Version + 1)
 	}
 	// save metadata
 	_, err = is.MetadataService.InsertOne(req.Ctx, &m)
