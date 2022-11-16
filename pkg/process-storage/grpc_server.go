@@ -35,9 +35,8 @@ func (p *processStorage) UploadProcess(stream pb.Storage_UploadProcessServer) er
 		in, err := stream.Recv()
 		chunkNum += 1
 		if err == io.EOF {
-			log.Info().Msg("EOF! File upload done")
-
 			stream.Send(&pb.ProcessUploadResponse{Status: pb.UploadStatus_SUCCESS})
+			log.Info().Msg("File upload done")
 			break
 		}
 		if err != nil {
@@ -71,18 +70,24 @@ func (p *processStorage) DownloadProcess(req *pb.ProcessDownloadRequest, stream 
 		log.Error().Msg(err.Error())
 		return err
 	}
-	metadata, file, err := storageAdapter.DownloadProcess(req)
+	r, w := io.Pipe()
+	metadata, err := storageAdapter.DownloadProcess(req, w)
 	err = stream.Send(&pb.ProcessDownloadResponse{
 		Data: &pb.ProcessFileData{
 			Data: &pb.ProcessFileData_Metadata{Metadata: metadata},
 		},
 	})
-	err = stream.Send(&pb.ProcessDownloadResponse{
-		Data: &pb.ProcessFileData{
-			Data: &pb.ProcessFileData_Chunk{Chunk: file},
-		},
+	if err != nil {
+		log.Err(err)
+		return err
+	}
+	return commons.StreamFileFromPipe(r, config.GetContext().AppConfig.ChunkSize, func(chunk []byte) error {
+		return stream.Send(&pb.ProcessDownloadResponse{
+			Data: &pb.ProcessFileData{
+				Data: &pb.ProcessFileData_Chunk{Chunk: chunk},
+			},
+		})
 	})
-	return err
 }
 
 func (p *processStorage) ProcessHistory(context.Context, *pb.ProcessHistoryRequest) (*pb.ProcessHistoryResponse, error) {

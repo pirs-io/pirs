@@ -7,6 +7,7 @@ import (
 	"github.com/pelletier/go-toml/v2"
 	"github.com/samber/lo"
 	"golang.org/x/net/context"
+	"io"
 	"os"
 	"path/filepath"
 	"pirs.io/commons"
@@ -23,6 +24,7 @@ type GitClient struct {
 	Context      context.Context
 	RepoRootPath string
 	Tenant       string
+	ChunkSize    int64
 
 	repo              *git.Repository
 	tenantGitRepoPath string
@@ -41,7 +43,7 @@ func (c *GitClient) InitializeStorage() error {
 	return err
 }
 
-// TODO refactor this method
+// SaveFile saves given process
 func (c *GitClient) SaveFile(processMetadata *pb.ProcessMetadata, file []byte) error {
 	processId, err := pb.ParseProcessId(processMetadata.ProcessId)
 	if err != nil {
@@ -57,6 +59,8 @@ func (c *GitClient) SaveFile(processMetadata *pb.ProcessMetadata, file []byte) e
 
 	var f *os.File
 	var commitMessage UploadActionSummary
+	newFileCreated := false
+	// take actions based on process file existence
 	if _, err := os.Stat(filePath); err == nil {
 		// path/to/whatever exists
 		f, err := os.OpenFile(filePath, os.O_RDWR|os.O_CREATE, 0755)
@@ -65,13 +69,7 @@ func (c *GitClient) SaveFile(processMetadata *pb.ProcessMetadata, file []byte) e
 			log.Error().Msg(err.Error())
 			return err
 		}
-		commitMessage = createCommitMessageForNewProcess(
-			processId.Process,
-			processId.Project,
-			processMetadata.Version,
-			commons.GetSingleValue(c.Context, commons.User),
-			true,
-		)
+
 	} else if errors.Is(err, os.ErrNotExist) {
 		// path/to/whatever does *not* exist
 		f, err = os.Create(filePath)
@@ -80,21 +78,23 @@ func (c *GitClient) SaveFile(processMetadata *pb.ProcessMetadata, file []byte) e
 			log.Error().Msg(err.Error())
 			return err
 		}
-		commitMessage = createCommitMessageForNewProcess(
-			processId.Process,
-			processId.Project,
-			processMetadata.Version,
-			commons.GetSingleValue(c.Context, commons.User),
-			false,
-		)
+		newFileCreated = true
 	}
+	commitMessage = createCommitMessage(
+		*processId,
+		commons.GetSingleValue(c.Context, commons.User),
+		newFileCreated,
+	)
 
 	worktree, err := c.repo.Worktree()
 	if err != nil {
 		return err
 	}
-	_, err = c.commitFile(worktree, filepath.Join(processId.Project, processId.Process), commitMessage)
+	_, err = c.commitAndTagFile(worktree, *processId, commitMessage)
 	if err != nil {
+		if err == git.ErrTagExists {
+			log.Warn().Msg("Specified process version alredy exists, nothing will be updated")
+		}
 		log.Error().Msg(err.Error())
 		return err
 	}
@@ -102,26 +102,28 @@ func (c *GitClient) SaveFile(processMetadata *pb.ProcessMetadata, file []byte) e
 }
 
 // DownloadProcess finds and returns save process file based in processId and version
-func (c *GitClient) DownloadProcess(request *pb.ProcessDownloadRequest) (*pb.ProcessMetadata, []byte, error) {
-	log.Info().Msgf("Getting history for process: %s with version: %s", request.ProcessId, request.ProcessVersion)
+func (c *GitClient) DownloadProcess(request *pb.ProcessDownloadRequest, w *io.PipeWriter) (*pb.ProcessMetadata, error) {
+	log.Info().Msgf("Getting history for process: %s", request.ProcessId)
 	processId, err := pb.ParseProcessId(request.ProcessId)
 	if err != nil {
 		log.Error().Msg(err.Error())
 	}
-	processCommits, err := c.getProcessCommitHistory(processId)
-	file, err := c.getProcessFile(processId, request.ProcessVersion, processCommits)
+	processVersionCommit, err := c.getProcessCommitForTag(processId)
+	if err != nil {
+		log.Err(err)
+		return nil, err
+	}
+	err = c.streamProcessFile(processId, processVersionCommit, w)
 	if err != nil {
 		log.Err(err)
 	}
-	// TODO use real values - not values from request
+	// TODO use real values - finish missing
 	return &pb.ProcessMetadata{
-			ProcessId: processId.FullProcessId(),
+			ProcessId: processId.FullProcessIdWithVersionTag(),
 			Filename:  processId.Process,
-			Version:   request.ProcessVersion,
 			Encoding:  0,
 			Type:      0,
 		},
-		file,
 		err
 }
 
@@ -146,42 +148,30 @@ func (c *GitClient) GetProcessHistory(processId *pb.ProcessId) ([]UploadActionSu
 	return commits, err
 }
 
-// TODO refactor this method
-// getProcessFile returns file byte array of process with specified version
-// processCommits is expected to contain only commits regarding specified processId
-func (c *GitClient) getProcessFile(processId *pb.ProcessId, version string, processCommits []*object.Commit) ([]byte, error) {
+// streamProcessFile returns file byte array of process with specified version
+// processCommit is expected to contain only commit regarding specified processId
+// target process file is streamed wo pipeWriter
+func (c *GitClient) streamProcessFile(processId *pb.ProcessId, processCommit *object.Commit, pipeWriter *io.PipeWriter) error {
+	commitMessage, err := parseCommitMessage(processCommit.Message)
+	if err != nil {
+		log.Err(err)
+		return err
+	}
 	processForVersion := struct {
 		gitCommit     *object.Commit
 		commitMessage *UploadActionSummary
-	}{}
-	// search all commits for process
-	for _, commit := range processCommits {
-		cm, err := parseCommitMessage(commit.Message)
-		if err != nil {
-			log.Err(err)
-		}
-		// find process in commit metadata
-		fileChangesInCommit := lo.Flatten([][]ProcessFile{cm.AddedFiles, cm.ModifiedFiled})
-		// find the right version
-		temp := lo.Filter(fileChangesInCommit, func(addedFile ProcessFile, i int) bool {
-			return addedFile.Version == version
-		})
-		if len(temp) > 0 {
-			processForVersion.gitCommit = commit
-			processForVersion.commitMessage = &cm
-		}
-	}
+	}{processCommit, &commitMessage}
 	// if commit with version is found - checkout to that commit
 	if processForVersion.gitCommit != nil && processForVersion.commitMessage != nil {
 		workTree, err := c.repo.Worktree()
 		if err != nil {
 			log.Err(err)
-			return nil, err
+			return err
 		}
 		err = workTree.Checkout(&git.CheckoutOptions{Hash: processForVersion.gitCommit.Hash})
 		if err != nil {
 			log.Err(err)
-			return nil, err
+			return err
 		}
 		// after reading - checkout back to head
 		defer func(name string) {
@@ -193,26 +183,24 @@ func (c *GitClient) getProcessFile(processId *pb.ProcessId, version string, proc
 		}(*processId.ProcessWithinProject())
 
 		// read desired version of file
-		f, err := os.Open(filepath.Join(c.tenantGitRepoPath, *processId.ProcessWithinProject()))
-		stat, err := f.Stat()
-		if err != nil {
-			log.Err(err)
-			return nil, err
-		}
-		// read into []byte
-		res := make([]byte, stat.Size())
-		if err != nil {
-			log.Error().Msg(err.Error())
-			return nil, err
-		}
-		_, err = f.Read(res)
-		if err != nil {
-			log.Err(err)
-			return nil, err
-		}
-		return res, err
+		fd, err := os.Open(filepath.Join(c.tenantGitRepoPath, *processId.ProcessWithinProject()))
+		return commons.StreamFileToPipe(fd, c.ChunkSize, pipeWriter)
 	}
-	return nil, errors.New("process not found")
+	return errors.New("process not found")
+}
+
+// getProcessCommitForTag returns slice of all commits that affected given processId (process version is searched by tag)
+func (c *GitClient) getProcessCommitForTag(processId *pb.ProcessId) (*object.Commit, error) {
+	tag, err := c.repo.Tag(processId.FullProcessIdWithVersionTag())
+	if err != nil {
+		if err == git.ErrTagNotFound {
+			log.Error().Msg("Specified version of process not found")
+			return nil, err
+		}
+		log.Err(err)
+		return nil, err
+	}
+	return c.repo.CommitObject(tag.Hash())
 }
 
 // getProcessCommitHistory returns slice of all commits that affected given processId
@@ -253,28 +241,40 @@ func (c *GitClient) createRepository() (*git.Repository, error) {
 	return git.PlainInit(c.tenantGitRepoPath, false)
 }
 
-func (c *GitClient) commitFile(tree *git.Worktree, file string, commitMessage UploadActionSummary) (string, error) {
-	_, err := tree.Add(file)
+func (c *GitClient) commitAndTagFile(tree *git.Worktree, processId pb.ProcessId, commitMessage UploadActionSummary) (*string, error) {
+	_, err := tree.Add(*processId.ProcessWithinProject())
 	if err != nil {
-		return "", err
+		return nil, err
 	}
 
-	b, err := toml.Marshal(commitMessage)
+	messageMarshalled, err := toml.Marshal(commitMessage)
 	if err != nil {
-		return "", err
+		return nil, err
 	}
-	commit, err := tree.Commit(string(b), &git.CommitOptions{
-		Author: &object.Signature{
-			Name:  commons.GetSingleValue(c.Context, commons.User),
-			Email: commons.GetSingleValue(c.Context, commons.UserEmail),
-			When:  time.Now(),
-		},
+	// TODO check after userinfo format for ctx will be implemented
+	author := &object.Signature{
+		Name:  commons.GetSingleValue(c.Context, commons.User),
+		Email: commons.GetSingleValue(c.Context, commons.UserEmail),
+		When:  time.Now(),
+	}
+	commit, err := tree.Commit(string(messageMarshalled), &git.CommitOptions{
+		Author: author,
 	})
 	if err != nil {
-		return "", err
+		return nil, err
 	}
-
-	return commit.String(), nil
+	head, err := c.repo.Head()
+	if err != nil {
+		log.Err(err)
+		return nil, err
+	}
+	versionTag := processId.FullProcessIdWithVersionTag()
+	_, err = c.repo.CreateTag(versionTag, head.Hash(), nil)
+	if err != nil {
+		return nil, err
+	}
+	res := commit.String()
+	return &res, nil
 }
 
 func commitIterToSlice(iter object.CommitIter) []*object.Commit {
@@ -295,31 +295,29 @@ func parseCommitMessage(message string) (UploadActionSummary, error) {
 	return c, nil
 }
 
-func createCommitMessageForNewProcess(
-	processName string,
-	project string,
-	version string,
+func createCommitMessage(
+	processId pb.ProcessId,
 	updatedBy string,
-	updated bool) UploadActionSummary {
+	newFileCreated bool) UploadActionSummary {
 	newFile := ProcessFile{
-		ProcessName: processName,
-		ProjectId:   project,
-		Version:     version,
+		ProcessName: processId.Process,
+		ProjectId:   processId.Project,
+		Version:     processId.Version,
 		LastUpdate:  time.Now().Unix(),
 	}
 
-	if updated {
-		return UploadActionSummary{
-			AddedFiles:    nil,
-			DeletedFiles:  nil,
-			ModifiedFiled: []ProcessFile{newFile},
-			UpdatedBy:     updatedBy,
-		}
-	} else {
+	if newFileCreated {
 		return UploadActionSummary{
 			AddedFiles:    []ProcessFile{newFile},
 			DeletedFiles:  nil,
 			ModifiedFiled: nil,
+			UpdatedBy:     updatedBy,
+		}
+	} else {
+		return UploadActionSummary{
+			AddedFiles:    nil,
+			DeletedFiles:  nil,
+			ModifiedFiled: []ProcessFile{newFile},
 			UpdatedBy:     updatedBy,
 		}
 	}

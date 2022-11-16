@@ -2,6 +2,7 @@ package adapter
 
 import (
 	"golang.org/x/net/context"
+	"io"
 	"pirs.io/commons"
 	"pirs.io/process-storage/config"
 	pb "pirs.io/process-storage/grpc"
@@ -12,7 +13,7 @@ var log = commons.GetLoggerFor("storage_client")
 
 type IStorageAdapter interface {
 	SaveProcess(processMetadata *pb.ProcessMetadata, file []byte) error
-	DownloadProcess(downloadRequest *pb.ProcessDownloadRequest) (*pb.ProcessMetadata, []byte, error)
+	DownloadProcess(downloadRequest *pb.ProcessDownloadRequest, w *io.PipeWriter) (*pb.ProcessMetadata, error)
 }
 
 func MakeStorageAdapter(ctx context.Context, provider storage.Provider) (IStorageAdapter, error) {
@@ -24,6 +25,7 @@ func MakeStorageAdapter(ctx context.Context, provider storage.Provider) (IStorag
 				Context:      ctx,
 				RepoRootPath: config.GetContext().AppConfig.RepoRootPath,
 				Tenant:       config.GetContext().AppConfig.Tenant,
+				ChunkSize:    config.GetContext().AppConfig.ChunkSize,
 			},
 		}
 		err := gitAdapter.GitClient.InitializeStorage()

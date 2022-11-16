@@ -2,6 +2,7 @@ package adapter
 
 import (
 	"golang.org/x/net/context"
+	"io"
 	pb "pirs.io/process-storage/grpc"
 	"pirs.io/process-storage/storage"
 )
@@ -15,6 +16,6 @@ func (a *GitAdapter) SaveProcess(processMetadata *pb.ProcessMetadata, file []byt
 	return a.GitClient.SaveFile(processMetadata, file)
 }
 
-func (a *GitAdapter) DownloadProcess(downloadRequest *pb.ProcessDownloadRequest) (*pb.ProcessMetadata, []byte, error) {
-	return a.GitClient.DownloadProcess(downloadRequest)
+func (a *GitAdapter) DownloadProcess(downloadRequest *pb.ProcessDownloadRequest, w *io.PipeWriter) (*pb.ProcessMetadata, error) {
+	return a.GitClient.DownloadProcess(downloadRequest, w)
 }

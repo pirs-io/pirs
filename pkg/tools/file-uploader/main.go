@@ -63,7 +63,6 @@ func uploadFile(client pb.StorageClient, processId string, file *os.File) {
 			Filename:  filepath.Base(file.Name()),
 			Encoding:  0,
 			Type:      0,
-			Version:   "0.2.0",
 		},
 	}
 

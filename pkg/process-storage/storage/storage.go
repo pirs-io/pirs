@@ -16,6 +16,6 @@ type UploadActionSummary struct {
 type ProcessFile struct {
 	ProcessName string
 	ProjectId   string
-	Version     string
+	Version     int64
 	LastUpdate  int64
 }

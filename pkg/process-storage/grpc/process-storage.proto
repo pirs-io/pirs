@@ -26,16 +26,14 @@ message ProcessFileData {
 }
 
 message ProcessMetadata {
-  string process_id = 1; // format: organization.tenant.project.process
+  string process_id = 1; // format: organization.tenant.project.process:version
   string filename = 2;
-  string version = 4;
   Encoding encoding = 5;
   ProcessType type = 6;
 }
 
 message ProcessDownloadRequest {
   string process_id = 1;
-  string process_version = 2;
 }
 
 message ProcessDownloadResponse {
@@ -50,7 +48,7 @@ message ProcessHistoryResponse {
   string process_id = 1;
   int64 last_modified = 2;
   string modified_by = 3;
-  string version = 4;
+  int64 version = 4;
 }
 
 enum Encoding {
@@ -68,3 +66,11 @@ enum UploadStatus {
   SUCCESS = 2;
   FAILED = 3;
 }
+// getProcessCommitForTag returns slice of all commits that affected given processId (process version is searched by tag)
+    func (c *GitClient) getProcessCommitForTag(processId *pb.ProcessId) (*object.Commit, error) {
+tag, err := c.repo.Tag(processId.FullProcessIdWithVersionTag())
+    if err != nil {
+return nil, err
+    }
+return c.repo.CommitObject(tag.Hash())
+    }

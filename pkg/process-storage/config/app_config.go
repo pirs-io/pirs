@@ -15,6 +15,7 @@ type ProcessStorageAppConfig struct {
 	StorageProvider storage.Provider `mapstructure:"STORAGE_PROVIDER"`
 	RepoRootPath    string           `mapstructure:"GIT_ROOT"`
 	Tenant          string           `mapstructure:"TENANT"`
+	ChunkSize       int64            `mapstructure:"CHUNK_SIZE"`
 }
 
 func (t ProcessStorageAppConfig) IsConfig() {}
