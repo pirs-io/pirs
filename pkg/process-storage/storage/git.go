@@ -148,9 +148,9 @@ func (c *GitClient) GetProcessHistory(processId *pb.ProcessId) ([]UploadActionSu
 	return commits, err
 }
 
-// streamProcessFile returns file byte array of process with specified version
+// streamProcessFile
 // processCommit is expected to contain only commit regarding specified processId
-// target process file is streamed wo pipeWriter
+// target process file is streamed to pipeWriter
 func (c *GitClient) streamProcessFile(processId *pb.ProcessId, processCommit *object.Commit, pipeWriter *io.PipeWriter) error {
 	commitMessage, err := parseCommitMessage(processCommit.Message)
 	if err != nil {
