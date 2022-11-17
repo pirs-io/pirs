@@ -4,6 +4,9 @@ import (
 	"bufio"
 	"bytes"
 	"github.com/antchfx/xmlquery"
+	"google.golang.org/grpc/codes"
+	"google.golang.org/grpc/status"
+	"pirs.io/commons"
 	"pirs.io/process/domain"
 	"pirs.io/process/enums"
 	"pirs.io/process/metadata/determiner"
@@ -17,17 +20,22 @@ const (
 	DEFAULT_VERSION = 1
 )
 
+var (
+	log = commons.GetLoggerFor("MetadataExtractor")
+)
+
 type MetadataExtractor struct {
 	BasicDataMapping           map[string]string
 	PetriflowCustomDataMapping map[string]string
 	BPMNCustomDataMapping      map[string]string
 }
 
-func (me *MetadataExtractor) ExtractMetadata(req models.ImportProcessRequestData) (domain.Metadata, error) {
+func (me *MetadataExtractor) ExtractMetadata(req models.ImportProcessRequestData) domain.Metadata {
 	data := req.ProcessData.Bytes()
 	doc, err := xmlquery.Parse(bytes.NewReader(data))
 	if err != nil {
-		return *domain.NewMetadata(), err
+		log.Error().Msg(status.Errorf(codes.Internal, "could not prepare xml data to parse: %v", err).Error())
+		return domain.Metadata{}
 	}
 	m := domain.NewMetadata()
 
@@ -61,7 +69,7 @@ func (me *MetadataExtractor) ExtractMetadata(req models.ImportProcessRequestData
 		m.UpdateProcessIdentifier(customData.ProcessIdentifier)
 	}
 
-	return *m, nil
+	return *m
 }
 
 func (me *MetadataExtractor) extractHeaders(data *[]byte) string {

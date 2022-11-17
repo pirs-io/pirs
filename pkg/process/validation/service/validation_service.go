@@ -1,9 +1,16 @@
 package service
 
 import (
+	"google.golang.org/grpc/codes"
+	"google.golang.org/grpc/status"
+	"pirs.io/commons"
 	"pirs.io/process/validation/models"
 	"pirs.io/process/validation/validators"
 	"reflect"
+)
+
+var (
+	log = commons.GetLoggerFor("ValidationService")
 )
 
 type ValidationService struct {
@@ -29,17 +36,17 @@ func buildValidationChains(rawExtensions string, ignoreWrongExtension bool) mode
 	return requestValidator
 }
 
-func (vs *ValidationService) ValidateProcessData(data *models.ImportProcessValidationData) (bool, error) {
+func (vs *ValidationService) ValidateProcessData(data *models.ImportProcessValidationData) bool {
 	vs.chainStart.Validate(data)
 	validationFlags := reflect.ValueOf(data.ValidationFlags)
 	// all validations must pass
 	for i := 0; i < validationFlags.NumField(); i++ {
 		if validationFlags.Field(i).Bool() == false {
-			// todo use error as description msg
-			return false, nil
+			log.Error().Msg(status.Errorf(codes.InvalidArgument, "process file %s is invalid: %s is false", data.ReqData.ProcessFileName, validationFlags.Field(i).String()).Error())
+			return false
 		}
 	}
-	return true, nil
+	return true
 }
 
 func (vs *ValidationService) ValidatePackageData(data *models.ImportPackageValidationData) {

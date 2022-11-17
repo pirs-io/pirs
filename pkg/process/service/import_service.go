@@ -1,6 +1,7 @@
 package service
 
 import (
+	"go.mongodb.org/mongo-driver/bson/primitive"
 	"google.golang.org/grpc/codes"
 	"google.golang.org/grpc/status"
 	"pirs.io/commons"
@@ -24,47 +25,42 @@ type ImportService struct {
 	MetadataService      *metadata.MetadataService
 }
 
-func (is *ImportService) ImportProcess(req *models.ImportProcessRequestData) (*models.ImportProcessResponseData, error) {
+func (is *ImportService) ImportProcess(req *models.ImportProcessRequestData) *models.ImportProcessResponseData {
+	createResponse := func(code codes.Code) *models.ImportProcessResponseData {
+		return &models.ImportProcessResponseData{
+			Status: code,
+		}
+	}
 	// validate process data
 	valData := transformRequestDataToValidationData(*req)
-	isValid, err := is.ValidationService.ValidateProcessData(valData)
-	if err != nil {
-		return &models.ImportProcessResponseData{
-			Status: codes.Internal,
-		}, err
-	}
+	isValid := is.ValidationService.ValidateProcessData(valData)
 	if !isValid {
-		return &models.ImportProcessResponseData{
-			Status: codes.InvalidArgument,
-		}, nil
+		return createResponse(codes.InvalidArgument)
 	}
 	// create metadata
-	m, _ := is.MetadataService.CreateMetadata(*req)
+	m := is.MetadataService.CreateMetadata(*req)
+	if m.ID == primitive.NilObjectID {
+		return createResponse(codes.Internal)
+	}
 	// resolve and save deps
 	// save file in storage
-	_, err = is.ProcessStorageClient.SaveProcessFile(req.ProcessData)
+	_, err := is.ProcessStorageClient.SaveProcessFile(req.ProcessData)
 	if err != nil {
 		log.Error().Msg(status.Errorf(codes.Internal, "cannot store the process: %v", err).Error())
-		return nil, err
+		return createResponse(codes.Internal)
 	}
 	// check version
-	foundVersion, err := is.MetadataService.FindNewestVersionByURI(req.Ctx, m.URIWithoutVersion)
-	if err != nil {
-		return nil, err
-	}
-	if foundVersion != 0 {
-		m.UpdateVersion(foundVersion + 1)
-	}
+	foundVersion := is.MetadataService.FindNewestVersionByURI(req.Ctx, m.URIWithoutVersion)
+	m.UpdateVersion(foundVersion + 1)
+
 	// save metadata
-	_, err = is.MetadataService.InsertOne(req.Ctx, &m)
-	if err != nil {
-		return nil, err
+	insertedMetadata := is.MetadataService.InsertOne(req.Ctx, &m)
+	if insertedMetadata.ID == primitive.NilObjectID {
+		return createResponse(codes.Internal)
 	}
 	// apply grace period
 	// create response
-	return &models.ImportProcessResponseData{
-		Status: codes.OK,
-	}, nil
+	return createResponse(codes.OK)
 }
 
 func transformRequestDataToValidationData(reqData models.ImportProcessRequestData) *valModels.ImportProcessValidationData {

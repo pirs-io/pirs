@@ -27,10 +27,27 @@ type processServer struct {
 }
 
 func (ps *processServer) ImportProcess(stream Process_ImportProcessServer) error {
+	importProcessResponse := ImportProcessResponse{}
+	createFailureResponse := func(response *ImportProcessResponse, filename string) {
+		importProcessResponse.Message = "failed to upload file: " + filename
+		importProcessResponse.TotalSize = 0
+	}
+	createSuccessResponse := func(response *ImportProcessResponse, filename string, filesize uint32) {
+		importProcessResponse.Message = "successfully uploaded file: " + filename
+		importProcessResponse.TotalSize = filesize
+	}
+	defer func(stream Process_ImportProcessServer, response *ImportProcessResponse) {
+		err := stream.SendAndClose(response)
+		if err != nil {
+			log.Error().Msg(status.Errorf(codes.Unavailable, "could not send response and close stream connection: %v", err).Error())
+		}
+	}(stream, &importProcessResponse)
+
 	// receive request
 	req, err := stream.Recv()
 	if err != nil {
 		log.Error().Msg(status.Errorf(codes.Unknown, "cannot receive process info").Error())
+		createFailureResponse(&importProcessResponse, "unknown")
 		return err
 	}
 	// authorization
@@ -45,6 +62,7 @@ func (ps *processServer) ImportProcess(stream Process_ImportProcessServer) error
 			break
 		} else if err != nil {
 			log.Error().Msg(status.Errorf(codes.Unknown, "cannot receive chunk data: %v", err).Error())
+			createFailureResponse(&importProcessResponse, filename)
 			return err
 		}
 		chunk := req.GetChunkData()
@@ -55,11 +73,13 @@ func (ps *processServer) ImportProcess(stream Process_ImportProcessServer) error
 			err = errors.New(status.Errorf(codes.ResourceExhausted, "file exceeds max size: %d kB",
 				ps.appContext.AppConfig.UploadFileMaxSize).Error())
 			log.Error().Msg(err.Error())
+			createFailureResponse(&importProcessResponse, filename)
 			return err
 		}
 		_, err = processData.Write(chunk)
 		if err != nil {
 			log.Error().Msg(status.Errorf(codes.Internal, "cannot write chunk data: %v", err).Error())
+			createFailureResponse(&importProcessResponse, filename)
 			return err
 		}
 	}
@@ -75,22 +95,13 @@ func (ps *processServer) ImportProcess(stream Process_ImportProcessServer) error
 		ProcessSize:     processSize,
 	}
 	// handle request
-	responseData, err := ps.appContext.ImportService.ImportProcess(&reqData)
-	if err != nil {
-		return err
-	}
+	responseData := ps.appContext.ImportService.ImportProcess(&reqData)
+
 	// handle response
-	importProcessResponse := ImportProcessResponse{}
 	if responseData.Status == codes.OK {
-		importProcessResponse.Message = "successfully uploaded file: " + filename
-		importProcessResponse.TotalSize = uint32(processSize)
+		createSuccessResponse(&importProcessResponse, filename, uint32(processSize))
 	} else {
-		importProcessResponse.Message = "failed to upload file: " + filename
-		importProcessResponse.TotalSize = 0
-	}
-	err = stream.SendAndClose(&importProcessResponse)
-	if err != nil {
-		return err
+		createFailureResponse(&importProcessResponse, filename)
 	}
 	return nil
 }
