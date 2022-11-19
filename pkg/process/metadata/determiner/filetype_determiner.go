@@ -10,7 +10,10 @@ func DetermineProcessType(doc *xmlquery.Node) enums.ProcessType {
 		finalType = enums.UNKNOWN
 		counter   int
 	)
-	determiners := []func(*xmlquery.Node) enums.ProcessType{isPetriflowType, isBPMNType}
+	determiners := []func(*xmlquery.Node) enums.ProcessType{
+		isPetriflowType,
+		isBPMNType,
+	}
 
 	for _, f := range determiners {
 		maybeType := f(doc)

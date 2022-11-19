@@ -1,4 +1,4 @@
-package grpc
+package server
 
 import (
 	"bytes"
@@ -14,6 +14,7 @@ import (
 	"net"
 	"pirs.io/commons"
 	"pirs.io/process/config"
+	grpcProto "pirs.io/process/grpc"
 	"pirs.io/process/service/models"
 )
 
@@ -22,21 +23,21 @@ var (
 )
 
 type processServer struct {
-	UnimplementedProcessServer
+	grpcProto.UnimplementedProcessServer
 	appContext *config.ApplicationContext
 }
 
-func (ps *processServer) ImportProcess(stream Process_ImportProcessServer) error {
-	importProcessResponse := ImportProcessResponse{}
-	createFailureResponse := func(response *ImportProcessResponse, filename string) {
+func (ps *processServer) ImportProcess(stream grpcProto.Process_ImportProcessServer) error {
+	importProcessResponse := grpcProto.ImportProcessResponse{}
+	createFailureResponse := func(response *grpcProto.ImportProcessResponse, filename string) {
 		importProcessResponse.Message = "failed to upload file: " + filename
 		importProcessResponse.TotalSize = 0
 	}
-	createSuccessResponse := func(response *ImportProcessResponse, filename string, filesize uint32) {
+	createSuccessResponse := func(response *grpcProto.ImportProcessResponse, filename string, filesize uint32) {
 		importProcessResponse.Message = "successfully uploaded file: " + filename
 		importProcessResponse.TotalSize = filesize
 	}
-	defer func(stream Process_ImportProcessServer, response *ImportProcessResponse) {
+	defer func(stream grpcProto.Process_ImportProcessServer, response *grpcProto.ImportProcessResponse) {
 		err := stream.SendAndClose(response)
 		if err != nil {
 			log.Error().Msg(status.Errorf(codes.Unavailable, "could not send response and close stream connection: %v", err).Error())
@@ -51,6 +52,7 @@ func (ps *processServer) ImportProcess(stream Process_ImportProcessServer) error
 		return err
 	}
 	// authorization
+	// todo
 	// extract req
 	filename := req.GetFileInfo().GetFileName()
 	partialUri := req.GetPartialUri()
@@ -106,15 +108,18 @@ func (ps *processServer) ImportProcess(stream Process_ImportProcessServer) error
 	return nil
 }
 
-func (c *processServer) ImportPackage(ctx context.Context, req *ImportPackageRequest) (*ImportPackageResponse, error) {
+func (c *processServer) ImportPackage(ctx context.Context, req *grpcProto.ImportPackageRequest) (*grpcProto.ImportPackageResponse, error) {
+	// todo
 	return nil, status.Errorf(codes.Unimplemented, "method ImportPackage not implemented")
 }
 
-func (c *processServer) RemoveProcess(ctx context.Context, req *RemoveProcessRequest) (*RemoveProcessResponse, error) {
+func (c *processServer) RemoveProcess(ctx context.Context, req *grpcProto.RemoveProcessRequest) (*grpcProto.RemoveProcessResponse, error) {
+	// todo
 	return nil, status.Errorf(codes.Unimplemented, "method RemoveProcess not implemented")
 }
 
-func (c *processServer) DownloadProcess(ctx context.Context, req *DownloadProcessRequest) (*DownloadProcessResponse, error) {
+func (c *processServer) DownloadProcess(ctx context.Context, req *grpcProto.DownloadProcessRequest) (*grpcProto.DownloadProcessResponse, error) {
+	// todo
 	return nil, status.Errorf(codes.Unimplemented, "method DownloadProcess not implemented")
 }
 
@@ -132,7 +137,7 @@ func StartGrpc(grpcIp string, grpcPort int, isReflection bool) error {
 		reflection.Register(grpcServer)
 	}
 
-	RegisterProcessServer(grpcServer, &processServer{appContext: config.GetContext()})
+	grpcProto.RegisterProcessServer(grpcServer, &processServer{appContext: config.GetContext()})
 
 	grpcErr := grpcServer.Serve(lis)
 	if grpcErr != nil {

@@ -43,7 +43,9 @@ func (is *ImportService) ImportProcess(req *models.ImportProcessRequestData) *mo
 		return createResponse(codes.Internal)
 	}
 	// resolve and save deps
+	// todo
 	// save file in storage
+	// todo
 	_, err := is.ProcessStorageClient.SaveProcessFile(req.ProcessData)
 	if err != nil {
 		log.Error().Msg(status.Errorf(codes.Internal, "cannot store the process: %v", err).Error())
@@ -59,6 +61,7 @@ func (is *ImportService) ImportProcess(req *models.ImportProcessRequestData) *mo
 		return createResponse(codes.Internal)
 	}
 	// apply grace period
+	// todo
 	// create response
 	return createResponse(codes.OK)
 }
@@ -71,5 +74,6 @@ func transformRequestDataToValidationData(reqData models.ImportProcessRequestDat
 }
 
 func (is *ImportService) ImportPackage() (*models.ImportPackageResponseData, error) {
+	// todo
 	panic("Not implemented")
 }

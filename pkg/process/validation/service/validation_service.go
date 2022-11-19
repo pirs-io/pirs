@@ -50,5 +50,6 @@ func (vs *ValidationService) ValidateProcessData(data *models.ImportProcessValid
 }
 
 func (vs *ValidationService) ValidatePackageData(data *models.ImportPackageValidationData) {
+	// todo
 	panic("not implemented")
 }
