@@ -42,7 +42,7 @@ func (vs *ValidationService) ValidateProcessData(data *models.ImportProcessValid
 	// all validations must pass
 	for i := 0; i < validationFlags.NumField(); i++ {
 		if validationFlags.Field(i).Bool() == false {
-			log.Error().Msg(status.Errorf(codes.InvalidArgument, "process file %s is invalid: %s is false", data.ReqData.ProcessFileName, validationFlags.Field(i).String()).Error())
+			log.Error().Msg(status.Errorf(codes.InvalidArgument, "process file %s is invalid: %s is false", data.ReqData.ProcessFileName, validationFlags.Type().Field(i).Name).Error())
 			return false
 		}
 	}
