@@ -8,7 +8,6 @@ import (
 	"pirs.io/process/db/mongo"
 	metadataMongo "pirs.io/process/metadata/repository/mongo"
 	metadata "pirs.io/process/metadata/service"
-	"pirs.io/process/mocks"
 	"pirs.io/process/service"
 	validation "pirs.io/process/validation/service"
 	"time"
@@ -24,6 +23,7 @@ type ProcessAppConfig struct {
 	GrpcPort              int    `mapstructure:"GRPC_PORT"`
 	UseGrpcReflection     bool   `mapstructure:"USE_GRPC_REFLECTION"`
 	UploadFileMaxSize     int    `mapstructure:"UPLOAD_FILE_MAX_SIZE"`
+	ChunkSize             int    `mapstructure:"CHUNK_SIZE"`
 	AllowedFileExtensions string `mapstructure:"ALLOWED_FILE_EXTENSIONS"`
 	MongoHost             string `mapstructure:"MONGO_HOST"`
 	MongoPort             string `mapstructure:"MONGO_PORT"`
@@ -37,6 +37,8 @@ type ProcessAppConfig struct {
 	PetriflowMetadataCsv  string `mapstructure:"PETRIFLOW_METADATA_CSV"`
 	BPMNMetadataCsv       string `mapstructure:"BPMN_METADATA_CSV"`
 	IgnoreWrongExtension  bool   `mapstructure:"IGNORE_WRONG_EXTENSION"`
+	ProcessStoragePort    string `mapstructure:"PROCESS_STORAGE_PORT"`
+	ProcessStorageHost    string `mapstructure:"PROCESS_STORAGE_HOST"`
 }
 
 func (p ProcessAppConfig) IsConfig() {}
@@ -117,9 +119,12 @@ func createApplicationContext(conf ProcessAppConfig) (appContext *ApplicationCon
 	metadataRepo := metadataMongo.NewMetadataRepository(mongoClient.Database(conf.MongoName, conf.MongoDrop), conf.MetadataCollection)
 	return &ApplicationContext{
 		ImportService: &service.ImportService{
-			// todo mockup
-			ProcessStorageClient: mocks.NewDiskProcessStore("./pkg/process/imported-files"),
-			MongoClient:          &mongoClient,
+			ProcessStorageClient: &service.StorageService{
+				Port:      conf.ProcessStoragePort,
+				Host:      conf.ProcessStorageHost,
+				ChunkSize: conf.ChunkSize,
+			},
+			MongoClient: &mongoClient,
 			ValidationService: validation.NewValidationService(
 				conf.AllowedFileExtensions,
 				conf.IgnoreWrongExtension,

@@ -16,6 +16,7 @@ import (
 	"pirs.io/process/config"
 	grpcProto "pirs.io/process/grpc"
 	"pirs.io/process/service/models"
+	"time"
 )
 
 var (
@@ -89,6 +90,10 @@ func (ps *processServer) ImportProcess(stream grpcProto.Process_ImportProcessSer
 	if ctx == nil {
 		ctx = context.Background()
 	}
+	// todo tmp timeout with cancel
+	ctx, cancel := context.WithTimeout(ctx, 10*time.Hour)
+	defer cancel()
+
 	reqData := models.ImportProcessRequestData{
 		Ctx:             ctx,
 		PartialUri:      partialUri,
