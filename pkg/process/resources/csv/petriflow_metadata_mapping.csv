@@ -3,4 +3,4 @@ Initials,//initials
 Title,//title[parent::document]
 DefaultRole,//defaultRole
 TransitionRole,//transitionRole
-Roles,//role//id
+Roles,//role//id[parent::role]

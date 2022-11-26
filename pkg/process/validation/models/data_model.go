@@ -5,9 +5,9 @@ import (
 )
 
 type ValidationFlags struct {
-	IsRequestValid   bool
-	IsExtensionValid bool
-	IsSchemaValid    bool
+	IsRequestValid  bool
+	IsFileTypeValid bool
+	IsSchemaValid   bool
 }
 
 type ImportProcessValidationData struct {
