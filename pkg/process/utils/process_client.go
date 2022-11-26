@@ -20,10 +20,11 @@ var (
 const (
 	IP               = "localhost"
 	PORT             = "8080"
-	UPLOAD_FILENAME1 = "diagram.bpmn"
+	UPLOAD_FILENAME1 = "uvod.pdf"
 	UPLOAD_FILENAME2 = "car.xml"
 	CHUNK_SIZE       = 1024
 	PARTIAL_URI      = "stu.fei.myproject2"
+	MAX              = 10
 )
 
 func main() {
@@ -36,13 +37,13 @@ func main() {
 	}
 	processClient := mygrpc.NewProcessClient(conn)
 
+	start := time.Now()
 	// Call endpoints here
-	uploadFile(processClient, "./pkg/process/"+UPLOAD_FILENAME1, UPLOAD_FILENAME1)
-	uploadFile(processClient, "./pkg/process/"+UPLOAD_FILENAME1, UPLOAD_FILENAME1)
-	uploadFile(processClient, "./pkg/process/"+UPLOAD_FILENAME1, UPLOAD_FILENAME1)
-	uploadFile(processClient, "./pkg/process/"+UPLOAD_FILENAME2, UPLOAD_FILENAME2)
-	uploadFile(processClient, "./pkg/process/"+UPLOAD_FILENAME2, UPLOAD_FILENAME2)
-	uploadFile(processClient, "./pkg/process/"+UPLOAD_FILENAME2, UPLOAD_FILENAME2)
+	for i := 0; i < MAX; i++ {
+		uploadFile(processClient, "./pkg/process/"+UPLOAD_FILENAME2, UPLOAD_FILENAME2)
+	}
+	elapsed := time.Since(start)
+	log2.Info().Msgf("Elapsed time: ", elapsed)
 }
 
 func uploadFile(processClient mygrpc.ProcessClient, processPath string, filename string) {
