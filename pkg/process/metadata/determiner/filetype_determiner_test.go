@@ -9,7 +9,7 @@ import (
 )
 
 const (
-	RESOURCES = "../../resources/testing/metadata-determiner/"
+	RESOURCES = "../../resources/testing/metadata/"
 	PF1       = "empty_petriflow.xml"
 	PF2       = "v5_petriflow.xml"
 	PF3       = "v6_petriflow.xml"
