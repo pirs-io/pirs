@@ -38,16 +38,23 @@ func (ft *FileTypeValidator) Validate(data *models.ImportProcessValidationData) 
 	defer func() { data.ValidationFlags.IsFileTypeValid = isValid }()
 
 	fileType := mimetype.Detect(data.ReqData.ProcessData.Bytes())
-	doc, err := xmlquery.Parse(bytes.NewReader(data.ReqData.ProcessData.Bytes()))
-	if err != nil {
-		log.Error().Msg(err.Error())
-		return
-	}
-	processType := determiner.DetermineProcessType(doc)
-	if !ft.isAllowedType(fileType.Extension()) || processType == enums.UNKNOWN {
-	} else if !ft.ignoreWrongExtension && fileType.Extension() != ft.parseExtensionFromFileName(data.ReqData.ProcessFileName) {
+
+	if ft.isAllowedType(fileType.Extension()) &&
+		(ft.ignoreWrongExtension || fileType.Extension() == ft.parseExtensionFromFileName(data.ReqData.ProcessFileName)) {
+		// here we can call xmlquery.Parse
+		doc, err := xmlquery.Parse(bytes.NewReader(data.ReqData.ProcessData.Bytes()))
+		if err != nil {
+			log.Error().Msg(err.Error())
+			return
+		}
+		processType := determiner.DetermineProcessType(doc)
+		if processType != enums.UNKNOWN {
+			isValid = true
+		} else {
+			isValid = false
+		}
 	} else {
-		isValid = true
+		isValid = false
 	}
 }
 
