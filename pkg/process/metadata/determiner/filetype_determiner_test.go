@@ -2,6 +2,7 @@ package determiner
 
 import (
 	"github.com/antchfx/xmlquery"
+	"github.com/magiconair/properties/assert"
 	"os"
 	"pirs.io/commons"
 	"pirs.io/process/enums"
@@ -23,41 +24,12 @@ var (
 )
 
 func TestDetermineProcessType(t *testing.T) {
-	// PF1
-	result := getProcessType(RESOURCES + PF1)
-	if result != enums.Petriflow {
-		t.Error(PF1 + "should be: " + enums.Petriflow.String() + ", got: " + result.String())
-	}
-
-	// PF2
-	result = getProcessType(RESOURCES + PF2)
-	if result != enums.Petriflow {
-		t.Error(PF2 + "should be: " + enums.Petriflow.String() + ", got: " + result.String())
-	}
-
-	// PF3
-	result = getProcessType(RESOURCES + PF3)
-	if result != enums.Petriflow {
-		t.Error(PF3 + "should be: " + enums.Petriflow.String() + ", got: " + result.String())
-	}
-
-	// BPMN1
-	result = getProcessType(RESOURCES + BPMN1)
-	if result != enums.BPMN {
-		t.Error(BPMN1 + "should be: " + enums.BPMN.String() + ", got: " + result.String())
-	}
-
-	// WRONG1
-	result = getProcessType(RESOURCES + WRONG1)
-	if result != enums.UNKNOWN {
-		t.Error(WRONG1 + "should be: " + enums.UNKNOWN.String() + ", got: " + result.String())
-	}
-
-	// WRONG2
-	result = getProcessType(RESOURCES + WRONG2)
-	if result != enums.UNKNOWN {
-		t.Error(WRONG2 + "should be: " + enums.UNKNOWN.String() + ", got: " + result.String())
-	}
+	assert.Equal(t, getProcessType(RESOURCES+PF1), enums.Petriflow)
+	assert.Equal(t, getProcessType(RESOURCES+PF2), enums.Petriflow)
+	assert.Equal(t, getProcessType(RESOURCES+PF3), enums.Petriflow)
+	assert.Equal(t, getProcessType(RESOURCES+BPMN1), enums.BPMN)
+	assert.Equal(t, getProcessType(RESOURCES+WRONG1), enums.UNKNOWN)
+	assert.Equal(t, getProcessType(RESOURCES+WRONG2), enums.UNKNOWN)
 }
 
 func getProcessType(path string) enums.ProcessType {
