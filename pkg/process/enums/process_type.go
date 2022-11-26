@@ -17,3 +17,13 @@ func (pt ProcessType) String() string {
 	}
 	return "unknown"
 }
+
+func (pt ProcessType) Int() int {
+	switch pt {
+	case Petriflow:
+		return 0
+	case BPMN:
+		return 1
+	}
+	return -1
+}
