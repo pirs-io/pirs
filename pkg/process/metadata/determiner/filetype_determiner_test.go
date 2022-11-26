@@ -10,7 +10,7 @@ import (
 )
 
 const (
-	RESOURCES = "../../resources/testing/metadata/"
+	RESOURCES = "../../resources/testing/"
 	PF1       = "empty_petriflow.xml"
 	PF2       = "v5_petriflow.xml"
 	PF3       = "v6_petriflow.xml"
