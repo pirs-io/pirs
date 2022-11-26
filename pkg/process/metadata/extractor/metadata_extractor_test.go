@@ -3,6 +3,7 @@ package extractor
 import (
 	"bufio"
 	"bytes"
+	"github.com/stretchr/testify/assert"
 	"go.mongodb.org/mongo-driver/bson/primitive"
 	"golang.org/x/net/context"
 	"io"
@@ -33,106 +34,45 @@ var (
 )
 
 func TestMetadataExtractor_ExtractMetadata(t *testing.T) {
-	//basicMapping := parseMetadataMappingFromCsv(BASIC_METADATA_MAPPING)
 	petriflowMapping := parseMetadataMappingFromCsv(PETRIFLOW_METADATA_MAPPING)
 	bpmnMapping := parseMetadataMappingFromCsv(BPMN_METADATA_MAPPING)
 
-	isWrong, desc := testPetriflow(PF2, petriflowMapping)
-	if isWrong {
-		t.Error(desc)
-	}
-
+	testPetriflow(t, PF2, petriflowMapping)
 	// todo use non-empty process
-	isWrong, desc = testBpmn(BPMN1, bpmnMapping)
-	if isWrong {
-		t.Error(desc)
-	}
+	testBpmn(t, BPMN1, bpmnMapping)
 }
 
-func testPetriflow(filename string, mapping map[string]string) (bool, string) {
+func testPetriflow(t *testing.T, filename string, mapping map[string]string) {
 	me := &MetadataExtractor{
 		PetriflowCustomDataMapping: mapping,
 	}
-	wrong := false
-	wrongDesc := ""
 	request := buildRequestData(RESOURCES+filename, filename)
 	metadata := me.ExtractMetadata(request)
-	if metadata.ID == primitive.NilObjectID {
-		return true, "[" + filename + "] Metadata is corrupted, description: ID should not be NilObjectID"
-	}
-	if isWrong, desc := checkField("Encoding", metadata.Encoding, "UTF-8"); isWrong {
-		wrong = true
-		wrongDesc = wrongDesc + desc + ";"
-	}
+
+	assert.NotEqual(t, primitive.NilObjectID, metadata.ID)
+	assert.Equal(t, "UTF-8", metadata.Encoding)
 
 	customData := metadata.CustomData.(*domain.PetriflowMetadata)
-	if isWrong, desc := checkField("ProcessIdentifier", customData.ProcessIdentifier, "dashboard"); isWrong {
-		wrong = true
-		wrongDesc = wrongDesc + desc + ";"
-	}
-	if isWrong, desc := checkField("Initials", customData.Initials, "dashboard"); isWrong {
-		wrong = true
-		wrongDesc = wrongDesc + desc + ";"
-	}
-	if isWrong, desc := checkField("Title", customData.Title, "Domov"); isWrong {
-		wrong = true
-		wrongDesc = wrongDesc + desc + ";"
-	}
-	if isWrong, desc := checkField("DefaultRole", customData.DefaultRole, "false"); isWrong {
-		wrong = true
-		wrongDesc = wrongDesc + desc + ";"
-	}
-	if isWrong, desc := checkField("TransitionRole", customData.TransitionRole, "false"); isWrong {
-		wrong = true
-		wrongDesc = wrongDesc + desc + ";"
-	}
-	if isWrong, desc := checkField("Roles", customData.Roles, "system,director,dispatcher,mechanic,driver"); isWrong {
-		wrong = true
-		wrongDesc = wrongDesc + desc + ";"
-	}
-
-	if wrong {
-		return true, "[" + filename + "] Metadata is corrupted, description: " + wrongDesc
-	} else {
-		return false, ""
-	}
+	assert.Equal(t, "dashboard", customData.ProcessIdentifier)
+	assert.Equal(t, "dashboard", customData.Initials)
+	assert.Equal(t, "Domov", customData.Title)
+	assert.Equal(t, "false", customData.DefaultRole)
+	assert.Equal(t, "false", customData.TransitionRole)
+	assert.Equal(t, "system,director,dispatcher,mechanic,driver", customData.Roles)
 }
 
-func testBpmn(filename string, mapping map[string]string) (bool, string) {
+func testBpmn(t *testing.T, filename string, mapping map[string]string) {
 	me := &MetadataExtractor{
 		BPMNCustomDataMapping: mapping,
 	}
-	wrong := false
-	wrongDesc := ""
 	request := buildRequestData(RESOURCES+filename, filename)
 	metadata := me.ExtractMetadata(request)
-	if metadata.ID == primitive.NilObjectID {
-		return true, "[" + filename + "] Metadata is corrupted, description: ID should not be NilObjectID"
-	}
-	if isWrong, desc := checkField("Encoding", metadata.Encoding, "UTF-8"); isWrong {
-		wrong = true
-		wrongDesc = wrongDesc + desc + ";"
-	}
+
+	assert.NotEqual(t, primitive.NilObjectID, metadata.ID)
+	assert.Equal(t, "UTF-8", metadata.Encoding)
 
 	customData := metadata.CustomData.(*domain.BPMNMetadata)
-	if isWrong, desc := checkField("ProcessIdentifier", customData.ProcessIdentifier, "Process_1"); isWrong {
-		wrong = true
-		wrongDesc = wrongDesc + desc + ";"
-	}
-
-	if wrong {
-		return true, "[" + filename + "] Metadata is corrupted, description: " + wrongDesc
-	} else {
-		return false, ""
-	}
-}
-
-func checkField(fieldName string, fieldValue string, expectedValue string) (bool, string) {
-	if fieldValue != expectedValue {
-		return true, fieldName + " should " + expectedValue + ", got " + fieldValue
-	} else {
-		return false, ""
-	}
+	assert.Equal(t, "Process_1", customData.ProcessIdentifier)
 }
 
 func parseMetadataMappingFromCsv(csvPath string) map[string]string {
