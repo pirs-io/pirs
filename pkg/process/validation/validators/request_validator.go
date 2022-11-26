@@ -3,10 +3,12 @@ package validators
 import (
 	"pirs.io/process/validation/models"
 	"regexp"
+	"strings"
 )
 
 const (
-	FILENAME_REGEX = "^[\\w\\-. ]+$"
+	FILENAME_REGEX   = "^[\\w\\-. ]+$"
+	PARTIALURI_REGEX = "^[\\w]+$"
 )
 
 type ImportProcessRequestValidator struct {
@@ -22,10 +24,12 @@ func (rv *ImportProcessRequestValidator) Validate(data *models.ImportProcessVali
 	defer rv.ExecuteNextIfPresent(data)
 	defer func() { data.ValidationFlags.IsRequestValid = isValid }()
 
-	if !isValidDataLength(data.ReqData.ProcessData.Len(), data.ReqData.ProcessSize) {
-	} else if !isValidFileName(data.ReqData.ProcessFileName) {
-	} else {
+	if isValidDataLength(data.ReqData.ProcessData.Len(), data.ReqData.ProcessSize) &&
+		isValidFileName(data.ReqData.ProcessFileName) &&
+		isValidPartialUri(data.ReqData.PartialUri) {
 		isValid = true
+	} else {
+		isValid = false
 	}
 }
 
@@ -57,4 +61,25 @@ func isValidFileName(fileName string) bool {
 }
 func isValidDataLength(dataLen int, dataLenFromReq int) bool {
 	return dataLen != 0 && dataLen == dataLenFromReq
+}
+func isValidPartialUri(partialUri string) bool {
+	if strings.Contains(partialUri, ".") {
+		splitPartialUri := strings.Split(partialUri, ".")
+		if len(splitPartialUri) == 3 {
+			for _, part := range splitPartialUri {
+				if len(part) == 0 {
+					return false
+				}
+				isValid, err := regexp.MatchString(PARTIALURI_REGEX, part)
+				if err != nil || !isValid {
+					return false
+				}
+			}
+			return true
+		} else {
+			return false
+		}
+	} else {
+		return false
+	}
 }
