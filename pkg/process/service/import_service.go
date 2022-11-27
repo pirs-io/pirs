@@ -45,8 +45,8 @@ func (is *ImportService) ImportProcess(req *models.ImportProcessRequestData) *mo
 		return createResponse(codes.Aborted)
 	}
 	// save metadata
-	insertedMetadata := is.MetadataService.InsertOne(req.Ctx, &m)
-	if insertedMetadata.ID == primitive.NilObjectID {
+	insertedID := is.MetadataService.InsertOne(req.Ctx, &m)
+	if *insertedID == primitive.NilObjectID {
 		return createResponse(codes.Internal)
 	}
 	// apply grace period

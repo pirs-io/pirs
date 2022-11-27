@@ -1,3 +1,4 @@
+// Package config is responsible for config loading and creating application context.
 package config
 
 import (
@@ -18,6 +19,7 @@ var (
 	processApplicationContext *ApplicationContext = nil
 )
 
+// A ProcessAppConfig contains loaded data from ENV config file
 type ProcessAppConfig struct {
 	GrpcIp                string `mapstructure:"GRPC_IP"`
 	GrpcPort              int    `mapstructure:"GRPC_PORT"`
@@ -43,24 +45,26 @@ type ProcessAppConfig struct {
 
 func (p ProcessAppConfig) IsConfig() {}
 
+// An ApplicationContext contains initialized config struct and all the main services
 type ApplicationContext struct {
 	AppConfig     *ProcessAppConfig
 	ImportService *service.ImportService
 }
 
+// GetContext returns ApplicationContext instance, that is stored in a variable processApplicationContext
 func GetContext() *ApplicationContext {
 	return processApplicationContext
 }
 
+// InitApp initializes ProcessAppConfig from given configFilePath and initializes services by createApplicationContext().
+// If success, ProcessAppConfig instance is returned, otherwise, it panics.
 func InitApp(configFilePath string) (conf *ProcessAppConfig) {
-	// config loading
 	log.Info().Msg("Initializing Process service...")
 	conf, confErr := commons.GetAppConfig(configFilePath, &ProcessAppConfig{})
 	if confErr != nil {
 		log.Fatal().Msgf("Unable to load application config for Process service! %s", confErr)
 	}
 
-	// create app context
 	appCtx, contextErr := createApplicationContext(*conf)
 	if contextErr != nil {
 		log.Fatal().Msgf("Error intializing app context for Process service")

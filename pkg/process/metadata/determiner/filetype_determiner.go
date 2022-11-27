@@ -5,6 +5,9 @@ import (
 	"pirs.io/process/enums"
 )
 
+// DetermineProcessType takes pointer of xmlquery.Node to represent XML content and determines the enums.ProcessType.
+// If success, valid enums.ProcessType instance is returned, otherwise enums.UNKNOWN is returned. It can fail if more
+// than one sub-function returns valid enums.ProcessType.
 func DetermineProcessType(doc *xmlquery.Node) enums.ProcessType {
 	var (
 		finalType = enums.UNKNOWN

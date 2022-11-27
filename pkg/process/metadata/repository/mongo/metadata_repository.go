@@ -9,23 +9,29 @@ import (
 	"pirs.io/process/domain"
 )
 
+// A MetadataRepository holds DB and Collection instances. It's initialized in config package.
 type MetadataRepository struct {
 	DB         mongo.Database
 	Collection mongo.Collection
 }
 
+// NewMetadataRepository creates instance pointer of MetadataRepository
 func NewMetadataRepository(db mongo.Database, collectionName string) *MetadataRepository {
 	return &MetadataRepository{db, db.Collection(collectionName)}
 }
 
-func (m *MetadataRepository) InsertOne(ctx context.Context, metadata *domain.Metadata) (*domain.Metadata, error) {
-	_, err := m.Collection.InsertOne(ctx, metadata)
+// InsertOne inserts given domain.Metadata into database. It returns ID if success. Otherwise, an error is returned.
+func (m *MetadataRepository) InsertOne(ctx context.Context, metadata *domain.Metadata) (interface{}, error) {
+	id, err := m.Collection.InsertOne(ctx, metadata)
 	if err != nil {
-		return metadata, err
+		return id, err
 	}
-	return metadata, nil
+	return id, nil
 }
 
+// FindNewestVersionByURI finds the newest version number of process based on given URI. Parameter uri corresponds
+// to uri_without_version in database. If success, the version from database is returned. Otherwise, 0 as version along
+// with error is returned.
 func (m *MetadataRepository) FindNewestVersionByURI(ctx context.Context, uri string) (uint32, error) {
 	var data []domain.Metadata
 	opts := options.MergeFindOptions(

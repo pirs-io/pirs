@@ -28,6 +28,9 @@ type processServer struct {
 	appContext *config.ApplicationContext
 }
 
+// ImportProcess handles request to import process file along with metadata. It authorizes user, validates request,
+// extracts metadata, generates response. If success, a success message is sent to the client. Otherwise, a fail message
+// is sent.
 func (ps *processServer) ImportProcess(stream grpcProto.Process_ImportProcessServer) error {
 	importProcessResponse := grpcProto.ImportProcessResponse{}
 	createFailureResponse := func(response *grpcProto.ImportProcessResponse, filename string) {
@@ -128,10 +131,11 @@ func (c *processServer) DownloadProcess(ctx context.Context, req *grpcProto.Down
 	return nil, status.Errorf(codes.Unimplemented, "method DownloadProcess not implemented")
 }
 
-func StartGrpc(grpcIp string, grpcPort int, isReflection bool) error {
+// StartGrpc serves GRPC server on given host and port. If it cannot serve, an error is returned.
+func StartGrpc(host string, port int, isReflection bool) error {
 	flag.Parse()
-	log.Info().Msgf("Starting Process service listening on %s:%d...", grpcIp, grpcPort)
-	lis, networkErr := net.Listen("tcp", fmt.Sprintf("%s:%d", grpcIp, grpcPort))
+	log.Info().Msgf("Starting Process service listening on %s:%d...", host, port)
+	lis, networkErr := net.Listen("tcp", fmt.Sprintf("%s:%d", host, port))
 	if networkErr != nil {
 		return networkErr
 	}
