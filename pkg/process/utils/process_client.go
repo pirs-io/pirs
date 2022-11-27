@@ -24,7 +24,7 @@ const (
 	UPLOAD_FILENAME2 = "car.xml"
 	CHUNK_SIZE       = 1024
 	PARTIAL_URI      = "stu.fei.myproject2"
-	MAX              = 10
+	MAX              = 3
 )
 
 func main() {

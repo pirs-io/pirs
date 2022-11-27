@@ -9,7 +9,9 @@ import (
 	"io"
 	"pirs.io/commons"
 	"pirs.io/process/domain"
+	"pirs.io/process/enums"
 	mygrpc "pirs.io/process/grpc"
+	"strings"
 )
 
 var (
@@ -28,15 +30,7 @@ func (ss *StorageService) SaveFile(reqCtx context.Context, m domain.Metadata, fi
 		return err
 	}
 
-	reqData := &mygrpc.ProcessFileData_Metadata{
-		Metadata: &mygrpc.ProcessMetadata{
-			ProcessId: m.URI,
-			Filename:  m.FileName,
-			Encoding:  0,
-			Type:      0,
-		},
-	}
-
+	reqMetadata := ss.transformMetadataToRequest(&m)
 	stream, err := client.UploadProcess(reqCtx)
 	if err != nil {
 		log.Error().Msgf("could not establish stream connection: %v", err)
@@ -59,48 +53,107 @@ func (ss *StorageService) SaveFile(reqCtx context.Context, m domain.Metadata, fi
 		}
 	}()
 
-	if err := stream.Send(&mygrpc.ProcessUploadRequest{
-		Data: &mygrpc.ProcessFileData{
-			Data: reqData,
-		},
-	}); err != nil {
-		log.Error().Msg(err.Error())
+	err = ss.sendMetadataRequest(stream, reqMetadata)
+	if err != nil {
 		return err
 	}
 
-	reader := bytes.NewReader(fileData)
-	buffer := make([]byte, ss.ChunkSize)
-	for {
-		n, err := reader.Read(buffer)
-		if err == io.EOF {
-			break
-		}
-		if err != nil {
-			log.Error().Msgf("cannot read chunk to buffer: ", err)
-			return err
-		}
-
-		req := &mygrpc.ProcessFileData_Chunk{Chunk: buffer[:n]}
-
-		err = stream.Send(&mygrpc.ProcessUploadRequest{
-			Data: &mygrpc.ProcessFileData{
-				Data: req,
-			},
-		})
-		if err != nil {
-			log.Error().Msgf("cannot send chunk to server: ", err, stream.RecvMsg(nil))
-			return err
-		}
+	sync := make(chan bool)
+	c := ss.createFileChunksAsync(fileData, sync)
+	err = ss.sendFileChunks(stream, c, sync)
+	if err != nil {
+		return err
 	}
 
 	err = stream.CloseSend()
 	if err != nil {
-		log.Error().Msgf("cannot close stream connection: ", err)
+		log.Error().Msgf("cannot close stream connection: %v", err)
 		return err
 	}
 	<-waitc
 
 	return nil
+}
+
+func (ss *StorageService) sendMetadataRequest(stream mygrpc.Storage_UploadProcessClient, metadata *mygrpc.ProcessFileData_Metadata) error {
+	if err := stream.Send(&mygrpc.ProcessUploadRequest{
+		Data: &mygrpc.ProcessFileData{
+			Data: metadata,
+		},
+	}); err != nil {
+		log.Error().Msg(err.Error())
+		return err
+	} else {
+		return nil
+	}
+}
+
+// receiver
+func (ss *StorageService) sendFileChunks(stream mygrpc.Storage_UploadProcessClient, c <-chan []byte, sync chan<- bool) error {
+	for chunk := range c {
+		req := &mygrpc.ProcessFileData_Chunk{Chunk: chunk}
+
+		err := stream.Send(&mygrpc.ProcessUploadRequest{
+			Data: &mygrpc.ProcessFileData{
+				Data: req,
+			},
+		})
+		if err != nil {
+			log.Error().Msgf("cannot send chunk to server: %v, %v", err, stream.RecvMsg(nil))
+			close(sync)
+			return err
+		}
+		sync <- true
+	}
+	close(sync)
+	return nil
+}
+
+// generator
+func (ss *StorageService) createFileChunksAsync(fileData []byte, sync <-chan bool) <-chan []byte {
+	c := make(chan []byte)
+
+	go func() {
+		defer close(c)
+		reader := bytes.NewReader(fileData)
+		buffer := make([]byte, ss.ChunkSize)
+		for {
+			n, err := reader.Read(buffer)
+			if err == io.EOF {
+				break
+			}
+			if err != nil {
+				log.Error().Msgf("cannot read chunk to buffer: %v", err)
+				return
+			}
+
+			c <- buffer[:n]
+			<-sync
+		}
+	}()
+
+	return c
+}
+
+func (ss *StorageService) transformMetadataToRequest(m *domain.Metadata) *mygrpc.ProcessFileData_Metadata {
+	return &mygrpc.ProcessFileData_Metadata{
+		Metadata: &mygrpc.ProcessMetadata{
+			ProcessId: m.URI,
+			Filename:  m.FileName,
+			Encoding:  ss.transformEncoding(m.Encoding),
+			Type:      ss.transformProcessType(m.ProcessType),
+		},
+	}
+}
+
+func (ss *StorageService) transformProcessType(pt enums.ProcessType) mygrpc.ProcessType {
+	mappedInt := mygrpc.ProcessType_value[pt.String()]
+	return mygrpc.ProcessType(mappedInt)
+}
+
+func (ss *StorageService) transformEncoding(e string) mygrpc.Encoding {
+	trimmed := strings.Replace(e, "-", "", -1)
+	return mygrpc.Encoding(mygrpc.Encoding_value[trimmed])
 }
 
 func (ss *StorageService) createClient() (mygrpc.StorageClient, error) {
@@ -110,7 +163,7 @@ func (ss *StorageService) createClient() (mygrpc.StorageClient, error) {
 
 	conn, err := grpc.Dial(ss.Host+":"+ss.Port, opts...)
 	if err != nil {
-		log.Error().Msgf("cannot dial process-storage server: ", err)
+		log.Error().Msgf("cannot dial process-storage server: %v", err)
 		return nil, err
 	}
 

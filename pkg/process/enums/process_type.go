@@ -11,11 +11,11 @@ const (
 func (pt ProcessType) String() string {
 	switch pt {
 	case Petriflow:
-		return "petriflow"
+		return "PETRIFLOW"
 	case BPMN:
-		return "bpmn"
+		return "BPMN"
 	}
-	return "unknown"
+	return "UNKNOWN"
 }
 
 func (pt ProcessType) Int() int {

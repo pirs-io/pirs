@@ -11,7 +11,6 @@ import (
 )
 
 type ImportService struct {
-	// todo mockup
 	ProcessStorageClient *StorageService
 	MongoClient          *mongo.Client
 	ValidationService    *validation.ValidationService
