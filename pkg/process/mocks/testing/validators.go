@@ -1,4 +1,4 @@
-package mocks
+package testing
 
 import (
 	"pirs.io/process/validation/models"

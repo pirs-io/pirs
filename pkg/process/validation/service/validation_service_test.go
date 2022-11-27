@@ -2,7 +2,7 @@ package service
 
 import (
 	"github.com/stretchr/testify/assert"
-	"pirs.io/process/mocks"
+	mockTesting "pirs.io/process/mocks/testing"
 	"pirs.io/process/service/models"
 	valModels "pirs.io/process/validation/models"
 	"testing"
@@ -33,13 +33,13 @@ func TestValidationService_ValidateProcessData(t *testing.T) {
 
 func buildValidationChainsTest(isFail bool) valModels.Validator {
 	// define validators
-	requestValidator := &mocks.ImportProcessRequestValidator{
+	requestValidator := &mockTesting.ImportProcessRequestValidator{
 		MockResult: !isFail,
 	}
-	fileTypeValidator := &mocks.FileTypeValidator{
+	fileTypeValidator := &mockTesting.FileTypeValidator{
 		MockResult: true,
 	}
-	schemaValidator := &mocks.SchemaValidator{
+	schemaValidator := &mockTesting.SchemaValidator{
 		MockResult: true,
 	}
 	// create chain
