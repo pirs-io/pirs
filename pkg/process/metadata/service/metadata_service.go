@@ -43,16 +43,16 @@ func (ms *MetadataService) CreateMetadata(req models.ImportProcessRequestData) d
 }
 
 // InsertOne passes given domain.Metadata to the repository layer along with added context timeout.
-func (ms *MetadataService) InsertOne(c context.Context, m *domain.Metadata) *primitive.ObjectID {
+func (ms *MetadataService) InsertOne(c context.Context, m *domain.Metadata) primitive.ObjectID {
 	ctx, cancel := context.WithTimeout(c, ms.contextTimeout)
 	defer cancel()
 
 	res, err := ms.repository.InsertOne(ctx, m)
 	if err != nil {
 		log.Error().Msg(status.Errorf(codes.Internal, "could not insert metadata into database: %v", err).Error())
-		return &primitive.NilObjectID
+		return primitive.NilObjectID
 	}
-	return res.(*primitive.ObjectID)
+	return res.(primitive.ObjectID)
 }
 
 // FindNewestVersionByURI passes given uri to the repository layer along with added context timeout. If repository returns
