@@ -11,6 +11,7 @@ const (
 	PARTIALURI_REGEX = "^[\\w]+$"
 )
 
+// An ImportProcessRequestValidator contains next validator instance. It's implementation of models.Validator
 type ImportProcessRequestValidator struct {
 	next models.Validator
 }
@@ -19,6 +20,8 @@ type ImportPackageRequestValidator struct {
 	next models.Validator
 }
 
+// Validate takes models.ImportProcessValidationData and validates it in request context. If data is valid, it sets
+// field IsRequestValid of models.ValidationFlags to true. Otherwise it sets to false.
 func (rv *ImportProcessRequestValidator) Validate(data *models.ImportProcessValidationData) {
 	var isValid bool
 	defer rv.ExecuteNextIfPresent(data)

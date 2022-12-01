@@ -15,12 +15,17 @@ var (
 	log = commons.GetLoggerFor("FileTypeValidator")
 )
 
+// A FileTypeValidator contains configurations to validate content type and next validator instance. It's implementation
+// of models.Validator
 type FileTypeValidator struct {
 	allowedExtensions    []string
 	ignoreWrongExtension bool
 	next                 models.Validator
 }
 
+// NewFileTypeValidator creates FileTypeValidator instance. Parameter rawExtensions is initialized in config package and
+// represents all the file type extensions, that can be accepted. If parameter ignoreWrongExtension is set to true, then
+// method FileTypeValidator.Validate doesn't compare extension from the filename with the extension found out by system.
 func NewFileTypeValidator(rawExtensions string, ignoreWrongExtension bool) *FileTypeValidator {
 	parsedExtensions := strings.Split(rawExtensions, ",")
 	for i, extension := range parsedExtensions {
@@ -32,6 +37,8 @@ func NewFileTypeValidator(rawExtensions string, ignoreWrongExtension bool) *File
 	}
 }
 
+// Validate takes models.ImportProcessValidationData and validates it in file-type context. If data is valid, it sets
+// field IsFileTypeValid of models.ValidationFlags to true. Otherwise it sets to false.
 func (ft *FileTypeValidator) Validate(data *models.ImportProcessValidationData) {
 	var isValid bool
 	defer ft.ExecuteNextIfPresent(data)

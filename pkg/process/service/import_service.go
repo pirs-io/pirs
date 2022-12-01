@@ -10,6 +10,7 @@ import (
 	validation "pirs.io/process/validation/service"
 )
 
+// An ImportService handles parsed request data from GRPC server to import process files.
 type ImportService struct {
 	ProcessStorageClient *StorageService
 	MongoClient          *mongo.Client
@@ -17,6 +18,8 @@ type ImportService struct {
 	MetadataService      *metadata.MetadataService
 }
 
+// ImportProcess handles models.ImportProcessRequestData. If success, it returns models.ImportProcessResponseData with codes.OK. Otherwise,
+// a response with error code is returned.
 func (is *ImportService) ImportProcess(req *models.ImportProcessRequestData) *models.ImportProcessResponseData {
 	createResponse := func(code codes.Code) *models.ImportProcessResponseData {
 		return &models.ImportProcessResponseData{

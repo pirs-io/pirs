@@ -13,10 +13,13 @@ var (
 	log = commons.GetLoggerFor("ValidationService")
 )
 
+// A ValidationService contains validation chain, that is used to validate models.ImportProcessValidationData.
 type ValidationService struct {
 	chainStart models.Validator
 }
 
+// NewValidationService creates instance of ValidationService with validation chain. This validation chain is created by
+// function buildValidationChains.
 func NewValidationService(rawExtensions string, ignoreWrongExtension bool) *ValidationService {
 	chainStart := buildValidationChains(rawExtensions, ignoreWrongExtension)
 	return &ValidationService{
@@ -36,6 +39,8 @@ func buildValidationChains(rawExtensions string, ignoreWrongExtension bool) mode
 	return requestValidator
 }
 
+// ValidateProcessData validates models.ImportProcessValidationData by models.Validator implementations. It returns true,
+// if all the models.ValidationFlags are set to true. Otherwise, false is returned.
 func (vs *ValidationService) ValidateProcessData(data *models.ImportProcessValidationData) bool {
 	vs.chainStart.Validate(data)
 	validationFlags := reflect.ValueOf(data.ValidationFlags)

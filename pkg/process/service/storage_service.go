@@ -18,12 +18,16 @@ var (
 	log = commons.GetLoggerFor("StorageService")
 )
 
+// A StorageService is used to save process bytes into storage managed by Process-Storage. Host and Port describes
+// Process-Storage instance. It's initialized in the config package.
 type StorageService struct {
 	Port      string
 	Host      string
 	ChunkSize int
 }
 
+// SaveFile takes domain.Metadata with array of bytes of process file and streams this data with grpc.StorageClient.
+// On success no error is returned. If it fails, an error is returned.
 func (ss *StorageService) SaveFile(reqCtx context.Context, m domain.Metadata, fileData []byte) error {
 	client, err := ss.createClient()
 	if err != nil {
@@ -70,11 +74,13 @@ func (ss *StorageService) SaveFile(reqCtx context.Context, m domain.Metadata, fi
 		log.Error().Msgf("cannot close stream connection: %v", err)
 		return err
 	}
+	// wait for goroutine to handle all the data and end.
 	<-waitc
 
 	return nil
 }
 
+// sendMetadataRequest takes stream and metadata. This data get wrapped and sent through the stream.
 func (ss *StorageService) sendMetadataRequest(stream mygrpc.Storage_UploadProcessClient, metadata *mygrpc.ProcessFileData_Metadata) error {
 	if err := stream.Send(&mygrpc.ProcessUploadRequest{
 		Data: &mygrpc.ProcessFileData{
@@ -88,7 +94,8 @@ func (ss *StorageService) sendMetadataRequest(stream mygrpc.Storage_UploadProces
 	}
 }
 
-// receiver
+// sendFileChunks takes stream, c channel to read bytes to send and sync channel where it signals to createFileChunksAsync,
+// that data were sent. This function is the receiver of c and sender of sync.
 func (ss *StorageService) sendFileChunks(stream mygrpc.Storage_UploadProcessClient, c <-chan []byte, sync chan<- bool) error {
 	for chunk := range c {
 		req := &mygrpc.ProcessFileData_Chunk{Chunk: chunk}
@@ -109,7 +116,9 @@ func (ss *StorageService) sendFileChunks(stream mygrpc.Storage_UploadProcessClie
 	return nil
 }
 
-// generator
+// createFileChunksAsync takes array of bytes of process file and sync channel. It firstly creates read-only channel, that
+// gets returned. It also executes a goroutine. This goroutine reads byte array, which is divided into chunks and sent
+// through the created channel. This function uses sync channel to make sure the chunk is read before writing new one in.
 func (ss *StorageService) createFileChunksAsync(fileData []byte, sync <-chan bool) <-chan []byte {
 	c := make(chan []byte)
 

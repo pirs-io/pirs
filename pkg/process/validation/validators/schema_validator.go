@@ -4,10 +4,13 @@ import (
 	"pirs.io/process/validation/models"
 )
 
+// An SchemaValidator contains next validator instance. It's implementation of models.Validator
 type SchemaValidator struct {
 	next models.Validator
 }
 
+// Validate takes models.ImportProcessValidationData and validates it in schema context. If data is valid, it sets
+// field IsSchemaValid of models.ValidationFlags to true. Otherwise it sets to false.
 func (sv *SchemaValidator) Validate(data *models.ImportProcessValidationData) {
 	var isValid bool
 	defer sv.ExecuteNextIfPresent(data)
