@@ -3,7 +3,6 @@ package service
 import (
 	"go.mongodb.org/mongo-driver/bson/primitive"
 	"google.golang.org/grpc/codes"
-	"pirs.io/process/db/mongo"
 	metadata "pirs.io/process/metadata/service"
 	"pirs.io/process/service/models"
 	valModels "pirs.io/process/validation/models"
@@ -13,7 +12,6 @@ import (
 // An ImportService handles parsed request data from GRPC server to import process files.
 type ImportService struct {
 	ProcessStorageClient *StorageService
-	MongoClient          *mongo.Client
 	ValidationService    *validation.ValidationService
 	MetadataService      *metadata.MetadataService
 }

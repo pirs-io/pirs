@@ -51,10 +51,13 @@ type BPMNMetadata struct {
 
 // NewMetadata creates Metadata instance pointer, which contains initialized Metadata.ID and Metadata.CreatedAt fields.
 func NewMetadata() *Metadata {
-	return &Metadata{
+	m := &Metadata{
 		ID:        primitive.NewObjectID(),
 		CreatedAt: time.Now(),
 	}
+	m.UpdateVersion(1)
+
+	return m
 }
 
 // BuildURI joins elements of SplitURI in URI and URIWithoutVersion.

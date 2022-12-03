@@ -10,10 +10,13 @@ import (
 	"google.golang.org/grpc/codes"
 	"google.golang.org/grpc/reflection"
 	"google.golang.org/grpc/status"
+	"google.golang.org/protobuf/types/known/structpb"
 	"io"
 	"net"
 	"pirs.io/commons"
+	"pirs.io/commons/structs"
 	"pirs.io/process/config"
+	"pirs.io/process/domain"
 	grpcProto "pirs.io/process/grpc"
 	"pirs.io/process/service/models"
 	"time"
@@ -127,8 +130,17 @@ func (c *processServer) RemoveProcess(ctx context.Context, req *grpcProto.Remove
 }
 
 func (c *processServer) DownloadProcess(ctx context.Context, req *grpcProto.DownloadProcessRequest) (*grpcProto.DownloadProcessResponse, error) {
-	// todo
-	return nil, status.Errorf(codes.Unimplemented, "method DownloadProcess not implemented")
+	m := domain.NewMetadata()
+	m.SplitURI = [5]string{"awd", "awd", "awd", "awd", "1"}
+
+	newM, err := structpb.NewStruct(structs.ToMap(m))
+	if err != nil {
+	}
+
+	return &grpcProto.DownloadProcessResponse{
+		Message:  "success",
+		Metadata: newM,
+	}, nil
 }
 
 // StartGrpc serves GRPC server on given host and port. If it cannot serve, an error is returned.

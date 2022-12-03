@@ -16,10 +16,6 @@ import (
 	"strings"
 )
 
-const (
-	DEFAULT_VERSION = 1
-)
-
 var (
 	log = commons.GetLoggerFor("MetadataExtractor")
 )
@@ -56,7 +52,6 @@ func (me *MetadataExtractor) ExtractMetadata(req models.ImportProcessRequestData
 	m.FileSize = req.ProcessSize
 	m.Publisher = "not implemented"
 	m.ProcessType = determiner.DetermineProcessType(doc)
-	m.UpdateVersion(DEFAULT_VERSION)
 
 	// dependency data
 	dd := &domain.DependencyMetadata{}

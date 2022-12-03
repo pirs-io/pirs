@@ -3,12 +3,14 @@ package main
 import (
 	"bufio"
 	"context"
+	"encoding/json"
 	"flag"
 	"google.golang.org/grpc"
 	"google.golang.org/grpc/credentials/insecure"
 	"io"
 	"os"
 	"pirs.io/commons"
+	"pirs.io/process/domain"
 	mygrpc "pirs.io/process/grpc"
 	"time"
 )
@@ -22,9 +24,12 @@ const (
 	PORT             = "8080"
 	UPLOAD_FILENAME1 = "uvod.pdf"
 	UPLOAD_FILENAME2 = "car.xml"
+	URI1             = "awd.awd.awd.awd:11"
+	URI2             = ""
 	CHUNK_SIZE       = 1024
 	PARTIAL_URI      = "stu.fei.myproject2"
-	MAX              = 3
+	MAX_IMPORT       = 1
+	MAX_DOWNLOAD     = 1
 )
 
 func main() {
@@ -37,13 +42,53 @@ func main() {
 	}
 	processClient := mygrpc.NewProcessClient(conn)
 
+	importProcess(processClient)
+	downloadProcess(processClient)
+}
+
+func downloadProcess(client mygrpc.ProcessClient) {
 	start := time.Now()
 	// Call endpoints here
-	for i := 0; i < MAX; i++ {
-		uploadFile(processClient, "./pkg/process/"+UPLOAD_FILENAME2, UPLOAD_FILENAME2)
+	for i := 0; i < MAX_DOWNLOAD; i++ {
+		downloadData(client, PARTIAL_URI+".car:1")
 	}
 	elapsed := time.Since(start)
-	log2.Info().Msgf("Elapsed time: ", elapsed)
+	log2.Info().Msgf("downloadProcess elapsed time: ", elapsed)
+}
+
+func downloadData(client mygrpc.ProcessClient, uri string) {
+	ctx, cancel := context.WithTimeout(context.Background(), 5*time.Second)
+	defer cancel()
+
+	req := &mygrpc.DownloadProcessRequest{
+		Uri: uri,
+	}
+
+	response, err := client.DownloadProcess(ctx, req)
+	if err != nil {
+		return
+	}
+	if response.Metadata == nil {
+		return
+	}
+
+	// example handling response
+	metadataFromResponse := domain.Metadata{}
+	jsonString, _ := json.Marshal(response.Metadata)
+	err = json.Unmarshal(jsonString, &metadataFromResponse)
+	if err != nil {
+		return
+	}
+}
+
+func importProcess(client mygrpc.ProcessClient) {
+	start := time.Now()
+	// Call endpoints here
+	for i := 0; i < MAX_IMPORT; i++ {
+		uploadFile(client, "./pkg/process/"+UPLOAD_FILENAME2, UPLOAD_FILENAME2)
+	}
+	elapsed := time.Since(start)
+	log2.Info().Msgf("importProcess elapsed time: ", elapsed)
 }
 
 func uploadFile(processClient mygrpc.ProcessClient, processPath string, filename string) {

@@ -128,7 +128,6 @@ func createApplicationContext(conf ProcessAppConfig) (appContext *ApplicationCon
 				Host:      conf.ProcessStorageHost,
 				ChunkSize: conf.ChunkSize,
 			},
-			MongoClient: &mongoClient,
 			ValidationService: validation.NewValidationService(
 				conf.AllowedFileExtensions,
 				conf.IgnoreWrongExtension,
