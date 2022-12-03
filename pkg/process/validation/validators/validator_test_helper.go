@@ -62,7 +62,7 @@ func buildValidationData(path string, filename string) valModels.ImportProcessVa
 			ProcessData:     *bytes.NewBuffer(data),
 			ProcessSize:     totalSize,
 		},
-		ValidationFlags: valModels.ValidationFlags{},
+		ValidationFlags: valModels.ImportProcessValidationFlags{},
 	}
 }
 

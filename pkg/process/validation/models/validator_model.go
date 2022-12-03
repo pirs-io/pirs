@@ -1,7 +1,7 @@
 package models
 
 type Validator interface {
-	Validate(*ImportProcessValidationData)
+	Validate(interface{})
 	SetNext(Validator)
-	ExecuteNextIfPresent(*ImportProcessValidationData)
+	ExecuteNextIfPresent(interface{})
 }

@@ -5,6 +5,7 @@ import (
 	"pirs.io/process/domain"
 	metadata "pirs.io/process/metadata/service"
 	"pirs.io/process/service/models"
+	valModels "pirs.io/process/validation/models"
 	validation "pirs.io/process/validation/service"
 )
 
@@ -13,7 +14,7 @@ type DownloadService struct {
 	ValidationService *validation.ValidationService
 }
 
-func (ds *DownloadService) DownloadProcess(uri string) *models.DownloadProcessResponseData {
+func (ds *DownloadService) DownloadProcess(req *models.DownloadProcessRequestData) *models.DownloadProcessResponseData {
 	createResponse := func(code codes.Code, m []domain.Metadata) *models.DownloadProcessResponseData {
 		return &models.DownloadProcessResponseData{
 			Status:   code,
@@ -22,6 +23,11 @@ func (ds *DownloadService) DownloadProcess(uri string) *models.DownloadProcessRe
 	}
 
 	// validate
+	valData := ds.transformRequestDataToValidationData(*req)
+	isValid := ds.ValidationService.ValidateDownloadData(valData)
+	if !isValid {
+		return createResponse(codes.InvalidArgument, nil)
+	}
 	// find in repo metadata
 	// resolve deps
 	// find additional dependent metadata
@@ -32,4 +38,11 @@ func (ds *DownloadService) DownloadProcess(uri string) *models.DownloadProcessRe
 		ProcessIdentifier: "awdawdawd",
 	}
 	return createResponse(codes.OK, []domain.Metadata{*customM, *domain.NewMetadata(), *domain.NewMetadata(), *domain.NewMetadata(), *domain.NewMetadata(), *domain.NewMetadata()})
+}
+
+func (ds *DownloadService) transformRequestDataToValidationData(reqData models.DownloadProcessRequestData) *valModels.DownloadProcessValidationData {
+	return &valModels.DownloadProcessValidationData{
+		ReqData:         reqData,
+		ValidationFlags: valModels.DownloadProcessValidationFlags{},
+	}
 }

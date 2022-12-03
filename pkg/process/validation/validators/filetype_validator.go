@@ -39,17 +39,18 @@ func NewFileTypeValidator(rawExtensions string, ignoreWrongExtension bool) *File
 
 // Validate takes models.ImportProcessValidationData and validates it in file-type context. If data is valid, it sets
 // field IsFileTypeValid of models.ValidationFlags to true. Otherwise it sets to false.
-func (ft *FileTypeValidator) Validate(data *models.ImportProcessValidationData) {
+func (ft *FileTypeValidator) Validate(data interface{}) {
+	typedData := data.(*models.ImportProcessValidationData)
 	var isValid bool
-	defer ft.ExecuteNextIfPresent(data)
-	defer func() { data.ValidationFlags.IsFileTypeValid = isValid }()
+	defer ft.ExecuteNextIfPresent(typedData)
+	defer func() { typedData.ValidationFlags.IsFileTypeValid = isValid }()
 
-	fileType := mimetype.Detect(data.ReqData.ProcessData.Bytes())
+	fileType := mimetype.Detect(typedData.ReqData.ProcessData.Bytes())
 
 	if ft.isAllowedType(fileType.Extension()) &&
-		(ft.ignoreWrongExtension || fileType.Extension() == ft.parseExtensionFromFileName(data.ReqData.ProcessFileName)) {
+		(ft.ignoreWrongExtension || fileType.Extension() == ft.parseExtensionFromFileName(typedData.ReqData.ProcessFileName)) {
 		// here we can call xmlquery.Parse
-		doc, err := xmlquery.Parse(bytes.NewReader(data.ReqData.ProcessData.Bytes()))
+		doc, err := xmlquery.Parse(bytes.NewReader(typedData.ReqData.ProcessData.Bytes()))
 		if err != nil {
 			log.Error().Msg(err.Error())
 			return
@@ -65,7 +66,7 @@ func (ft *FileTypeValidator) Validate(data *models.ImportProcessValidationData) 
 	}
 }
 
-func (ft *FileTypeValidator) ExecuteNextIfPresent(data *models.ImportProcessValidationData) {
+func (ft *FileTypeValidator) ExecuteNextIfPresent(data interface{}) {
 	if ft.next != nil {
 		ft.next.Validate(data)
 	}

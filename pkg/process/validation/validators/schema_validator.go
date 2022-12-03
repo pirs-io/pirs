@@ -11,10 +11,11 @@ type SchemaValidator struct {
 
 // Validate takes models.ImportProcessValidationData and validates it in schema context. If data is valid, it sets
 // field IsSchemaValid of models.ValidationFlags to true. Otherwise it sets to false.
-func (sv *SchemaValidator) Validate(data *models.ImportProcessValidationData) {
+func (sv *SchemaValidator) Validate(data interface{}) {
+	typedData := data.(*models.ImportProcessValidationData)
 	var isValid bool
-	defer sv.ExecuteNextIfPresent(data)
-	defer func() { data.ValidationFlags.IsSchemaValid = isValid }()
+	defer sv.ExecuteNextIfPresent(typedData)
+	defer func() { typedData.ValidationFlags.IsSchemaValid = isValid }()
 
 	// todo
 	// neexistuje standard libka, len github projekty. Vacsina to su nieco ako skolske projekty, ktore nie su podporovane
@@ -24,7 +25,7 @@ func (sv *SchemaValidator) Validate(data *models.ImportProcessValidationData) {
 	isValid = true
 }
 
-func (sv *SchemaValidator) ExecuteNextIfPresent(data *models.ImportProcessValidationData) {
+func (sv *SchemaValidator) ExecuteNextIfPresent(data interface{}) {
 	if sv.next != nil {
 		sv.next.Validate(data)
 	}

@@ -133,7 +133,10 @@ func (ps *processServer) DownloadProcess(req *grpcProto.DownloadProcessRequest, 
 	// todo
 
 	// main logic
-	response := ps.appContext.DownloadService.DownloadProcess(req.Uri)
+	reqData := models.DownloadProcessRequestData{
+		Uri: req.Uri,
+	}
+	response := ps.appContext.DownloadService.DownloadProcess(&reqData)
 
 	// handle response
 	if response.Status == codes.OK {

@@ -25,7 +25,7 @@ func (is *ImportService) ImportProcess(req *models.ImportProcessRequestData) *mo
 		}
 	}
 	// validate process data
-	valData := transformRequestDataToValidationData(*req)
+	valData := is.transformRequestDataToValidationData(*req)
 	isValid := is.ValidationService.ValidateProcessData(valData)
 	if !isValid {
 		return createResponse(codes.InvalidArgument)
@@ -56,10 +56,10 @@ func (is *ImportService) ImportProcess(req *models.ImportProcessRequestData) *mo
 	return createResponse(codes.OK)
 }
 
-func transformRequestDataToValidationData(reqData models.ImportProcessRequestData) *valModels.ImportProcessValidationData {
+func (is *ImportService) transformRequestDataToValidationData(reqData models.ImportProcessRequestData) *valModels.ImportProcessValidationData {
 	return &valModels.ImportProcessValidationData{
 		ReqData:         reqData,
-		ValidationFlags: valModels.ValidationFlags{},
+		ValidationFlags: valModels.ImportProcessValidationFlags{},
 	}
 }
 

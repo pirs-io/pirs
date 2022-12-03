@@ -4,8 +4,8 @@ import (
 	importModels "pirs.io/process/service/models"
 )
 
-// A ValidationFlags contains fields, that are filled by corresponding Validator implementations.
-type ValidationFlags struct {
+// A ImportProcessValidationFlags contains fields, that are filled by corresponding Validator implementations.
+type ImportProcessValidationFlags struct {
 	IsRequestValid  bool
 	IsFileTypeValid bool
 	IsSchemaValid   bool
@@ -15,8 +15,17 @@ type ValidationFlags struct {
 type ImportProcessValidationData struct {
 	// ReqData mustn't be a pointer. It has to be a copy.
 	ReqData         importModels.ImportProcessRequestData
-	ValidationFlags ValidationFlags
+	ValidationFlags ImportProcessValidationFlags
 }
 
 type ImportPackageValidationData struct {
+}
+
+type DownloadProcessValidationFlags struct {
+	IsRequestValid bool
+}
+
+type DownloadProcessValidationData struct {
+	ReqData         importModels.DownloadProcessRequestData
+	ValidationFlags DownloadProcessValidationFlags
 }
