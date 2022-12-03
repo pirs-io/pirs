@@ -16,7 +16,6 @@ import (
 	"pirs.io/commons"
 	"pirs.io/commons/structs"
 	"pirs.io/process/config"
-	"pirs.io/process/domain"
 	grpcProto "pirs.io/process/grpc"
 	"pirs.io/process/service/models"
 	"time"
@@ -119,28 +118,57 @@ func (ps *processServer) ImportProcess(stream grpcProto.Process_ImportProcessSer
 	return nil
 }
 
-func (c *processServer) ImportPackage(ctx context.Context, req *grpcProto.ImportPackageRequest) (*grpcProto.ImportPackageResponse, error) {
+func (ps *processServer) ImportPackage(ctx context.Context, req *grpcProto.ImportPackageRequest) (*grpcProto.ImportPackageResponse, error) {
 	// todo
 	return nil, status.Errorf(codes.Unimplemented, "method ImportPackage not implemented")
 }
 
-func (c *processServer) RemoveProcess(ctx context.Context, req *grpcProto.RemoveProcessRequest) (*grpcProto.RemoveProcessResponse, error) {
+func (ps *processServer) RemoveProcess(ctx context.Context, req *grpcProto.RemoveProcessRequest) (*grpcProto.RemoveProcessResponse, error) {
 	// todo
 	return nil, status.Errorf(codes.Unimplemented, "method RemoveProcess not implemented")
 }
 
-func (c *processServer) DownloadProcess(ctx context.Context, req *grpcProto.DownloadProcessRequest) (*grpcProto.DownloadProcessResponse, error) {
-	m := domain.NewMetadata()
-	m.SplitURI = [5]string{"awd", "awd", "awd", "awd", "1"}
+func (ps *processServer) DownloadProcess(req *grpcProto.DownloadProcessRequest, stream grpcProto.Process_DownloadProcessServer) error {
+	// authorization
+	// todo
 
-	newM, err := structpb.NewStruct(structs.ToMap(m))
-	if err != nil {
+	// main logic
+	response := ps.appContext.DownloadService.DownloadProcess(req.Uri)
+
+	// handle response
+	if response.Status == codes.OK {
+		err := stream.Send(&grpcProto.DownloadProcessResponse{
+			Message: "success: " + response.Status.String(),
+		})
+		if err != nil {
+			return err
+		}
+	} else {
+		err := stream.Send(&grpcProto.DownloadProcessResponse{
+			Message: "fail: " + response.Status.String(),
+		})
+		if err != nil {
+			return err
+		}
+		return nil
 	}
 
-	return &grpcProto.DownloadProcessResponse{
-		Message:  "success",
-		Metadata: newM,
-	}, nil
+	// send all metadata
+	for _, m := range response.Metadata {
+		grpcM, err := structpb.NewStruct(structs.ToMap(m))
+		if err != nil {
+			return err
+		}
+
+		err = stream.Send(&grpcProto.DownloadProcessResponse{
+			Metadata: grpcM,
+		})
+		if err != nil {
+			return err
+		}
+	}
+
+	return nil
 }
 
 // StartGrpc serves GRPC server on given host and port. If it cannot serve, an error is returned.

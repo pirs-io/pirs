@@ -25,7 +25,7 @@ type ProcessClient interface {
 	ImportProcess(ctx context.Context, opts ...grpc.CallOption) (Process_ImportProcessClient, error)
 	ImportPackage(ctx context.Context, in *ImportPackageRequest, opts ...grpc.CallOption) (*ImportPackageResponse, error)
 	RemoveProcess(ctx context.Context, in *RemoveProcessRequest, opts ...grpc.CallOption) (*RemoveProcessResponse, error)
-	DownloadProcess(ctx context.Context, in *DownloadProcessRequest, opts ...grpc.CallOption) (*DownloadProcessResponse, error)
+	DownloadProcess(ctx context.Context, in *DownloadProcessRequest, opts ...grpc.CallOption) (Process_DownloadProcessClient, error)
 }
 
 type processClient struct {
@@ -88,13 +88,36 @@ func (c *processClient) RemoveProcess(ctx context.Context, in *RemoveProcessRequ
 	return out, nil
 }
 
-func (c *processClient) DownloadProcess(ctx context.Context, in *DownloadProcessRequest, opts ...grpc.CallOption) (*DownloadProcessResponse, error) {
-	out := new(DownloadProcessResponse)
-	err := c.cc.Invoke(ctx, "/grpc.Process/DownloadProcess", in, out, opts...)
+func (c *processClient) DownloadProcess(ctx context.Context, in *DownloadProcessRequest, opts ...grpc.CallOption) (Process_DownloadProcessClient, error) {
+	stream, err := c.cc.NewStream(ctx, &Process_ServiceDesc.Streams[1], "/grpc.Process/DownloadProcess", opts...)
 	if err != nil {
 		return nil, err
 	}
-	return out, nil
+	x := &processDownloadProcessClient{stream}
+	if err := x.ClientStream.SendMsg(in); err != nil {
+		return nil, err
+	}
+	if err := x.ClientStream.CloseSend(); err != nil {
+		return nil, err
+	}
+	return x, nil
+}
+
+type Process_DownloadProcessClient interface {
+	Recv() (*DownloadProcessResponse, error)
+	grpc.ClientStream
+}
+
+type processDownloadProcessClient struct {
+	grpc.ClientStream
+}
+
+func (x *processDownloadProcessClient) Recv() (*DownloadProcessResponse, error) {
+	m := new(DownloadProcessResponse)
+	if err := x.ClientStream.RecvMsg(m); err != nil {
+		return nil, err
+	}
+	return m, nil
 }
 
 // ProcessServer is the server API for Process service.
@@ -104,7 +127,7 @@ type ProcessServer interface {
 	ImportProcess(Process_ImportProcessServer) error
 	ImportPackage(context.Context, *ImportPackageRequest) (*ImportPackageResponse, error)
 	RemoveProcess(context.Context, *RemoveProcessRequest) (*RemoveProcessResponse, error)
-	DownloadProcess(context.Context, *DownloadProcessRequest) (*DownloadProcessResponse, error)
+	DownloadProcess(*DownloadProcessRequest, Process_DownloadProcessServer) error
 	mustEmbedUnimplementedProcessServer()
 }
 
@@ -121,8 +144,8 @@ func (UnimplementedProcessServer) ImportPackage(context.Context, *ImportPackageR
 func (UnimplementedProcessServer) RemoveProcess(context.Context, *RemoveProcessRequest) (*RemoveProcessResponse, error) {
 	return nil, status.Errorf(codes.Unimplemented, "method RemoveProcess not implemented")
 }
-func (UnimplementedProcessServer) DownloadProcess(context.Context, *DownloadProcessRequest) (*DownloadProcessResponse, error) {
-	return nil, status.Errorf(codes.Unimplemented, "method DownloadProcess not implemented")
+func (UnimplementedProcessServer) DownloadProcess(*DownloadProcessRequest, Process_DownloadProcessServer) error {
+	return status.Errorf(codes.Unimplemented, "method DownloadProcess not implemented")
 }
 func (UnimplementedProcessServer) mustEmbedUnimplementedProcessServer() {}
 
@@ -199,22 +222,25 @@ func _Process_RemoveProcess_Handler(srv interface{}, ctx context.Context, dec fu
 	return interceptor(ctx, in, info, handler)
 }
 
-func _Process_DownloadProcess_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
-	in := new(DownloadProcessRequest)
-	if err := dec(in); err != nil {
-		return nil, err
+func _Process_DownloadProcess_Handler(srv interface{}, stream grpc.ServerStream) error {
+	m := new(DownloadProcessRequest)
+	if err := stream.RecvMsg(m); err != nil {
+		return err
 	}
-	if interceptor == nil {
-		return srv.(ProcessServer).DownloadProcess(ctx, in)
-	}
-	info := &grpc.UnaryServerInfo{
-		Server:     srv,
-		FullMethod: "/grpc.Process/DownloadProcess",
-	}
-	handler := func(ctx context.Context, req interface{}) (interface{}, error) {
-		return srv.(ProcessServer).DownloadProcess(ctx, req.(*DownloadProcessRequest))
-	}
-	return interceptor(ctx, in, info, handler)
+	return srv.(ProcessServer).DownloadProcess(m, &processDownloadProcessServer{stream})
+}
+
+type Process_DownloadProcessServer interface {
+	Send(*DownloadProcessResponse) error
+	grpc.ServerStream
+}
+
+type processDownloadProcessServer struct {
+	grpc.ServerStream
+}
+
+func (x *processDownloadProcessServer) Send(m *DownloadProcessResponse) error {
+	return x.ServerStream.SendMsg(m)
 }
 
 // Process_ServiceDesc is the grpc.ServiceDesc for Process service.
@@ -232,16 +258,17 @@ var Process_ServiceDesc = grpc.ServiceDesc{
 			MethodName: "RemoveProcess",
 			Handler:    _Process_RemoveProcess_Handler,
 		},
-		{
-			MethodName: "DownloadProcess",
-			Handler:    _Process_DownloadProcess_Handler,
-		},
 	},
 	Streams: []grpc.StreamDesc{
 		{
 			StreamName:    "ImportProcess",
 			Handler:       _Process_ImportProcess_Handler,
 			ClientStreams: true,
+		},
+		{
+			StreamName:    "DownloadProcess",
+			Handler:       _Process_DownloadProcess_Handler,
+			ServerStreams: true,
 		},
 	},
 	Metadata: "process.proto",

@@ -10,7 +10,7 @@ service Process {
   rpc ImportProcess(stream ImportProcessRequest) returns (ImportProcessResponse) {}
   rpc ImportPackage(ImportPackageRequest) returns (ImportPackageResponse) {}
   rpc RemoveProcess(RemoveProcessRequest) returns (RemoveProcessResponse) {}
-  rpc DownloadProcess(DownloadProcessRequest) returns (DownloadProcessResponse) {}
+  rpc DownloadProcess(DownloadProcessRequest) returns (stream DownloadProcessResponse) {}
 }
 
 message ImportProcessRequest {

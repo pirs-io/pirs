@@ -47,8 +47,9 @@ func (p ProcessAppConfig) IsConfig() {}
 
 // An ApplicationContext contains initialized config struct and all the main services
 type ApplicationContext struct {
-	AppConfig     *ProcessAppConfig
-	ImportService *service.ImportService
+	AppConfig       *ProcessAppConfig
+	ImportService   *service.ImportService
+	DownloadService *service.DownloadService
 }
 
 // GetContext returns ApplicationContext instance, that is stored in a variable processApplicationContext
@@ -121,6 +122,15 @@ func parseCustomMetadataMappingFromCsv(csvPath string) map[string]string {
 func createApplicationContext(conf ProcessAppConfig) (appContext *ApplicationContext, err error) {
 	mongoClient := initMongoDatabase(conf)
 	metadataRepo := metadataMongo.NewMetadataRepository(mongoClient.Database(conf.MongoName, conf.MongoDrop), conf.MetadataCollection)
+	validationService := validation.NewValidationService(conf.AllowedFileExtensions, conf.IgnoreWrongExtension)
+	metadataService := metadata.NewMetadataService(
+		*metadataRepo,
+		time.Duration(conf.ContextTimeout)*time.Second,
+		parseCustomMetadataMappingFromCsv(conf.BasicMetadataCsv),
+		parseCustomMetadataMappingFromCsv(conf.PetriflowMetadataCsv),
+		parseCustomMetadataMappingFromCsv(conf.BPMNMetadataCsv),
+	)
+
 	return &ApplicationContext{
 		ImportService: &service.ImportService{
 			ProcessStorageClient: &service.StorageService{
@@ -128,17 +138,12 @@ func createApplicationContext(conf ProcessAppConfig) (appContext *ApplicationCon
 				Host:      conf.ProcessStorageHost,
 				ChunkSize: conf.ChunkSize,
 			},
-			ValidationService: validation.NewValidationService(
-				conf.AllowedFileExtensions,
-				conf.IgnoreWrongExtension,
-			),
-			MetadataService: metadata.NewMetadataService(
-				*metadataRepo,
-				time.Duration(conf.ContextTimeout)*time.Second,
-				parseCustomMetadataMappingFromCsv(conf.BasicMetadataCsv),
-				parseCustomMetadataMappingFromCsv(conf.PetriflowMetadataCsv),
-				parseCustomMetadataMappingFromCsv(conf.BPMNMetadataCsv),
-			),
+			ValidationService: validationService,
+			MetadataService:   metadataService,
+		},
+		DownloadService: &service.DownloadService{
+			ValidationService: validationService,
+			MetadataService:   metadataService,
 		},
 	}, nil
 }

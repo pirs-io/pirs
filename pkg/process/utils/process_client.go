@@ -6,12 +6,14 @@ import (
 	"encoding/json"
 	"flag"
 	"google.golang.org/grpc"
+	"google.golang.org/grpc/codes"
 	"google.golang.org/grpc/credentials/insecure"
 	"io"
 	"os"
 	"pirs.io/commons"
 	"pirs.io/process/domain"
 	mygrpc "pirs.io/process/grpc"
+	"strings"
 	"time"
 )
 
@@ -42,7 +44,7 @@ func main() {
 	}
 	processClient := mygrpc.NewProcessClient(conn)
 
-	importProcess(processClient)
+	//importProcess(processClient)
 	downloadProcess(processClient)
 }
 
@@ -63,22 +65,40 @@ func downloadData(client mygrpc.ProcessClient, uri string) {
 	req := &mygrpc.DownloadProcessRequest{
 		Uri: uri,
 	}
-
-	response, err := client.DownloadProcess(ctx, req)
+	stream, err := client.DownloadProcess(ctx, req)
 	if err != nil {
 		return
 	}
-	if response.Metadata == nil {
-		return
-	}
 
-	// example handling response
-	metadataFromResponse := domain.Metadata{}
-	jsonString, _ := json.Marshal(response.Metadata)
-	err = json.Unmarshal(jsonString, &metadataFromResponse)
+	resp, err := stream.Recv()
 	if err != nil {
+		log2.Error().Msgf("Cannot receive status response: %v", err)
+	}
+	if !strings.Contains(resp.Message, codes.OK.String()) {
+		log2.Error().Msgf("Downloading metadata failed with code: %s", resp.Message)
 		return
 	}
+	var downloadedMetadata []domain.Metadata
+	for {
+		resp, err = stream.Recv()
+		if err == io.EOF {
+			break
+		}
+		if err != nil {
+			log2.Error().Msgf("Downloading metadata failed with error: %v", err)
+			return
+		}
+
+		metadataFromResponse := domain.Metadata{}
+		jsonString, _ := json.Marshal(resp.Metadata)
+		err = json.Unmarshal(jsonString, &metadataFromResponse)
+		if err != nil {
+			return
+		}
+
+		downloadedMetadata = append(downloadedMetadata, metadataFromResponse)
+	}
+	log2.Info().Msgf("Downloaded metadata of %d processes", len(downloadedMetadata))
 }
 
 func importProcess(client mygrpc.ProcessClient) {
