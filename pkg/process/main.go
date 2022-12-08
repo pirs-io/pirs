@@ -1,5 +1,19 @@
 package main
 
+import (
+	"pirs.io/commons"
+	"pirs.io/process/config"
+	"pirs.io/process/server"
+)
+
+var log = commons.GetLoggerFor("main")
+var configFilePath = "./pkg/process/dev.env"
+
 func main() {
-	panic("Implement me")
+	appConfig := config.InitApp(configFilePath)
+	err := server.StartGrpc(appConfig.GrpcIp, appConfig.GrpcPort, appConfig.UseGrpcReflection)
+	if err != nil {
+		log.Error().Msg("Failed to start Process service.")
+		return
+	}
 }

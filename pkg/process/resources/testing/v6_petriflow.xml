@@ -1,0 +1,1578 @@
+<document xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xsi:noNamespaceSchemaLocation="https://petriflow.com/petriflow.schema.xsd">
+	<id>vehicle</id>
+	<initials>VEH</initials>
+	<title name="case_title">Vehicle</title>
+	<defaultRole>true</defaultRole>
+	<anonymousRole>false</anonymousRole>
+	<transitionRole>false</transitionRole>
+	<caseName name="default_case_name">Vehicle</caseName>
+	<roleRef>
+		<id>system</id>
+		<caseLogic>
+			<create>true</create>
+			<delete>true</delete>
+			<view>true</view>
+		</caseLogic>
+	</roleRef>
+	<roleRef>
+		<id>admin</id>
+		<caseLogic>
+			<create>true</create>
+			<delete>true</delete>
+			<view>true</view>
+		</caseLogic>
+	</roleRef>
+	<roleRef>
+		<id>mechanic</id>
+		<caseLogic>
+			<create>true</create>
+			<delete>true</delete>
+			<view>true</view>
+		</caseLogic>
+	</roleRef>
+	<caseEvents>
+		<event type="delete">
+			<id>case_delete</id>
+			<actions phase="pre">
+				<action id="action_2">// find child_enum_vehicle instance with useCase.stringId
+                    // check if t_select_vehicle is assigned
+                    // if yes, cancel it
+
+                    def cev = findCase( {it.processIdentifier.eq("child_enum_vehicles").and(it.dataSet.get("vehicle_id").value?.eq(useCase.stringId))} )
+                    if(cev == null)
+                        return
+
+                    def exists = false
+                    for(taskpair in cev.tasks){
+                        if(taskpair.transition == "t_select_vehicle"){
+                            exists = true
+                            break
+                        }
+                    }
+
+                    if(exists)
+                        cancelTask("t_select_vehicle", cev)</action>
+				<action id="action_3">status: f.status,
+                    cust_id: f.actual_customer_id;
+                    if(cust_id.value == null)
+                        return
+
+                    def customer = findCase( {it._id.eq(cust_id.value)} )
+                    if(customer == null)
+                        return
+
+                    customer.dataSet["vehicles"].choices = customer.dataSet["vehicles"].choices - useCase.stringId
+                    workflowService.save(customer)</action>
+			</actions>
+		</event>
+	</caseEvents>
+	<role>
+		<id>system</id>
+		<title>System</title>
+	</role>
+	<role>
+		<id>admin</id>
+		<title>Admin</title>
+		<event type="assign">
+			<id>1</id>
+			<actions phase="post">
+				<action id="action_0">def processIdentifier = "child_enum_vehicles"
+                    if(!checkIfUserHasInstance(processIdentifier)){
+                        createInstance(processIdentifier, "CEV", "white")
+                    }</action>
+			</actions>
+		</event>
+	</role>
+	<role>
+		<id>mechanic</id>
+		<title>Mechanic</title>
+		<event type="assign">
+			<id>1</id>
+			<actions phase="post">
+				<action id="action_1">def processIdentifier = "child_enum_vehicles"
+                    if(!checkIfUserHasInstance(processIdentifier)){
+                        createInstance(processIdentifier, "CEV", "white")
+                    }</action>
+			</actions>
+		</event>
+	</role>
+	<data type="text">
+		<id>vin</id>
+		<title name="vin">VIN</title>
+		<validations>
+			<validation>
+				<expression>regex("^[A-HJ-NPR-Za-hj-npr-z\d]{8}[\dX][A-HJ-NPR-Za-hj-npr-z\d]{2}\d{6}$")</expression>
+			</validation>
+		</validations>
+	</data>
+	<data type="text" immediate="true">
+		<id>manufacturer</id>
+		<title name="Manufacturer">Manufacturer</title>
+	</data>
+	<data type="text" immediate="true">
+		<id>licenceNumber</id>
+		<title name="licenceNumber">Licence munber</title>
+		<validations>
+			<validation>
+				<expression>regex("^[0-9a-zA-Z]{4,9}$")</expression>
+			</validation>
+		</validations>
+	</data>
+	<data type="text" immediate="true">
+		<id>model</id>
+		<title name="model">Model</title>
+	</data>
+	<data type="taskRef">
+		<id>input_form</id>
+		<title/>
+		<init>t_form</init>
+	</data>
+	<data type="taskRef">
+		<id>enum_form</id>
+		<title/>
+	</data>
+	<data type="number">
+		<id>kilometers</id>
+		<title name="kilometers">Number of KM</title>
+		<validations>
+			<validation>
+				<expression>positive</expression>
+			</validation>
+		</validations>
+	</data>
+	<data type="number">
+		<id>manufactureYear</id>
+		<title name="manufactureYear">Year of manufacture</title>
+		<validations>
+			<validation>
+				<expression>inrange 1900,2100</expression>
+				<message name="manufactureYear_valid">Must be greater or even than 1900</message>
+			</validation>
+		</validations>
+	</data>
+	<data type="enumeration_map" immediate="true">
+		<id>status</id>
+		<title name="status">Status</title>
+		<options>
+			<option key="assigned" name="status_assigned">Assigned</option>
+			<option key="unassigned" name="status_unassigned">Unassigned</option>
+		</options>
+		<init>unassigned</init>
+		<component>
+			<name>autocomplete</name>
+		</component>
+	</data>
+	<data type="boolean">
+		<id>change_model</id>
+		<title name="change_model">Do you want to change the model?</title>
+	</data>
+	<data type="boolean" immediate="true">
+		<id>is_created</id>
+		<title>is_created</title>
+	</data>
+	<data type="text">
+		<id>actual_customer_id</id>
+		<title>actual_customer_id</title>
+	</data>
+	<data type="boolean">
+		<id>moreData</id>
+		<title name="moreData">Show More Data</title>
+		<init>false</init>
+		<event type="set">
+			<actions phase="post">
+				<action id="action_4">moreData: f.moreData,
+            carDescription: f.carDescription,
+            oilChangeKM: f.oilChangeKM,
+            dateEC: f.dateEC,
+            dateTC: f.dateTC,
+            t_form: t.t_form,
+            oilChangeDate: f.oilChangeDate;
+
+            if(moreData.value){
+                make oilChangeDate, editable on t_form when { true }
+                make dateTC, editable on t_form when { true }
+                make dateEC, editable on t_form when { true }
+                make oilChangeKM, editable on t_form when { true }
+                make carDescription, editable on t_form when { true }
+            }else{
+                make oilChangeDate, hidden on t_form when { true }
+                make dateTC, hidden on t_form when { true }
+                make dateEC, hidden on t_form when { true }
+                make oilChangeKM, hidden on t_form when { true }
+                make carDescription, hidden on t_form when { true }
+            }</action>
+			</actions>
+		</event>
+	</data>
+	<data type="date">
+		<id>dateTC</id>
+		<title name="dateTC">Valid until (TC)</title>
+		<desc name="dateTC_desc">Date technical control </desc>
+	</data>
+	<data type="date">
+		<id>dateEC</id>
+		<title name="dateEC">Valid unitl (EC)</title>
+		<desc name="dateEC_desc">Date emission control</desc>
+	</data>
+	<data type="date">
+		<id>oilChangeDate</id>
+		<title name="oilChangeDate"> Last oil change</title>
+	</data>
+	<data type="number">
+		<id>oilChangeKM</id>
+		<title name="oilChangeKM">Number of kilomenters when last oil change was made</title>
+		<validations>
+			<validation>
+				<expression>positive</expression>
+			</validation>
+		</validations>
+		<init>0</init>
+	</data>
+	<data type="text">
+		<id>carDescription</id>
+		<title name="carDescription">Car description</title>
+		<validations>
+			<validation>
+				<expression>minLength 2</expression>
+			</validation>
+		</validations>
+	</data>
+	<data type="button">
+		<id>remove_from_customer_1</id>
+		<title/>
+		<placeholder name="remove_from_customer_1">Remove from the customer</placeholder>
+	</data>
+	<data type="button">
+		<id>remove_from_customer_2</id>
+		<title/>
+		<placeholder name="remove_from_customer_2">Approve removal</placeholder>
+	</data>
+	<data type="button">
+		<id>remove_from_customer_3</id>
+		<title/>
+		<placeholder name="remove_from_customer_3">Successfully removed</placeholder>
+	</data>
+	<i18n locale="sk">
+		<i18nString name="case_title">Vozidlo</i18nString>
+		<i18nString name="default_case_name">Vozidlo</i18nString>
+		<i18nString name="create">Vytvoriť</i18nString>
+		<i18nString name="read">Prečítať</i18nString>
+		<i18nString name="update">Aktualizovať</i18nString>
+		<i18nString name="delete">Vymazať</i18nString>
+		<i18nString name="vehicle_form">Formulár Vozidla</i18nString>
+		<i18nString name="manufacturer">Výrobca</i18nString>
+		<i18nString name="vin">VIN</i18nString>
+		<i18nString name="licenceNumber">EČV</i18nString>
+		<i18nString name="model">Model</i18nString>
+		<i18nString name="manufactureYear">Rok výroby</i18nString>
+		<i18nString name="status">Stav</i18nString>
+		<i18nString name="kilometers">Počet km</i18nString>
+		<i18nString name="status_assigned">Priradené</i18nString>
+		<i18nString name="status_unassigned">Nepriradené</i18nString>
+		<i18nString name="change_model">Chcete zmeniť model?</i18nString>
+		<i18nString name="remove_from_customer_1">Odobrať zákaznikovi</i18nString>
+		<i18nString name="remove_from_customer_2">Potvrdiť odobratie</i18nString>
+		<i18nString name="remove_from_customer_3">Odobrané</i18nString>
+		<i18nString name="moreData">Ďalšie informácie</i18nString>
+		<i18nString name="dateTC">Platné do (TK)</i18nString>
+		<i18nString name="dateTC_desc">Dátum platnosti technickej kontroly</i18nString>
+		<i18nString name="dateEC">Platné do (EK)</i18nString>
+		<i18nString name="dateEC_desc">Dátum platnosti emisnej kontroly</i18nString>
+		<i18nString name="oilChangeDate">Dátum poslednej zmeny oleja</i18nString>
+		<i18nString name="oilChangeKM">Počet najazdených kilometrov</i18nString>
+		<i18nString name="carDescription">Popis auta</i18nString>
+		<i18nString name="manufactureYear_valid">Musi byť väčšie alebo rovné ako 1900</i18nString>
+	</i18n>
+	<i18n locale="de">
+		<i18nString name="create">Schaffen</i18nString>
+		<i18nString name="case_title">Fahrzeug</i18nString>
+		<i18nString name="default_case_name">Fahrzeug</i18nString>
+		<i18nString name="read">Fahrzeug-Identifikationsnummer </i18nString>
+		<i18nString name="update">Aktualisieren</i18nString>
+		<i18nString name="delete">Löschen</i18nString>
+		<i18nString name="vehicle_form">Fahrzeug-Formular</i18nString>
+		<i18nString name="manufacturer">Produzent</i18nString>
+		<i18nString name="vin">Fahrzeug-Identifikationsnummer </i18nString>
+		<i18nString name="licenceNumber">amtliches Kennzeichen </i18nString>
+		<i18nString name="model">Modell </i18nString>
+		<i18nString name="manufactureYear">Jahr der Herstellung</i18nString>
+		<i18nString name="status">Zustand</i18nString>
+		<i18nString name="kilometers">Anzahl der km</i18nString>
+		<i18nString name="status_assigned">Zugewiesen</i18nString>
+		<i18nString name="status_unassigned">Nicht zugewiesen</i18nString>
+		<i18nString name="change_model">Möchten Sie das Modell ändern?</i18nString>
+		<i18nString name="remove_from_customer_1">Vom Kunden entfernen</i18nString>
+		<i18nString name="remove_from_customer_2">Entfernung bestätigen</i18nString>
+		<i18nString name="remove_from_customer_3">Entfernt</i18nString>
+		<i18nString name="moreData">Mehr Details</i18nString>
+		<i18nString name="dateTC">Gültig bis (TC)</i18nString>
+		<i18nString name="dateTC_desc">Gültigkeitsdatum der technischen Prüfung</i18nString>
+		<i18nString name="dateEC">Gültig bis (EC)</i18nString>
+		<i18nString name="dateEC_desc">Gültigkeitsdatum der Abgasreinigung</i18nString>
+		<i18nString name="oilChangeDate">Datum des letzten Ölwechsels</i18nString>
+		<i18nString name="oilChangeKM">Kilometerstand</i18nString>
+		<i18nString name="carDescription">Fahrzeugbeschreibung</i18nString>
+		<i18nString name="manufactureYear_valid">Must sein 1900+</i18nString>
+	</i18n>
+	<transition>
+		<id>t_delete</id>
+		<x>540</x>
+		<y>340</y>
+		<label name="delete">delete</label>
+		<layout>
+			<offset>0</offset>
+		</layout>
+		<roleRef>
+			<id>admin</id>
+			<logic>
+				<perform>true</perform>
+			</logic>
+		</roleRef>
+		<roleRef>
+			<id>mechanic</id>
+			<logic>
+				<perform>true</perform>
+			</logic>
+		</roleRef>
+		<event type="finish">
+			<id>t_delete_finish</id>
+			<actions phase="post">
+				<action id="action_5">async.run{
+                        workflowService.deleteCase(useCase.stringId);
+                    }</action>
+			</actions>
+		</event>
+	</transition>
+	<transition>
+		<id>t_create</id>
+		<x>300</x>
+		<y>340</y>
+		<label name="create">Create</label>
+		<layout>
+			<offset>0</offset>
+		</layout>
+		<assignPolicy>auto</assignPolicy>
+		<roleRef>
+			<id>admin</id>
+			<logic>
+				<perform>true</perform>
+			</logic>
+		</roleRef>
+		<roleRef>
+			<id>mechanic</id>
+			<logic>
+				<perform>true</perform>
+			</logic>
+		</roleRef>
+		<dataGroup>
+			<id>dg0</id>
+			<stretch>true</stretch>
+			<dataRef>
+				<id>enum_form</id>
+				<logic>
+					<behavior>editable</behavior>
+					<behavior>required</behavior>
+				</logic>
+				<layout>
+					<x>0</x>
+					<y>0</y>
+					<rows>1</rows>
+					<cols>2</cols>
+					<template>material</template>
+					<appearance>outline</appearance>
+				</layout>
+			</dataRef>
+		</dataGroup>
+		<dataGroup>
+			<id>dg1</id>
+			<stretch>true</stretch>
+			<dataRef>
+				<id>input_form</id>
+				<logic>
+					<behavior>editable</behavior>
+					<behavior>required</behavior>
+				</logic>
+				<layout>
+					<x>0</x>
+					<y>0</y>
+					<rows>1</rows>
+					<cols>2</cols>
+					<template>material</template>
+					<appearance>outline</appearance>
+				</layout>
+			</dataRef>
+		</dataGroup>
+		<event type="assign">
+			<id>0</id>
+			<actions phase="pre">
+				<action id="action_6">enum_form: f.enum_form;
+
+                    def myEnumCase = findCase( {it.processIdentifier.eq("child_enum_vehicles").and(it.author.email.eq(loggedUser().email))} )
+                    if(myEnumCase == null)
+                        throw new IllegalArgumentException("Cannot find your instance of process Child vehicles enumeration")
+
+                    def enumTask = findTask( {it.caseId.eq(myEnumCase.stringId).and(it.transitionId.eq("t_select_vehicle"))} )
+                    if(enumTask == null)
+                        throw new IllegalArgumentException("Cannot find task with id t_select_vehicle in ${myEnumCase.title}")
+
+                    cancelTask(enumTask)
+                    assignTask(enumTask)
+                    setData(enumTask, [
+                        "vehicle_id": [
+                            "value": useCase.stringId,
+                            "type" : "text"
+                        ],
+                    ])
+
+                    change enum_form value { [enumTask.stringId] }</action>
+			</actions>
+		</event>
+		<event type="finish">
+			<id>t_create_finish</id>
+			<actions phase="pre">
+				<action id="action_7">getAndSetVehicleManufacturerAndModel()</action>
+			</actions>
+			<actions phase="post">
+				<action id="action_8">model: f.model,
+                    manufacturer: f.manufacturer,
+                    enum_form: f.enum_form,
+                    licenceNumber: f.licenceNumber;
+
+                    changeCaseProperty "title" about {
+                        def stringModel = (model.value != null) ? model.value : "Model"
+                        def stringManufacturer = (manufacturer.value != null) ? manufacturer.value : "Manufacturer"
+                        def stringLicenceNumber = (licenceNumber.value != null) ? licenceNumber.value : "Licence Number"
+                            "${stringLicenceNumber} - ${stringManufacturer} ${stringModel}"
+                    }</action>
+				<action id="action_9">def myEnumCase = findCase( {it.processIdentifier.eq("child_enum_vehicles").and(it.author.email.eq(loggedUser().email))} )
+                    if(myEnumCase == null)
+                        throw new IllegalArgumentException("Cannot find your instance of process Child vehicles enumeration")
+
+                    try {
+                        finishTask("t_select_vehicle", myEnumCase)
+                    }
+                    catch(IllegalArgumentException e) {
+                        assignTask("t_select_vehicle", myEnumCase)
+                        finishTask("t_select_vehicle", myEnumCase)
+                    }</action>
+				<action id="action_10">moreData: f.moreData;
+                    change moreData value { false; }</action>
+				<action id="action_11">useCase.dataSet.get("enum_form").value = []
+                    workflowService.save(useCase)</action>
+				<action id="action_12">is_created: f.is_created;
+                    change is_created value { true }</action>
+			</actions>
+		</event>
+		<event type="cancel">
+			<id>t_create_cancel</id>
+			<actions phase="post">
+				<action id="action_13">async.run{
+                        workflowService.deleteCase(useCase.stringId)
+                    }</action>
+			</actions>
+		</event>
+	</transition>
+	<transition>
+		<id>t_read</id>
+		<x>420</x>
+		<y>180</y>
+		<label name="read">read</label>
+		<layout>
+			<offset>0</offset>
+		</layout>
+		<assignPolicy>auto</assignPolicy>
+		<roleRef>
+			<id>admin</id>
+			<logic>
+				<perform>true</perform>
+			</logic>
+		</roleRef>
+		<roleRef>
+			<id>mechanic</id>
+			<logic>
+				<perform>true</perform>
+			</logic>
+		</roleRef>
+		<dataGroup>
+			<id>0</id>
+			<layout>grid</layout>
+			<dataRef>
+				<id>manufacturer</id>
+				<logic>
+					<behavior>visible</behavior>
+				</logic>
+				<layout>
+					<x>0</x>
+					<y>0</y>
+					<rows>1</rows>
+					<cols>2</cols>
+					<offset>0</offset>
+					<template>material</template>
+					<appearance>outline</appearance>
+				</layout>
+				<event type="set">
+					<actions phase="post">
+						<action id="action_14">model: f.model,
+                        manufacturer: f.manufacturer,
+                        licenceNumber: f.licenceNumber;
+
+                        changeCaseProperty "title" about {
+                            def stringModel = (model.value != null) ? model.value : "Model"
+                            def stringManufacturer = (manufacturer.value != null) ? manufacturer.value : "Manufacturer"
+                            def stringLicenceNumber = (licenceNumber.value != null) ? licenceNumber.value : "Licence Number"
+                            "${stringLicenceNumber} - ${stringManufacturer} ${stringModel}"
+                        }</action>
+					</actions>
+				</event>
+			</dataRef>
+			<dataRef>
+				<id>model</id>
+				<logic>
+					<behavior>visible</behavior>
+				</logic>
+				<layout>
+					<x>2</x>
+					<y>0</y>
+					<rows>1</rows>
+					<cols>2</cols>
+					<offset>0</offset>
+					<template>material</template>
+					<appearance>outline</appearance>
+				</layout>
+				<event type="set">
+					<actions phase="post">
+						<action id="action_15">model: f.model,
+                        manufacturer: f.manufacturer,
+                        licenceNumber: f.licenceNumber;
+
+                        changeCaseProperty "title" about {
+                            def stringModel = (model.value != null) ? model.value : "Model"
+                            def stringManufacturer = (manufacturer.value != null) ? manufacturer.value : "Manufacturer"
+                            def stringLicenceNumber = (licenceNumber.value != null) ? licenceNumber.value : "Licence Number"
+                            "${stringLicenceNumber} - ${stringManufacturer} ${stringModel}"
+                        }</action>
+					</actions>
+				</event>
+			</dataRef>
+		</dataGroup>
+		<dataGroup>
+			<id>1</id>
+			<layout>grid</layout>
+			<dataRef>
+				<id>vin</id>
+				<logic>
+					<behavior>visible</behavior>
+				</logic>
+				<layout>
+					<x>0</x>
+					<y>0</y>
+					<rows>1</rows>
+					<cols>2</cols>
+					<offset>0</offset>
+					<template>material</template>
+					<appearance>outline</appearance>
+				</layout>
+			</dataRef>
+			<dataRef>
+				<id>licenceNumber</id>
+				<logic>
+					<behavior>visible</behavior>
+				</logic>
+				<layout>
+					<x>2</x>
+					<y>0</y>
+					<rows>1</rows>
+					<cols>2</cols>
+					<offset>0</offset>
+					<template>material</template>
+					<appearance>outline</appearance>
+				</layout>
+				<event type="set">
+					<actions phase="post">
+						<action id="action_16">model: f.model,
+                        manufacturer: f.manufacturer,
+                        licenceNumber: f.licenceNumber;
+
+                        changeCaseProperty "title" about {
+                            def stringModel = (model.value != null) ? model.value : "Model"
+                            def stringManufacturer = (manufacturer.value != null) ? manufacturer.value : "Manufacturer"
+                            def stringLicenceNumber = (licenceNumber.value != null) ? licenceNumber.value : "Licence Number"
+                            "${stringLicenceNumber} - ${stringManufacturer} ${stringModel}"
+                        }</action>
+					</actions>
+				</event>
+			</dataRef>
+			<dataRef>
+				<id>kilometers</id>
+				<logic>
+					<behavior>visible</behavior>
+				</logic>
+				<layout>
+					<x>0</x>
+					<y>2</y>
+					<rows>1</rows>
+					<cols>2</cols>
+					<offset>0</offset>
+					<template>material</template>
+					<appearance>outline</appearance>
+				</layout>
+			</dataRef>
+			<dataRef>
+				<id>manufactureYear</id>
+				<logic>
+					<behavior>visible</behavior>
+				</logic>
+				<layout>
+					<x>2</x>
+					<y>2</y>
+					<rows>1</rows>
+					<cols>2</cols>
+					<offset>0</offset>
+					<template>material</template>
+					<appearance>outline</appearance>
+				</layout>
+			</dataRef>
+			<dataRef>
+				<id>moreData</id>
+				<logic>
+					<behavior>editable</behavior>
+				</logic>
+				<layout>
+					<x>0</x>
+					<y>3</y>
+					<rows>1</rows>
+					<cols>4</cols>
+					<offset>0</offset>
+					<template>material</template>
+				</layout>
+				<event type="set">
+					<actions phase="post">
+						<action id="action_17">moreData: f.moreData,
+                        carDescription: f.carDescription,
+                        oilChangeKM: f.oilChangeKM,
+                        dateEC: f.dateEC,
+                        dateTC: f.dateTC,
+                        t_form: t.t_read,
+                        oilChangeDate: f.oilChangeDate;
+
+                        if(moreData.value){
+                            make oilChangeDate, visible on t_form when { true }
+                            make dateTC, visible on t_form when { true }
+                            make dateEC, visible on t_form when { true }
+                            make oilChangeKM, visible on t_form when { true }
+                            make carDescription, visible on t_form when { true }
+                        }else{
+                            make oilChangeDate, hidden on t_form when { true }
+                            make dateTC, hidden on t_form when { true }
+                            make dateEC, hidden on t_form when { true }
+                            make oilChangeKM, hidden on t_form when { true }
+                            make carDescription, hidden on t_form when { true }
+                        }</action>
+					</actions>
+				</event>
+			</dataRef>
+			<dataRef>
+				<id>dateEC</id>
+				<logic>
+					<behavior>hidden</behavior>
+				</logic>
+				<layout>
+					<x>0</x>
+					<y>4</y>
+					<rows>1</rows>
+					<cols>2</cols>
+					<offset>0</offset>
+					<template>material</template>
+					<appearance>outline</appearance>
+				</layout>
+			</dataRef>
+			<dataRef>
+				<id>dateTC</id>
+				<logic>
+					<behavior>hidden</behavior>
+				</logic>
+				<layout>
+					<x>2</x>
+					<y>4</y>
+					<rows>1</rows>
+					<cols>2</cols>
+					<offset>0</offset>
+					<template>material</template>
+					<appearance>outline</appearance>
+				</layout>
+			</dataRef>
+			<dataRef>
+				<id>oilChangeKM</id>
+				<logic>
+					<behavior>hidden</behavior>
+				</logic>
+				<layout>
+					<x>2</x>
+					<y>5</y>
+					<rows>1</rows>
+					<cols>2</cols>
+					<offset>0</offset>
+					<template>material</template>
+					<appearance>outline</appearance>
+				</layout>
+			</dataRef>
+			<dataRef>
+				<id>carDescription</id>
+				<logic>
+					<behavior>hidden</behavior>
+				</logic>
+				<layout>
+					<x>0</x>
+					<y>6</y>
+					<rows>1</rows>
+					<cols>4</cols>
+					<offset>0</offset>
+					<template>material</template>
+					<appearance>outline</appearance>
+				</layout>
+			</dataRef>
+			<dataRef>
+				<id>oilChangeDate</id>
+				<logic>
+					<behavior>hidden</behavior>
+				</logic>
+				<layout>
+					<x>0</x>
+					<y>5</y>
+					<rows>1</rows>
+					<cols>2</cols>
+					<offset>0</offset>
+					<template>material</template>
+					<appearance>outline</appearance>
+				</layout>
+			</dataRef>
+		</dataGroup>
+		<dataGroup>
+			<id>2</id>
+			<layout>grid</layout>
+			<dataRef>
+				<id>status</id>
+				<logic>
+					<behavior>visible</behavior>
+				</logic>
+				<layout>
+					<x>0</x>
+					<y>0</y>
+					<rows>1</rows>
+					<cols>1</cols>
+					<offset>0</offset>
+					<template>material</template>
+					<appearance>outline</appearance>
+				</layout>
+			</dataRef>
+		</dataGroup>
+		<event type="assign">
+			<id>0</id>
+			<actions phase="pre">
+				<action id="action_18">moreData: f.moreData;
+                    change moreData value { false }</action>
+			</actions>
+		</event>
+		<event type="finish">
+			<id>finish_event_0</id>
+		</event>
+		<event type="delegate">
+			<id>delegate_event_1</id>
+		</event>
+	</transition>
+	<transition>
+		<id>t_update</id>
+		<x>420</x>
+		<y>500</y>
+		<label name="update">update</label>
+		<layout>
+			<offset>0</offset>
+		</layout>
+		<roleRef>
+			<id>admin</id>
+			<logic>
+				<perform>true</perform>
+			</logic>
+		</roleRef>
+		<roleRef>
+			<id>mechanic</id>
+			<logic>
+				<perform>true</perform>
+			</logic>
+		</roleRef>
+		<dataGroup>
+			<id>dg0</id>
+			<stretch>true</stretch>
+			<dataRef>
+				<id>change_model</id>
+				<logic>
+					<behavior>editable</behavior>
+				</logic>
+				<layout>
+					<x>0</x>
+					<y>0</y>
+					<rows>1</rows>
+					<cols>2</cols>
+					<template>material</template>
+					<appearance>outline</appearance>
+				</layout>
+				<event type="set">
+					<actions phase="post">
+						<action id="action_19">change_model: f.this,
+                        enum_form: f.enum_form;
+
+                        if(!change_model.value){
+                            if(enum_form.value == null || enum_form.value == [])
+                                return
+                            def tazk = findTask( {it._id.eq(enum_form.value[0])} )
+                            async.run { cancelTask(tazk) }
+                            change enum_form value { [] }
+
+                            return
+                        }
+
+                        def myEnumCase = findCase( {it.processIdentifier.eq("child_enum_vehicles").and(it.author.email.eq(loggedUser().email))} )
+                        if(myEnumCase == null)
+                            throw new IllegalArgumentException("Cannot find your instance of process Child vehicles enumeration")
+
+                        def enumTask = findTask( {it.caseId.eq(myEnumCase.stringId).and(it.transitionId.eq("t_select_vehicle"))} )
+                        if(enumTask == null)
+                            throw new IllegalArgumentException("Cannot find task with id t_select_vehicle in ${myEnumCase.title}")
+
+                        cancelTask(enumTask)
+
+                        async.run { assignTask(enumTask) }
+                        setData(enumTask, [
+                            "vehicle_id": [
+                                "value": useCase.stringId,
+                                "type" : "text"
+                            ],
+                        ])
+                        change enum_form value { [enumTask.stringId] }</action>
+					</actions>
+				</event>
+			</dataRef>
+		</dataGroup>
+		<dataGroup>
+			<id>dg1</id>
+			<stretch>true</stretch>
+			<dataRef>
+				<id>enum_form</id>
+				<logic>
+					<behavior>editable</behavior>
+				</logic>
+				<layout>
+					<x>0</x>
+					<y>0</y>
+					<rows>1</rows>
+					<cols>2</cols>
+					<template>material</template>
+					<appearance>outline</appearance>
+				</layout>
+			</dataRef>
+		</dataGroup>
+		<dataGroup>
+			<id>dg2</id>
+			<layout>grid</layout>
+			<dataRef>
+				<id>manufacturer</id>
+				<logic>
+					<behavior>visible</behavior>
+				</logic>
+				<layout>
+					<x>0</x>
+					<y>0</y>
+					<rows>1</rows>
+					<cols>2</cols>
+					<offset>0</offset>
+					<template>material</template>
+					<appearance>outline</appearance>
+				</layout>
+			</dataRef>
+			<dataRef>
+				<id>model</id>
+				<logic>
+					<behavior>visible</behavior>
+				</logic>
+				<layout>
+					<x>2</x>
+					<y>0</y>
+					<rows>1</rows>
+					<cols>2</cols>
+					<offset>0</offset>
+					<template>material</template>
+					<appearance>outline</appearance>
+				</layout>
+			</dataRef>
+		</dataGroup>
+		<dataGroup>
+			<id>dg3</id>
+			<stretch>true</stretch>
+			<dataRef>
+				<id>input_form</id>
+				<logic>
+					<behavior>editable</behavior>
+					<behavior>required</behavior>
+				</logic>
+				<layout>
+					<x>0</x>
+					<y>0</y>
+					<rows>1</rows>
+					<cols>2</cols>
+					<template>material</template>
+					<appearance>outline</appearance>
+				</layout>
+			</dataRef>
+		</dataGroup>
+		<event type="assign">
+			<id>0</id>
+			<actions phase="pre">
+				<action id="action_20">change_model: f.change_model;
+                    change change_model value { false }</action>
+			</actions>
+		</event>
+		<event type="finish">
+			<id>1</id>
+			<actions phase="pre">
+				<action id="action_21">getAndSetVehicleManufacturerAndModel()</action>
+			</actions>
+			<actions phase="post">
+				<action id="action_22">model: f.model,
+                    manufacturer: f.manufacturer,
+                    licenceNumber: f.licenceNumber;
+
+                    changeCaseProperty "title" about {
+                        def stringModel = (model.value != null) ? model.value : "Model"
+                        def stringManufacturer = (manufacturer.value != null) ? manufacturer.value : "Manufacturer"
+                        def stringLicenceNumber = (licenceNumber.value != null) ? licenceNumber.value : "Licence Number"
+                        "${stringLicenceNumber} - ${stringManufacturer} ${stringModel}"
+                    }</action>
+				<action id="action_23">def myEnumCase = findCase( {it.processIdentifier.eq("child_enum_vehicles").and(it.author.email.eq(loggedUser().email))} )
+                    if(myEnumCase == null)
+                        throw new IllegalArgumentException("Cannot find your instance of process Child vehicles enumeration")
+
+                    try {
+                        finishTask("t_select_vehicle", myEnumCase)
+                        }
+                    catch(IllegalArgumentException e) {
+                        assignTask("t_select_vehicle", myEnumCase)
+                        finishTask("t_select_vehicle", myEnumCase)
+                    }</action>
+				<action id="action_24">moreData: f.moreData;
+                    change moreData value { false; }</action>
+				<action id="action_25">useCase.dataSet.get("enum_form").value = []
+                    workflowService.save(useCase)</action>
+			</actions>
+		</event>
+		<event type="cancel">
+			<id>t_update_cancel</id>
+			<actions phase="pre">
+				<action id="action_26">def cev = findCase( {it.processIdentifier.eq("child_enum_vehicles").and(it.dataSet.get("vehicle_id").value?.eq(useCase.stringId))} )
+                    if(cev == null)
+                        return
+
+                    def exists = false
+                    for(taskpair in cev.tasks){
+                        if(taskpair.transition == "t_select_vehicle"){
+                            exists = true
+                            break
+                        }
+                    }
+
+                    if(exists)
+                        cancelTask("t_select_vehicle", cev)</action>
+			</actions>
+			<actions phase="post">
+				<action id="action_27">moreData: f.moreData;
+                    change moreData value { false; }</action>
+			</actions>
+		</event>
+	</transition>
+	<transition>
+		<id>t_form</id>
+		<x>620</x>
+		<y>180</y>
+		<label name="vehicle_form">Vehicle form</label>
+		<layout>
+			<offset>0</offset>
+		</layout>
+		<roleRef>
+			<id>system</id>
+			<logic>
+				<perform>true</perform>
+			</logic>
+		</roleRef>
+		<dataGroup>
+			<id>DataGroup</id>
+			<layout>grid</layout>
+			<dataRef>
+				<id>vin</id>
+				<logic>
+					<behavior>editable</behavior>
+					<behavior>required</behavior>
+				</logic>
+				<layout>
+					<x>0</x>
+					<y>0</y>
+					<rows>1</rows>
+					<cols>2</cols>
+					<offset>0</offset>
+					<template>material</template>
+					<appearance>outline</appearance>
+				</layout>
+			</dataRef>
+			<dataRef>
+				<id>manufacturer</id>
+				<logic>
+					<behavior>hidden</behavior>
+				</logic>
+				<layout>
+					<x>0</x>
+					<y>1</y>
+					<rows>1</rows>
+					<cols>2</cols>
+					<offset>0</offset>
+					<template>material</template>
+					<appearance>outline</appearance>
+				</layout>
+				<event type="set">
+					<actions phase="post">
+						<action id="action_28">model: f.model,
+manufacturer: f.manufacturer,
+licenceNumber: f.licenceNumber;
+
+changeCaseProperty "title" about {
+    def stringModel = (model.value != null) ? model.value : "Model"
+    def stringManufacturer = (manufacturer.value != null) ? manufacturer.value : "Manufacturer"
+    def stringLicenceNumber = (licenceNumber.value != null) ? licenceNumber.value : "Licence Number"
+    "${stringLicenceNumber} - ${stringManufacturer} ${stringModel}"
+}</action>
+					</actions>
+				</event>
+			</dataRef>
+			<dataRef>
+				<id>licenceNumber</id>
+				<logic>
+					<behavior>editable</behavior>
+					<behavior>required</behavior>
+				</logic>
+				<layout>
+					<x>2</x>
+					<y>0</y>
+					<rows>1</rows>
+					<cols>2</cols>
+					<offset>0</offset>
+					<template>material</template>
+					<appearance>outline</appearance>
+				</layout>
+				<event type="set">
+					<actions phase="post">
+						<action id="action_29">model: f.model,
+manufacturer: f.manufacturer,
+licenceNumber: f.licenceNumber;
+
+changeCaseProperty "title" about {
+    def stringModel = (model.value != null) ? model.value : "Model"
+    def stringManufacturer = (manufacturer.value != null) ? manufacturer.value : "Manufacturer"
+    def stringLicenceNumber = (licenceNumber.value != null) ? licenceNumber.value : "Licence Number"
+    "${stringLicenceNumber} - ${stringManufacturer} ${stringModel}"
+}</action>
+					</actions>
+				</event>
+			</dataRef>
+			<dataRef>
+				<id>model</id>
+				<logic>
+					<behavior>hidden</behavior>
+				</logic>
+				<layout>
+					<x>2</x>
+					<y>1</y>
+					<rows>1</rows>
+					<cols>2</cols>
+					<offset>0</offset>
+					<template>material</template>
+					<appearance>outline</appearance>
+				</layout>
+				<event type="set">
+					<actions phase="post">
+						<action id="action_30">model: f.model,
+manufacturer: f.manufacturer,
+licenceNumber: f.licenceNumber;
+
+changeCaseProperty "title" about {
+    def stringModel = (model.value != null) ? model.value : "Model"
+    def stringManufacturer = (manufacturer.value != null) ? manufacturer.value : "Manufacturer"
+    def stringLicenceNumber = (licenceNumber.value != null) ? licenceNumber.value : "Licence Number"
+    "${stringLicenceNumber} - ${stringManufacturer} ${stringModel}"
+}</action>
+					</actions>
+				</event>
+			</dataRef>
+			<dataRef>
+				<id>kilometers</id>
+				<logic>
+					<behavior>editable</behavior>
+				</logic>
+				<layout>
+					<x>0</x>
+					<y>2</y>
+					<rows>1</rows>
+					<cols>2</cols>
+					<offset>0</offset>
+					<template>material</template>
+					<appearance>outline</appearance>
+				</layout>
+			</dataRef>
+			<dataRef>
+				<id>manufactureYear</id>
+				<logic>
+					<behavior>editable</behavior>
+				</logic>
+				<layout>
+					<x>2</x>
+					<y>2</y>
+					<rows>1</rows>
+					<cols>2</cols>
+					<offset>0</offset>
+					<template>material</template>
+					<appearance>outline</appearance>
+				</layout>
+			</dataRef>
+			<dataRef>
+				<id>moreData</id>
+				<logic>
+					<behavior>editable</behavior>
+				</logic>
+				<layout>
+					<x>0</x>
+					<y>3</y>
+					<rows>1</rows>
+					<cols>4</cols>
+					<offset>0</offset>
+					<template>material</template>
+				</layout>
+			</dataRef>
+			<dataRef>
+				<id>dateEC</id>
+				<logic>
+					<behavior>hidden</behavior>
+				</logic>
+				<layout>
+					<x>0</x>
+					<y>4</y>
+					<rows>1</rows>
+					<cols>2</cols>
+					<offset>0</offset>
+					<template>material</template>
+					<appearance>outline</appearance>
+				</layout>
+			</dataRef>
+			<dataRef>
+				<id>dateTC</id>
+				<logic>
+					<behavior>hidden</behavior>
+				</logic>
+				<layout>
+					<x>2</x>
+					<y>4</y>
+					<rows>1</rows>
+					<cols>2</cols>
+					<offset>0</offset>
+					<template>material</template>
+					<appearance>outline</appearance>
+				</layout>
+			</dataRef>
+			<dataRef>
+				<id>oilChangeKM</id>
+				<logic>
+					<behavior>hidden</behavior>
+				</logic>
+				<layout>
+					<x>2</x>
+					<y>5</y>
+					<rows>1</rows>
+					<cols>2</cols>
+					<offset>0</offset>
+					<template>material</template>
+					<appearance>outline</appearance>
+				</layout>
+			</dataRef>
+			<dataRef>
+				<id>carDescription</id>
+				<logic>
+					<behavior>hidden</behavior>
+				</logic>
+				<layout>
+					<x>0</x>
+					<y>6</y>
+					<rows>1</rows>
+					<cols>4</cols>
+					<offset>0</offset>
+					<template>material</template>
+					<appearance>outline</appearance>
+				</layout>
+			</dataRef>
+			<dataRef>
+				<id>oilChangeDate</id>
+				<logic>
+					<behavior>hidden</behavior>
+				</logic>
+				<layout>
+					<x>0</x>
+					<y>5</y>
+					<rows>1</rows>
+					<cols>2</cols>
+					<offset>0</offset>
+					<template>material</template>
+					<appearance>outline</appearance>
+				</layout>
+			</dataRef>
+		</dataGroup>
+	</transition>
+	<transition>
+		<id>t_short_description</id>
+		<x>750</x>
+		<y>180</y>
+		<label>t_short_description</label>
+		<layout>
+			<offset>0</offset>
+		</layout>
+		<roleRef>
+			<id>system</id>
+			<logic>
+				<perform>true</perform>
+			</logic>
+		</roleRef>
+		<dataGroup>
+			<id>DataGroup</id>
+			<layout>grid</layout>
+			<dataRef>
+				<id>licenceNumber</id>
+				<logic>
+					<behavior>visible</behavior>
+				</logic>
+				<layout>
+					<x>0</x>
+					<y>0</y>
+					<rows>1</rows>
+					<cols>1</cols>
+					<offset>0</offset>
+					<template>material</template>
+					<appearance>outline</appearance>
+				</layout>
+			</dataRef>
+			<dataRef>
+				<id>manufacturer</id>
+				<logic>
+					<behavior>visible</behavior>
+				</logic>
+				<layout>
+					<x>1</x>
+					<y>0</y>
+					<rows>1</rows>
+					<cols>1</cols>
+					<offset>0</offset>
+					<template>material</template>
+					<appearance>outline</appearance>
+				</layout>
+			</dataRef>
+			<dataRef>
+				<id>model</id>
+				<logic>
+					<behavior>visible</behavior>
+				</logic>
+				<layout>
+					<x>2</x>
+					<y>0</y>
+					<rows>1</rows>
+					<cols>1</cols>
+					<offset>0</offset>
+					<template>material</template>
+					<appearance>outline</appearance>
+				</layout>
+			</dataRef>
+			<dataRef>
+				<id>manufactureYear</id>
+				<logic>
+					<behavior>visible</behavior>
+				</logic>
+				<layout>
+					<x>3</x>
+					<y>0</y>
+					<rows>1</rows>
+					<cols>1</cols>
+					<offset>0</offset>
+					<template>material</template>
+					<appearance>outline</appearance>
+				</layout>
+			</dataRef>
+		</dataGroup>
+	</transition>
+	<transition>
+		<id>t_short_description_cus</id>
+		<x>950</x>
+		<y>180</y>
+		<label>t_short_description_cus</label>
+		<layout>
+			<offset>0</offset>
+		</layout>
+		<roleRef>
+			<id>system</id>
+			<logic>
+				<perform>true</perform>
+			</logic>
+		</roleRef>
+		<dataGroup>
+			<id>DataGroup</id>
+			<layout>grid</layout>
+			<dataRef>
+				<id>licenceNumber</id>
+				<logic>
+					<behavior>visible</behavior>
+				</logic>
+				<layout>
+					<x>0</x>
+					<y>0</y>
+					<rows>1</rows>
+					<cols>1</cols>
+					<offset>0</offset>
+					<template>material</template>
+					<appearance>outline</appearance>
+				</layout>
+			</dataRef>
+			<dataRef>
+				<id>manufacturer</id>
+				<logic>
+					<behavior>visible</behavior>
+				</logic>
+				<layout>
+					<x>1</x>
+					<y>0</y>
+					<rows>1</rows>
+					<cols>1</cols>
+					<offset>0</offset>
+					<template>material</template>
+					<appearance>outline</appearance>
+				</layout>
+				<event type="get">
+					<actions phase="pre">
+						<action id="action_31">remove1: f.remove_from_customer_1,
+                        remove2: f.remove_from_customer_2,
+                        remove3: f.remove_from_customer_3,
+                        thisTask: t.t_short_description_cus;
+
+                        make remove1,editable on thisTask when { true }
+                        make remove2,hidden on thisTask when { true }
+                        make remove3,hidden on thisTask when { true }</action>
+					</actions>
+				</event>
+			</dataRef>
+			<dataRef>
+				<id>model</id>
+				<logic>
+					<behavior>visible</behavior>
+				</logic>
+				<layout>
+					<x>2</x>
+					<y>0</y>
+					<rows>1</rows>
+					<cols>1</cols>
+					<offset>0</offset>
+					<template>material</template>
+					<appearance>outline</appearance>
+				</layout>
+			</dataRef>
+			<dataRef>
+				<id>manufactureYear</id>
+				<logic>
+					<behavior>visible</behavior>
+				</logic>
+				<layout>
+					<x>3</x>
+					<y>0</y>
+					<rows>1</rows>
+					<cols>1</cols>
+					<offset>0</offset>
+					<template>material</template>
+					<appearance>outline</appearance>
+				</layout>
+			</dataRef>
+			<dataRef>
+				<id>remove_from_customer_1</id>
+				<logic>
+					<behavior>editable</behavior>
+				</logic>
+				<layout>
+					<x>4</x>
+					<y>0</y>
+					<rows>1</rows>
+					<cols>1</cols>
+					<offset>0</offset>
+					<template>material</template>
+					<appearance>outline</appearance>
+				</layout>
+				<event type="set">
+					<actions phase="post">
+						<action id="action_32">remove1: f.remove_from_customer_1,
+                        remove2: f.remove_from_customer_2,
+                        thisTask: t.t_short_description_cus;
+
+                        make remove1,hidden on thisTask when { true }
+                        make remove2,editable on thisTask when { true }</action>
+					</actions>
+				</event>
+			</dataRef>
+			<dataRef>
+				<id>remove_from_customer_2</id>
+				<logic>
+					<behavior>hidden</behavior>
+				</logic>
+				<layout>
+					<x>4</x>
+					<y>0</y>
+					<rows>1</rows>
+					<cols>1</cols>
+					<offset>0</offset>
+					<template>material</template>
+					<appearance>outline</appearance>
+				</layout>
+				<event type="set">
+					<actions phase="post">
+						<action id="action_33">remove2: f.remove_from_customer_2,
+                        remove3: f.remove_from_customer_3,
+                        thisTask: t.t_short_description_cus,
+                        actual_customer_id: f.actual_customer_id,
+                        status: f.status;
+
+                        make remove2,hidden on thisTask when { true }
+                        make remove3,visible on thisTask when { true }
+
+                        // uprav old_customer vehicles
+                        // Najdi customera ktory vlastni vozidlo - id v actual_customer_id
+
+                        if (actual_customer_id.value != null) {
+                            def old_customer = findCase( { it._id.eq(actual_customer_id.value) } )
+                            if (old_customer != null) {
+
+                                //vymazanie Vozidla z enum customera
+
+                                def old_customer_vehicles = old_customer.dataSet.get("vehicles").choices.collect{it.defaultValue}
+                                old_customer.dataSet.get("vehicles").choices = old_customer_vehicles - useCase.stringId
+
+                                workflowService.save(old_customer)
+                            }
+                        }
+
+                        // nastav tu status a actual customer id
+                        change status value { return "unassigned"; }
+                        change actual_customer_id value { return ""; }</action>
+					</actions>
+				</event>
+			</dataRef>
+			<dataRef>
+				<id>remove_from_customer_3</id>
+				<logic>
+					<behavior>hidden</behavior>
+				</logic>
+				<layout>
+					<x>4</x>
+					<y>0</y>
+					<rows>1</rows>
+					<cols>1</cols>
+					<offset>0</offset>
+					<template>material</template>
+					<appearance>outline</appearance>
+				</layout>
+			</dataRef>
+		</dataGroup>
+	</transition>
+	<transition>
+		<id>t_synchronize</id>
+		<x>350</x>
+		<y>60</y>
+		<label>Synchronize</label>
+		<layout>
+			<offset>0</offset>
+		</layout>
+		<roleRef>
+			<id>system</id>
+			<logic>
+				<perform>true</perform>
+			</logic>
+		</roleRef>
+	</transition>
+	<place>
+		<id>p3</id>
+		<x>700</x>
+		<y>340</y>
+		<label>deleted</label>
+		<tokens>0</tokens>
+		<static>false</static>
+	</place>
+	<place>
+		<id>p2</id>
+		<x>420</x>
+		<y>340</y>
+		<label>created</label>
+		<tokens>0</tokens>
+		<static>false</static>
+	</place>
+	<place>
+		<id>p1</id>
+		<x>140</x>
+		<y>340</y>
+		<label>uninitialized</label>
+		<tokens>1</tokens>
+		<static>false</static>
+	</place>
+	<arc>
+		<id>a1</id>
+		<type>regular</type>
+		<sourceId>p1</sourceId>
+		<destinationId>t_create</destinationId>
+		<multiplicity>1</multiplicity>
+	</arc>
+	<arc>
+		<id>a2</id>
+		<type>regular</type>
+		<sourceId>t_create</sourceId>
+		<destinationId>p2</destinationId>
+		<multiplicity>1</multiplicity>
+	</arc>
+	<arc>
+		<id>a3</id>
+		<type>regular</type>
+		<sourceId>p2</sourceId>
+		<destinationId>t_delete</destinationId>
+		<multiplicity>1</multiplicity>
+	</arc>
+	<arc>
+		<id>a4</id>
+		<type>regular</type>
+		<sourceId>t_delete</sourceId>
+		<destinationId>p3</destinationId>
+		<multiplicity>1</multiplicity>
+	</arc>
+	<arc>
+		<id>a10</id>
+		<type>regular</type>
+		<sourceId>p2</sourceId>
+		<destinationId>t_update</destinationId>
+		<multiplicity>1</multiplicity>
+	</arc>
+	<arc>
+		<id>a11</id>
+		<type>regular</type>
+		<sourceId>t_update</sourceId>
+		<destinationId>p2</destinationId>
+		<multiplicity>1</multiplicity>
+	</arc>
+	<arc>
+		<id>a12</id>
+		<type>read</type>
+		<sourceId>p2</sourceId>
+		<destinationId>t_read</destinationId>
+		<multiplicity>1</multiplicity>
+	</arc>
+</document>

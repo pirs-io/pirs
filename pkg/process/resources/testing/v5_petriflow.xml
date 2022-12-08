@@ -1,0 +1,863 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<document xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xsi:noNamespaceSchemaLocation="https://modeler.netgrif.com/petriflow_schema.xsd">
+	<id>dashboard</id>
+	<initials>dashboard</initials>
+	<title>Domov</title>
+	<defaultRole>false</defaultRole>
+	<transitionRole>false</transitionRole>
+	<caseEvents>
+        <event type="delete">
+            <id>pdf</id>
+            <actions phase="pre">
+                <action>
+                    assignTask("checker")
+					finishTask("checker")
+                </action>
+            </actions>
+        </event>
+		<event type="create">
+            <id>crt</id>
+            <actions phase="post">
+                <action>
+					allowedUsers: f.allowed_dashboard_userlist;
+				
+                    //only one instance per user, otherwise delete created case
+					if(findCase( {it.author.email.eq(useCase.author.email).and(it.processIdentifier.eq(useCase.processIdentifier)).and(it._id.ne(useCase._id))} )) {
+						async.run {
+							workflowService.deleteCase(useCase._id.toString())
+						}
+						throw new Exception("Instance of this process already exists for the author")		
+					}
+					
+					assignTask("creator")
+					finishTask("creator")
+					
+					change allowedUsers value {
+						[userService.getLoggedOrSystem().id]
+					}
+				
+					def title = "Domov"
+					def name = userService.getLoggedOrSystem().name + " " + userService.getLoggedOrSystem().surname
+					changeCaseProperty "title" about {
+						title + " - " + name
+					}
+                </action>
+            </actions>
+        </event>
+    </caseEvents>
+	<!-- TRANSACTIONS -->
+	<!-- ROLES -->
+	<role>
+		<id>system</id>
+		<title>System</title>
+	</role>
+	<role>
+		<id>director</id>
+		<title>Riaditeľ</title>
+	</role>
+	<role>
+		<id>dispatcher</id>
+		<title>Dispečer</title>
+	</role>
+	<role>
+		<id>mechanic</id>
+		<title>Mechanik</title>
+	</role>
+	<role>
+		<id>driver</id>
+		<title>Vodič</title>
+	</role>
+	<roleRef>
+        <id>system</id>
+        <caseLogic>
+			<create>true</create>
+            <delete>true</delete>
+        </caseLogic>
+    </roleRef>
+	<roleRef>
+        <id>director</id>
+        <caseLogic>
+			<create>true</create>
+        </caseLogic>
+    </roleRef>
+	<roleRef>
+        <id>dispatcher</id>
+        <caseLogic>
+            <create>true</create>
+        </caseLogic>
+    </roleRef>
+	<roleRef>
+        <id>mechanic</id>
+        <caseLogic>
+            <create>true</create>
+        </caseLogic>
+    </roleRef>
+	<roleRef>
+        <id>driver</id>
+        <caseLogic>
+            <create>true</create>
+        </caseLogic>
+    </roleRef>
+	<!-- DATA -->
+	<data type="taskRef">
+		<id>home_taskref</id>
+		<title>Pracovná plocha</title>
+		<action trigger="set">
+			home: f.home_taskref,
+			pressed: f.pressed_btn;
+			
+			assignTask("checker")
+			finishTask("checker")
+			
+			if(home.value == null || home.value == []){
+				change pressed value{ null }
+			}
+		</action>
+	</data>
+	<data type="button">
+		<id>btn_reset</id>
+		<title>Domov</title>
+		<placeholder>Obnoviť</placeholder>
+	</data>
+	<data type="button">
+		<id>btn_finish</id>
+		<title></title>
+		<placeholder>Potvrdiť</placeholder>
+	</data>
+	<data type="button">
+		<id>btn_cancel</id>
+		<title></title>
+		<placeholder>Zrušiť</placeholder>
+	</data>
+	<data type="button">
+		<id>btn_show_info</id>
+		<title></title>
+		<placeholder>Zobraziť</placeholder>
+	</data>
+	<data type="button">
+		<id>btn_notification</id>
+		<title>Notifikácie</title>
+		<placeholder>Spustiť</placeholder>
+	</data>
+	<data type="button">
+		<id>btn_notification_settings</id>
+		<title>Notifikácie - nastavenia</title>
+		<placeholder>Spustiť</placeholder>
+	</data>
+	<data type="button">
+		<id>btn_create_car</id>
+		<title>Auto</title>
+		<placeholder>Vytvoriť</placeholder>
+	</data>
+	<data type="button">
+		<id>btn_create_service</id>
+		<title>Servisný záznam</title>
+		<placeholder>Vytvoriť</placeholder>
+	</data>
+	<data type="button">
+		<id>btn_create_task</id>
+		<title>Úloha</title>
+		<placeholder>Vytvoriť</placeholder>
+	</data>
+	<data type="button">
+		<id>btn_task_overview</id>
+		<title>Úloha - prehľad</title>
+		<placeholder>Spustiť</placeholder>
+	</data>
+	<data type="text">
+		<id>view_title</id>
+		<title>Aktuálne zobrazenie</title>
+		<init>Žiadne</init>
+	</data>
+	<data type="userList">
+		<id>allowed_dashboard_userlist</id>
+		<title>Allowed users to dashboard</title>
+	</data>
+	<data type="text">
+		<id>pressed_btn</id>
+		<title>pressed_btn</title>
+	</data>
+	<!-- I18NS -->
+	<!-- TRANSITIONS -->
+	<transition>
+		<id>4</id>
+		<x>620</x>
+		<y>260</y>
+		<layout>
+			<offset>0</offset>
+		</layout>
+		<label>Domov</label>
+		<usersRef>
+			<id>allowed_dashboard_userlist</id>
+			<logic>
+				<perform>true</perform>
+			</logic>
+		</usersRef>
+		<assignPolicy>auto</assignPolicy>
+		<dataGroup>
+			<layout>grid</layout>
+			<id>DataGroup_2</id>
+			<dataRef>
+				<id>btn_create_car</id>
+				<logic>
+					<behavior>editable</behavior>
+					<action trigger="set">
+						show: f.btn_show_info,
+						viewTitle: f.view_title,
+						home: f.home_taskref,
+						pressed: f.pressed_btn,
+						thisTask: t.4;
+						
+						def carController = findCase( {it.processIdentifier.eq("5faffef90a975a1b77c9b54a_car_controller").and(it.author.email.eq(useCase.author.email))} )
+						
+						if( (carController != null).and(pressed.value == null || pressed.value != "btn_create_car") ){
+							def assigned = assignTask("4", carController)							
+							
+							make show, visible on thisTask when {true}
+							change viewTitle value { assigned.title.defaultValue }
+							change home value { [assigned.stringId] }	
+							change pressed value { "btn_create_car" }
+						}
+					</action>
+				</logic>
+				<layout>
+					<x>0</x>
+					<y>0</y>
+					<rows>1</rows>
+					<cols>1</cols>
+					<offset>0</offset>
+					<template>material</template>
+					<appearance>fill</appearance>
+				</layout>
+			</dataRef>
+			<dataRef>
+				<id>btn_create_service</id>
+				<logic>
+					<behavior>editable</behavior>
+					<action trigger="set">
+						show: f.btn_show_info,
+						viewTitle: f.view_title,
+						home: f.home_taskref,
+						pressed: f.pressed_btn,
+						thisTask: t.4;
+						
+						def serviceController = findCase( {it.processIdentifier.eq("5faffef90a975a1b77c9b54a_service_controller").and(it.author.email.eq(useCase.author.email))} )
+						
+						if( (serviceController != null).and(pressed.value == null || pressed.value != "btn_create_service") ){							
+							def assigned = assignTask("2", serviceController)
+							
+							make show, visible on thisTask when {true}
+							change viewTitle value { assigned.title.defaultValue }
+							change home value { [assigned.stringId] }
+							change pressed value { "btn_create_service" }
+						}
+					</action>
+				</logic>
+				<layout>
+					<x>1</x>
+					<y>0</y>
+					<rows>1</rows>
+					<cols>1</cols>
+					<offset>0</offset>
+					<template>material</template>
+					<appearance>fill</appearance>
+				</layout>
+			</dataRef>
+			<dataRef>
+				<id>btn_create_task</id>
+				<logic>
+					<behavior>editable</behavior>
+					<action trigger="set">
+						show: f.btn_show_info,
+						viewTitle: f.view_title,
+						home: f.home_taskref,
+						pressed: f.pressed_btn,
+						thisTask: t.4;
+						
+						def taskController = findCase( {it.processIdentifier.eq("5faffef90a975a1b77c9b54a_task_controller").and(it.author.email.eq(useCase.author.email))} )
+						
+						if( (taskController != null).and(pressed.value == null || pressed.value != "btn_create_task") ){
+							def assigned = assignTask("4", taskController)
+							
+							make show, visible on thisTask when {true}
+							change viewTitle value { assigned.title.defaultValue }
+							change home value { [assigned.stringId] }	
+							change pressed value { "btn_create_task" }
+						}
+					</action>
+				</logic>
+				<layout>
+					<x>2</x>
+					<y>0</y>
+					<rows>1</rows>
+					<cols>1</cols>
+					<offset>0</offset>
+					<template>material</template>
+					<appearance>fill</appearance>
+				</layout>
+			</dataRef>
+			<dataRef>
+				<id>btn_notification</id>
+				<logic>
+					<behavior>editable</behavior>
+					<action trigger="set">
+						show: f.btn_show_info,
+						viewTitle: f.view_title,
+						home: f.home_taskref,
+						pressed: f.pressed_btn,
+						thisTask: t.4;
+						
+						def notification = findCase( {it.processIdentifier.eq("5faffef90a975a1b77c9b54a_notification").and(it.author.email.eq(useCase.author.email))} )
+						
+						if( (notification != null).and(pressed.value == null || pressed.value != "btn_notification") ){
+							def assigned = assignTask("41", notification)
+							
+							make show, editable on thisTask when {true}
+							change viewTitle value { assigned.title.defaultValue }
+							change home value { [assigned.stringId] }		
+							change pressed value { "btn_notification" }							
+						}
+					</action>
+				</logic>
+				<layout>
+					<x>3</x>
+					<y>0</y>
+					<rows>1</rows>
+					<cols>1</cols>
+					<offset>0</offset>
+					<template>material</template>
+					<appearance>fill</appearance>
+				</layout>
+			</dataRef>
+			<dataRef>
+				<id>view_title</id>
+				<logic>
+					<behavior>visible</behavior>
+				</logic>
+				<layout>
+					<x>0</x>
+					<y>1</y>
+					<rows>1</rows>
+					<cols>1</cols>
+					<offset>0</offset>
+					<template>material</template>
+					<appearance>fill</appearance>
+				</layout>
+			</dataRef>
+			<dataRef>
+				<id>btn_task_overview</id>
+				<logic>
+					<behavior>editable</behavior>
+					<action trigger="set">
+						show: f.btn_show_info,
+						viewTitle: f.view_title,
+						home: f.home_taskref,
+						pressed: f.pressed_btn,
+						thisTask: t.4;
+						
+						def taskController = findCase( {it.processIdentifier.eq("5faffef90a975a1b77c9b54a_task_controller").and(it.author.email.eq(useCase.author.email))} )
+						
+						if( (taskController != null).and(pressed.value == null || pressed.value != "btn_task_overview") ){
+							def assigned = assignTask("9", taskController)
+							
+							make show, editable on thisTask when {true}
+							change viewTitle value { assigned.title.defaultValue }
+							change home value { [assigned.stringId] }	
+							change pressed value { "btn_task_overview" }								
+						}
+					</action>
+				</logic>
+				<layout>
+					<x>2</x>
+					<y>1</y>
+					<rows>1</rows>
+					<cols>1</cols>
+					<offset>0</offset>
+					<template>material</template>
+					<appearance>fill</appearance>
+				</layout>
+			</dataRef>
+			<dataRef>
+				<id>btn_notification_settings</id>
+				<logic>
+					<behavior>editable</behavior>
+					<action trigger="set">
+						show: f.btn_show_info,
+						viewTitle: f.view_title,
+						home: f.home_taskref,
+						pressed: f.pressed_btn,
+						thisTask: t.4;
+						
+						def notification = findCase( {it.processIdentifier.eq("5faffef90a975a1b77c9b54a_notification").and(it.author.email.eq(useCase.author.email))} )
+						
+						if( (notification != null).and(pressed.value == null || pressed.value != "btn_notification_settings") ){
+							def assigned = assignTask("19", notification)
+							
+							make show, visible on thisTask when {true}
+							change viewTitle value { assigned.title.defaultValue }
+							change home value { [assigned.stringId] }		
+							change pressed value { "btn_notification_settings" }
+						}
+					</action>
+				</logic>
+				<layout>
+					<x>3</x>
+					<y>1</y>
+					<rows>1</rows>
+					<cols>1</cols>
+					<offset>0</offset>
+					<template>material</template>
+					<appearance>fill</appearance>
+				</layout>
+			</dataRef>
+		</dataGroup>
+		<dataGroup>
+			<id>DataGroup_1</id>
+			<dataRef>
+				<id>home_taskref</id>
+				<logic>
+					<behavior>editable</behavior>
+					<behavior>required</behavior>
+					<action trigger="set">
+						thisTask: t.4,
+						btnFinish: f.btn_finish,
+						btnCancel: f.btn_cancel,
+						home: f.this;
+						
+						if( (home.value != null).and(home.value != []) ){
+							make btnFinish, editable on thisTask when { true }
+							make btnCancel, editable on thisTask when { true }
+						}
+						else{
+							make btnFinish, visible on thisTask when { true }
+							make btnCancel, visible on thisTask when { true }
+						}
+					</action>
+				</logic>
+				<layout>
+					<x>0</x>
+					<y>0</y>
+					<rows>1</rows>
+					<cols>1</cols>
+					<offset>0</offset>
+					<template>material</template>
+					<appearance>fill</appearance>
+				</layout>
+			</dataRef>
+		</dataGroup>
+		<dataGroup>
+			<layout>grid</layout>
+			<id>DataGroup_0</id>
+			<dataRef>
+				<id>btn_reset</id>
+				<logic>
+					<behavior>editable</behavior>
+					<action trigger="set">
+						thisTask: t.4,
+						show: f.btn_show_info,
+						title: f.view_title,
+						home: f.home_taskref;
+						
+						assignTask("creator")
+						finishTask("creator")
+						
+						make show, visible on thisTask when { true }
+						change title value { "Žiadne" }
+						change home value { [] }
+					</action>
+				</logic>
+				<layout>
+					<x>0</x>
+					<y>0</y>
+					<rows>1</rows>
+					<cols>1</cols>
+					<offset>0</offset>
+					<template>material</template>
+					<appearance>fill</appearance>
+				</layout>
+			</dataRef>
+			<dataRef>
+				<id>btn_cancel</id>
+				<logic>
+					<behavior>editable</behavior>
+					<action trigger="set">
+						show: f.btn_show_info,
+						viewTitle: f.view_title,
+						home: f.home_taskref,
+						thisTask: t.4;
+						
+						make show, visible on thisTask when {true}
+						change viewTitle value { "Žiadne" }
+						change home value { [] }
+					</action>
+				</logic>
+				<layout>
+					<x>1</x>
+					<y>0</y>
+					<rows>1</rows>
+					<cols>1</cols>
+					<offset>0</offset>
+					<template>material</template>
+					<appearance>fill</appearance>
+				</layout>
+			</dataRef>
+			<dataRef>
+				<id>btn_show_info</id>
+				<logic>
+					<behavior>visible</behavior>
+					<action trigger="set">
+						thisTask: t.4,
+						show: f.btn_show_info,
+						pressed: f.pressed_btn,
+						home: f.home_taskref;						
+						
+						if( (home.value != null).and(home.value != []) ){
+							def taskInHome = findTask( {it._id.eq(home.value[0])} )
+
+							if(taskInHome != null){
+								def foundCase = findCase( {it._id.eq(taskInHome.caseId)} )
+
+								if(foundCase != null){
+									def selectedId = foundCase.getFieldValue("selected")
+
+									if(selectedId != null){
+										def showTask = findTask( {it.caseId.eq(selectedId).and(it.transitionId.eq("show"))} )
+
+										if(showTask != null){
+											assignTask(showTask)
+											change home value { [showTask.stringId] }
+											make show, visible on thisTask when { true }
+											change pressed value { "btn_show_info" }
+										}
+									}
+								}								
+							}
+						}
+					</action>
+				</logic>
+				<layout>
+					<x>2</x>
+					<y>0</y>
+					<rows>1</rows>
+					<cols>1</cols>
+					<offset>0</offset>
+					<template>material</template>
+					<appearance>fill</appearance>
+				</layout>
+			</dataRef>
+			<dataRef>
+				<id>btn_finish</id>
+				<logic>
+					<behavior>editable</behavior>
+					<action trigger="set">
+						show: f.btn_show_info,
+						viewTitle: f.view_title,
+						home: f.home_taskref,
+						thisTask: t.4;
+						
+						if( (home.value != null).and(home.value != []) ){
+							def toFinish = findTask( {it._id.eq(home.value[0])} )
+							if(toFinish != null){
+								finishTask(toFinish)
+							}
+						}
+						
+						make show, visible on thisTask when {true}
+						change viewTitle value { "Žiadne" }
+						change home value { [] }
+					</action>
+				</logic>
+				<layout>
+					<x>3</x>
+					<y>0</y>
+					<rows>1</rows>
+					<cols>1</cols>
+					<offset>0</offset>
+					<template>material</template>
+					<appearance>fill</appearance>
+				</layout>
+			</dataRef>
+		</dataGroup>
+		<event type="assign">
+			<id>4_assign</id>
+			<title> </title>
+			<actions phase="pre">
+				<action>
+					btnCreateCar: f.btn_create_car,
+					btnCreateService: f.btn_create_service,
+					btnCreateTask: f.btn_create_task,
+					btnNotification: f.btn_notification,
+					btnTaskOverview: f.btn_task_overview,
+					btnNotificationSettings: f.btn_notification_settings,
+					thisTask: t.4;
+					
+					def allowedBtnCreateCar = ["system", "director", "dispatcher", "mechanic"]
+					def allowedBtnCreateService = ["system", "director", "mechanic"]
+					def allowedBtnCreateTask = ["system", "director", "dispatcher"]
+					def allowedBtnNotification = ["system", "director", "dispatcher", "mechanic", "driver"]
+					def allowedBtnTaskOverview = ["system", "director", "dispatcher", "mechanic", "driver"]
+					def allowedBtnNotificationSettings = ["system", "director", "dispatcher", "mechanic", "driver"]
+					
+					def userProcessRoles = loggedUser().userProcessRoles
+					if(userProcessRoles != null){
+						userProcessRoles.find{ userProcessRole ->
+							def tmpNetId = userProcessRole.netId
+							
+							if(tmpNetId != null){
+								def petriNet = petriNetService.getPetriNet(tmpNetId)
+								
+								if(petriNet != null){
+									def toCompareProcessIdentifier = petriNet.importId
+
+									if(toCompareProcessIdentifier == useCase.processIdentifier){									
+										def roleId = userProcessRole.roleId
+										def importId = petriNet.roles[roleId].importId
+										
+										// btn_create_car
+										if(allowedBtnCreateCar.contains(importId))
+											make btnCreateCar, editable on thisTask when {true}
+										else
+											make btnCreateCar, visible on thisTask when {true}
+										
+										// btn_create_service
+										if(allowedBtnCreateService.contains(importId))
+											make btnCreateService, editable on thisTask when {true}
+										else
+											make btnCreateService, visible on thisTask when {true}
+											
+										// btn_create_task
+										if(allowedBtnCreateTask.contains(importId))
+											make btnCreateTask, editable on thisTask when {true}
+										else
+											make btnCreateTask, visible on thisTask when {true}
+										
+										// btn_notification
+										if(allowedBtnNotification.contains(importId))
+											make btnNotification, editable on thisTask when {true}
+										else
+											make btnNotification, visible on thisTask when {true}
+											
+										// btn_task_overview
+										if(allowedBtnTaskOverview.contains(importId))
+											make btnTaskOverview, editable on thisTask when {true}
+										else
+											make btnTaskOverview, visible on thisTask when {true}
+											
+										// btn_notification_settings
+										if(allowedBtnNotificationSettings.contains(importId))
+											make btnNotificationSettings, editable on thisTask when {true}
+										else
+											make btnNotificationSettings, visible on thisTask when {true}
+											
+										return true
+									}
+									else{
+										make btnCreateCar, visible on thisTask when {true}
+										make btnCreateService, visible on thisTask when {true}
+										make btnCreateTask, visible on thisTask when {true}
+										make btnNotification, visible on thisTask when {true}
+										make btnTaskOverview, visible on thisTask when {true}
+										make btnNotificationSettings, visible on thisTask when {true}
+									}
+								}
+							}
+							return false	
+						}
+					}
+				</action>
+			</actions>
+			<actions phase="post">
+				<action>
+					thisTask: t.4,
+					btnFinish: f.btn_finish,
+					btnCancel: f.btn_cancel;
+					
+					make btnFinish, visible on thisTask when { true }
+					make btnCancel, visible on thisTask when { true }
+				</action>
+			</actions>
+		</event>
+		<event type="cancel">
+			<id>4_cancel</id>
+			<title> </title>
+			<actions phase="post">
+				<action>
+					home: f.home_taskref;
+
+					change home value { [] }
+				</action>
+			</actions>
+		</event>
+		<event type="finish">	
+			<id>4_finish</id>
+			<title> </title>
+		</event>
+	</transition>
+	<transition>
+		<id>checker</id>
+		<x>300</x>
+		<y>260</y>
+		<layout>
+			<offset>0</offset>
+		</layout>
+		<label>check_home_taskref</label>
+		<roleRef>
+			<id>system</id>
+			<logic>
+				<perform>true</perform>
+				<delegate>true</delegate>
+				<view>true</view>
+			</logic>
+		</roleRef>
+		<event type="finish">
+			<id>checker_finish</id>
+			<actions phase="pre">
+				<action>
+					home: f.home_taskref;
+					
+					if( (home.value != null).and(home.value != []) ){
+						def toCancel = findTask( {it._id.eq(home.value[0])} )
+						if(toCancel != null){
+							cancelTask(toCancel)
+						}
+					}
+				</action>
+			</actions>
+		</event>
+	</transition>
+	<transition>
+		<id>creator</id>
+		<x>300</x>
+		<y>160</y>
+		<layout>
+			<offset>0</offset>
+		</layout>
+		<label>instance_creator</label>
+		<roleRef>
+			<id>system</id>
+			<logic>
+				<perform>true</perform>
+				<delegate>true</delegate>
+				<view>true</view>
+			</logic>
+		</roleRef>
+		<event type="finish">
+			<id>creator_finish</id>
+			<actions phase="pre">
+				<action>
+					def carControllerProcessId = "5faffef90a975a1b77c9b54a_car_controller"
+					def serviceControllerProcessId = "5faffef90a975a1b77c9b54a_service_controller"
+					def taskControllerProcessId = "5faffef90a975a1b77c9b54a_task_controller"
+					def notificationProcessId = "5faffef90a975a1b77c9b54a_notification"
+				
+					def carController = findCase( {it.author.email.eq(useCase.author.email).and(it.processIdentifier.eq(carControllerProcessId))} )
+					def serviceController = findCase( {it.author.email.eq(useCase.author.email).and(it.processIdentifier.eq(serviceControllerProcessId))} )
+					def taskController = findCase( {it.author.email.eq(useCase.author.email).and(it.processIdentifier.eq(taskControllerProcessId))} )
+					def notification = findCase( {it.author.email.eq(useCase.author.email).and(it.processIdentifier.eq(notificationProcessId))} )
+					
+					if(carController == null){
+						createCase(carControllerProcessId)
+					}
+					
+					if(serviceController == null){
+						createCase(serviceControllerProcessId)
+					}
+					
+					if(taskController == null){
+						createCase(taskControllerProcessId)
+					}
+					
+					if(notification == null){
+						createCase(notificationProcessId)
+					}
+				</action>
+			</actions>
+		</event>
+	</transition>
+	<transition>
+		<id>first_start</id>
+		<x>100</x>
+		<y>160</y>
+		<layout>
+			<offset>0</offset>
+		</layout>
+		<label>Prve spustenie</label>
+		<assignPolicy>auto</assignPolicy>
+		<finishPolicy>auto_no_data</finishPolicy>
+		<roleRef>
+			<id>system</id>
+			<logic>
+				<perform>true</perform>
+				<delegate>true</delegate>
+				<view>true</view>
+			</logic>
+		</roleRef>
+		<roleRef>
+			<id>director</id>
+			<logic>
+				<perform>true</perform>
+				<view>true</view>
+			</logic>
+		</roleRef>
+		<roleRef>
+			<id>dispatcher</id>
+			<logic>
+				<perform>true</perform>
+				<view>true</view>
+			</logic>
+		</roleRef>
+		<roleRef>
+			<id>mechanic</id>
+			<logic>
+				<perform>true</perform>
+				<view>true</view>
+			</logic>
+		</roleRef>
+		<roleRef>
+			<id>driver</id>
+			<logic>
+				<perform>true</perform>
+				<view>true</view>
+			</logic>
+		</roleRef>
+	</transition>
+	<!-- PLACES -->
+	<place>
+		<id>p1</id>
+		<x>339</x>
+		<y>409</y>
+		<label></label>
+		<tokens>1</tokens>
+		<static>false</static>
+	</place>
+	<place>
+		<id>p2</id>
+		<x>575</x>
+		<y>414</y>
+		<label></label>
+		<tokens>0</tokens>
+		<static>false</static>
+	</place>
+	<!-- ARCS -->
+	<arc>
+		<id>3</id>
+		<type>regular</type>
+		<sourceId>p1</sourceId>
+		<destinationId>first_start</destinationId>
+		<multiplicity>1</multiplicity>
+	</arc>
+	<arc>
+		<id>4</id>
+		<type>regular</type>
+		<sourceId>first_start</sourceId>
+		<destinationId>p2</destinationId>
+		<multiplicity>1</multiplicity>
+	</arc>
+	<arc>
+		<id>a3</id>
+		<type>read</type>
+		<sourceId>p2</sourceId>
+		<destinationId>4</destinationId>
+		<multiplicity>1</multiplicity>
+	</arc>
+</document>

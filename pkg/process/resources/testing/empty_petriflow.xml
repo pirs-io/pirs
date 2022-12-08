@@ -1,0 +1,15 @@
+<document xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xsi:noNamespaceSchemaLocation="https://petriflow.com/petriflow.schema.xsd">
+	<id>new_model</id>
+	<initials>NEW</initials>
+	<title>New Model</title>
+	<icon>device_hub</icon>
+	<defaultRole>true</defaultRole>
+	<anonymousRole>true</anonymousRole>
+	<transitionRole>false</transitionRole>
+	<transition>
+		<id>t1</id>
+		<x>488</x>
+		<y>112</y>
+		<label/>
+	</transition>
+</document>
