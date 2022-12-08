@@ -2,8 +2,9 @@ package db
 
 import (
 	"context"
-	"pirs.io/common"
+	"pirs.io/commons"
 	"pirs.io/tracker/domain/register"
+	"pirs.io/tracker/redis"
 )
 
 const (
@@ -11,12 +12,12 @@ const (
 )
 
 var (
-	rrLog = common.GetLoggerFor("register_repo_logger")
+	rrLog = commons.GetLoggerFor("register_repo_logger")
 )
 
 type RegisterRepo struct {
 	Context *context.Context
-	Client  *common.CustomRedisClient
+	Client  *redis.CustomRedisClient
 }
 
 func (r *RegisterRepo) GetAllRegisteredInstances() ([]register.TrackerInstance, error) {

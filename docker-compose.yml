@@ -8,6 +8,16 @@ services:
       dockerfile: tracker/Dockerfile.dev
     ports:
       - "50004:50004"
+  process-storage:
+    image: pirs.process-storage:latest
+    build:
+      context: ./pkg
+      dockerfile: ./process-storage/Dockerfile.dev
+    ports:
+      - "8080:8080"
+    volumes:
+      - ./data/pirs/git:/data/pirs/git
+
   redis:
     image: redislabs/redismod:latest
     restart: always
@@ -18,3 +28,11 @@ services:
     volumes:
       - ./docker/redis/data:/data
       - ./docker/redis/conf:/data/redis-server
+  mongo:
+    container_name: pirs-mongo
+    image: mongo:latest
+    restart: always
+    ports:
+      - "27017:27017"
+networks:
+  git:

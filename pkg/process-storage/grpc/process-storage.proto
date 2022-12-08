@@ -1,0 +1,76 @@
+syntax = "proto3";
+
+package grpc;
+option go_package = "./;grpc";
+
+service Storage {
+
+  rpc UploadProcess(stream ProcessUploadRequest) returns (stream ProcessUploadResponse) {}
+  rpc DownloadProcess(ProcessDownloadRequest) returns (stream ProcessDownloadResponse) {}
+  rpc ProcessHistory(ProcessHistoryRequest) returns (ProcessHistoryResponse) {}
+}
+
+message ProcessUploadRequest {
+  ProcessFileData data = 1;
+}
+
+message ProcessUploadResponse {
+  UploadStatus status = 1;
+}
+
+message ProcessFileData {
+  oneof data {
+    ProcessMetadata metadata = 1;
+    bytes chunk = 2;
+    }
+}
+
+message ProcessMetadata {
+  string process_id = 1; // format: organization.tenant.project.process:version
+  string filename = 2;
+  Encoding encoding = 5;
+  ProcessType type = 6;
+}
+
+message ProcessDownloadRequest {
+  string process_id = 1;
+}
+
+message ProcessDownloadResponse {
+  ProcessFileData data = 1;
+}
+
+message ProcessHistoryRequest {
+  string process_id = 1;
+}
+
+message ProcessHistoryResponse {
+  string process_id = 1;
+  int64 last_modified = 2;
+  string modified_by = 3;
+  int64 version = 4;
+}
+
+enum Encoding {
+  UTF8 = 0;
+}
+
+enum ProcessType {
+  PETRIFLOW = 0;
+  BPMN = 1;
+}
+
+enum UploadStatus {
+  PENDING = 0;
+  IN_PROGRESS = 1;
+  SUCCESS = 2;
+  FAILED = 3;
+}
+// getProcessCommitForTag returns slice of all commits that affected given processId (process version is searched by tag)
+    func (c *GitClient) getProcessCommitForTag(processId *pb.ProcessId) (*object.Commit, error) {
+tag, err := c.repo.Tag(processId.FullProcessIdWithVersionTag())
+    if err != nil {
+return nil, err
+    }
+return c.repo.CommitObject(tag.Hash())
+    }

@@ -1,0 +1,39 @@
+FROM golang:1.19-bullseye as builder
+
+ARG APP_NAME=process-storage
+ARG APP_DIR=/app/$APP_NAME
+ARG COMMONS_DIR=/app/commons
+
+WORKDIR /app
+
+## install protoc
+RUN apt-get update
+RUN apt-get install -y protobuf-compiler
+
+# install go protoc deps
+RUN go install google.golang.org/protobuf/cmd/protoc-gen-go@latest
+RUN go install google.golang.org/grpc/cmd/protoc-gen-go-grpc@latest
+RUN go install github.com/envoyproxy/protoc-gen-validate@latest
+
+# copy all application files
+COPY ./process-storage $APP_DIR
+COPY ./commons $COMMONS_DIR
+COPY ./process-storage/go.work-template .
+RUN mv go.work-template go.work
+
+# generate go files from proto
+RUN cd $APP_DIR/grpc && ./generate.sh
+
+WORKDIR $APP_DIR
+
+# install deps && build app
+RUN go work sync
+RUN go work use .
+RUN CGO_ENABLED=0 GOOS=linux GOARCH=amd64 go build -o bin/$APP_NAME .
+
+FROM gcr.io/distroless/static-debian11
+
+COPY --from=builder /app/process-storage/bin/process-storage .
+COPY --from=builder /app/process-storage/.env .
+
+CMD ["./process-storage"]

@@ -1,0 +1,10 @@
+go 1.19
+
+use (
+	./commons
+	./process
+	./process-storage
+	./tools/file-uploader
+	./tracker
+	./user
+)

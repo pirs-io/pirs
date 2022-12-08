@@ -2,13 +2,14 @@ package config
 
 import (
 	"context"
-	"pirs.io/common"
+	"pirs.io/commons"
 	"pirs.io/tracker/db"
+	"pirs.io/tracker/redis"
 	"pirs.io/tracker/service"
 )
 
 var (
-	log                                           = common.GetLoggerFor("config")
+	log                                           = commons.GetLoggerFor("config")
 	trackerApplicationContext *ApplicationContext = nil
 )
 
@@ -30,7 +31,7 @@ type ApplicationContext struct {
 func InitApp(configFilePath string) (conf *TrackerAppConfig) {
 	// config loading
 	log.Info().Msg("Starting application")
-	conf, confErr := common.GetAppConfig(configFilePath, &TrackerAppConfig{})
+	conf, confErr := commons.GetAppConfig(configFilePath, &TrackerAppConfig{})
 	if confErr != nil {
 		log.Fatal().Msgf("Unable to load application config! %s", confErr)
 	}
@@ -53,7 +54,7 @@ func GetContext() *ApplicationContext {
 
 func createApplicationContext(conf TrackerAppConfig) (appContext *ApplicationContext, err error) {
 	ctx := context.Background()
-	redisClient := common.NewRedisClient(ctx, conf.RedisURl, conf.RedisPort, conf.RedisPwd, 0)
+	redisClient := redis.NewRedisClient(ctx, conf.RedisURl, conf.RedisPort, conf.RedisPwd, 0)
 	return &ApplicationContext{
 		InstanceRegistrationService: &service.InstanceRegistrationService{RegisterRepo: &db.RegisterRepo{
 			Context: &ctx,

@@ -1,4 +1,4 @@
-package common
+package commons
 
 import (
 	"github.com/rs/zerolog"
@@ -24,5 +24,12 @@ func GetLoggerFor(loggerName string) zerolog.Logger {
 
 		return logger
 	}
+}
 
+func CheckAndLog(err error, log zerolog.Logger) error {
+	if err != nil {
+		log.Err(err).Msg(err.Error())
+		return err
+	}
+	return nil
 }

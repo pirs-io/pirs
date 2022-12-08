@@ -1,4 +1,4 @@
-package grpc
+package main
 
 import (
 	"context"
@@ -9,32 +9,33 @@ import (
 	"google.golang.org/grpc/status"
 	"google.golang.org/protobuf/types/known/emptypb"
 	"net"
-	"pirs.io/commons"
+	"pirs.io/common"
 	"pirs.io/tracker/config"
+	pb "pirs.io/tracker/grpc"
 )
 
 var (
-	log = commons.GetLoggerFor("trackerGrpc")
+	grpcLog = common.GetLoggerFor("trackerGrpc")
 )
 
 type trackerServer struct {
-	UnimplementedTrackerServer
+	pb.UnimplementedTrackerServer
 	appContext *config.ApplicationContext
 }
 
-func (c *trackerServer) RegisterNewPackage(ctx context.Context, packageInfo *PackageInfo) (*PackageRegisterResponse, error) {
+func (c *trackerServer) RegisterNewPackage(ctx context.Context, packageInfo *pb.PackageInfo) (*pb.PackageRegisterResponse, error) {
 	return nil, status.Errorf(codes.Unimplemented, "method RegisterNewPackage not implemented")
 }
 
-func (c *trackerServer) FindPackageLocation(ctx context.Context, in *LocationRequest) (*PackageLocation, error) {
+func (c *trackerServer) FindPackageLocation(ctx context.Context, in *pb.LocationRequest) (*pb.PackageLocation, error) {
 	return nil, status.Errorf(codes.Unimplemented, "method FindPackageLocation not implemented")
 }
 
-func (c *trackerServer) RegisterTrackerInstance(ctx context.Context, in *TrackerInfo) (*InstanceRegisterResponse, error) {
+func (c *trackerServer) RegisterTrackerInstance(ctx context.Context, in *pb.TrackerInfo) (*pb.InstanceRegisterResponse, error) {
 	return nil, status.Errorf(codes.Unimplemented, "method RegisterTrackerInstance not implemented")
 }
 
-func (c *trackerServer) GetAllRegisteredInstances(empty *emptypb.Empty, stream Tracker_GetAllRegisteredInstancesServer) error {
+func (c *trackerServer) GetAllRegisteredInstances(empty *emptypb.Empty, stream pb.Tracker_GetAllRegisteredInstancesServer) error {
 	instances, err := c.appContext.InstanceRegistrationService.GetAllRegisteredInstances()
 	if err != nil {
 		return err
@@ -53,9 +54,9 @@ func StartGrpc(grpcPort int) error {
 	}
 	grpcServer := grpc.NewServer()
 
-	RegisterTrackerServer(grpcServer, &trackerServer{appContext: config.GetContext()})
+	pb.RegisterTrackerServer(grpcServer, &trackerServer{appContext: config.GetContext()})
 
-	log.Info().Msgf("Running gRPC server on port: %s", grpcPort)
+	grpcLog.Info().Msgf("Running gRPC server on port: %s", grpcPort)
 	grpcErr := grpcServer.Serve(lis)
 	if grpcErr != nil {
 		return grpcErr
