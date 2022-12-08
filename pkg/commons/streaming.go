@@ -37,40 +37,38 @@ func StreamFileFromPipe(r *io.PipeReader, chunkSize int64, chunkCallback func(ch
 }
 
 func StreamFileToPipe(fd *os.File, chunkSize int64, pipeWriter *io.PipeWriter) (err error) {
-	go func() {
-		defer func(fd *os.File) {
-			err = fd.Close()
-			if err != nil {
-				log.Err(err)
-			}
-		}(fd)
-		defer func(pipeWriter *io.PipeWriter) {
-			err = pipeWriter.Close()
-			if err != nil {
-				log.Err(err)
-			}
-		}(pipeWriter)
-
-		buff := make([]byte, chunkSize)
-		for {
-			var n int
-			n, err = fd.Read(buff)
-			if err != nil {
-				log.Err(err)
-			}
-			remaining := buff[:n]
-			if err == io.EOF {
-				_, err = pipeWriter.Write(remaining)
-				if err != nil {
-					log.Err(err)
-				}
-				break
-			}
-			_, err = pipeWriter.Write(buff)
-			if err != nil {
-				log.Err(err)
-			}
+	defer func(fd *os.File) {
+		err = fd.Close()
+		if err != nil {
+			log.Err(err)
 		}
-	}()
+	}(fd)
+	defer func(pipeWriter *io.PipeWriter) {
+		err = pipeWriter.Close()
+		if err != nil {
+			log.Err(err)
+		}
+	}(pipeWriter)
+
+	buff := make([]byte, chunkSize)
+	for {
+		var n int
+		n, err = fd.Read(buff)
+		if err != nil {
+			log.Err(err)
+		}
+		remaining := buff[:n]
+		if err == io.EOF {
+			_, err = pipeWriter.Write(remaining)
+			if err != nil {
+				log.Err(err)
+			}
+			break
+		}
+		_, err = pipeWriter.Write(buff)
+		if err != nil {
+			log.Err(err)
+		}
+	}
 	return err
 }

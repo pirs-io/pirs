@@ -184,9 +184,14 @@ func (c *GitClient) streamProcessFile(processId *pb.ProcessId, processCommit *ob
 
 		// read desired version of file
 		fd, err := os.Open(filepath.Join(c.tenantGitRepoPath, *processId.ProcessWithinProject()))
-		return commons.StreamFileToPipe(fd, c.ChunkSize, pipeWriter)
+		go func() {
+			err := commons.StreamFileToPipe(fd, c.ChunkSize, pipeWriter)
+			if err != nil {
+				log.Err(err)
+			}
+		}()
 	}
-	return errors.New("process not found")
+	return nil
 }
 
 // getProcessCommitForTag returns slice of all commits that affected given processId (process version is searched by tag)
