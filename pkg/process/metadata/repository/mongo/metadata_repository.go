@@ -60,6 +60,8 @@ func (m *MetadataRepository) FindNewestVersionByURI(ctx context.Context, uri str
 	}
 }
 
+// FindByURI finds the metadata of process based on given URI. If success, found metadata is returned. Otherwise, empty
+// metadata is returned.
 func (m *MetadataRepository) FindByURI(ctx context.Context, uri string) (domain.Metadata, error) {
 	var data []domain.Metadata
 	opts := options.MergeFindOptions(

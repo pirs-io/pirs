@@ -69,6 +69,8 @@ func (ms *MetadataService) FindNewestVersionByURI(ctx context.Context, uri strin
 	return ver
 }
 
+// FindByURI passes give uri to the repository layer along with added context timeout. If repository returns an error,
+// empty metadata is returned. Otherwise, found metadata is returned.
 func (ms *MetadataService) FindByURI(ctx context.Context, uri string) domain.Metadata {
 	newCtx, cancel := context.WithTimeout(ctx, ms.contextTimeout)
 	defer cancel()

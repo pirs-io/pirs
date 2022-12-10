@@ -128,6 +128,8 @@ func (ps *processServer) RemoveProcess(ctx context.Context, req *grpcProto.Remov
 	return nil, status.Errorf(codes.Unimplemented, "method RemoveProcess not implemented")
 }
 
+// DownloadProcess handles request to download process metadata. It streams the response. First it sends success or fail
+// message and then metadata one by one.
 func (ps *processServer) DownloadProcess(req *grpcProto.DownloadProcessRequest, stream grpcProto.Process_DownloadProcessServer) error {
 	// authorization
 	// todo
