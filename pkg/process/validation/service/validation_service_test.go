@@ -11,27 +11,27 @@ import (
 func TestValidationService_ValidateProcessData(t *testing.T) {
 	valData := &valModels.ImportProcessValidationData{
 		ReqData:         models.ImportProcessRequestData{},
-		ValidationFlags: valModels.ValidationFlags{},
+		ValidationFlags: valModels.ImportProcessValidationFlags{},
 	}
 
 	// is valid
-	chainSucess := buildValidationChainsTest(false)
+	chainSucess := buildValidationChainForImportProcessTest(false)
 	vsSucess := &ValidationService{
-		chainStart: chainSucess,
+		chainStartImportProcess: chainSucess,
 	}
 	result := vsSucess.ValidateProcessData(valData)
 	assert.Equal(t, true, result)
 
 	// is invalid
-	chainFail := buildValidationChainsTest(true)
+	chainFail := buildValidationChainForImportProcessTest(true)
 	vsFail := &ValidationService{
-		chainStart: chainFail,
+		chainStartImportProcess: chainFail,
 	}
 	result = vsFail.ValidateProcessData(valData)
 	assert.Equal(t, false, result)
 }
 
-func buildValidationChainsTest(isFail bool) valModels.Validator {
+func buildValidationChainForImportProcessTest(isFail bool) valModels.Validator {
 	// define validators
 	requestValidator := &mockTesting.ImportProcessRequestValidator{
 		MockResult: !isFail,
@@ -45,6 +45,38 @@ func buildValidationChainsTest(isFail bool) valModels.Validator {
 	// create chain
 	requestValidator.SetNext(fileTypeValidator)
 	fileTypeValidator.SetNext(schemaValidator)
+
+	return requestValidator
+}
+
+func TestValidationService_ValidateDownloadData(t *testing.T) {
+	valData := &valModels.DownloadProcessValidationData{
+		ReqData:         models.DownloadProcessRequestData{},
+		ValidationFlags: valModels.DownloadProcessValidationFlags{},
+	}
+
+	// is valid
+	chainSucess := buildValidationChainForDownloadProcessTest(false)
+	vsSucess := &ValidationService{
+		chainStartDownloadProcess: chainSucess,
+	}
+	result := vsSucess.ValidateDownloadData(valData)
+	assert.Equal(t, true, result)
+
+	// is invalid
+	chainFail := buildValidationChainForDownloadProcessTest(true)
+	vsFail := &ValidationService{
+		chainStartDownloadProcess: chainFail,
+	}
+	result = vsFail.ValidateDownloadData(valData)
+	assert.Equal(t, false, result)
+}
+
+func buildValidationChainForDownloadProcessTest(isFail bool) valModels.Validator {
+	// define validators
+	requestValidator := &mockTesting.DownloadProcessRequestValidator{
+		MockResult: !isFail,
+	}
 
 	return requestValidator
 }

@@ -38,7 +38,7 @@ func NewFileTypeValidator(rawExtensions string, ignoreWrongExtension bool) *File
 }
 
 // Validate takes models.ImportProcessValidationData and validates it in file-type context. If data is valid, it sets
-// field IsFileTypeValid of models.ValidationFlags to true. Otherwise it sets to false.
+// field IsFileTypeValid of models.ValidationFlags to true. Otherwise, it sets to false.
 func (ft *FileTypeValidator) Validate(data interface{}) {
 	typedData := data.(*models.ImportProcessValidationData)
 	var isValid bool

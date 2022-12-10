@@ -13,23 +13,23 @@ func TestFileTypeValidator_Validate(t *testing.T) {
 	}
 	validator := NewFileTypeValidator(conf.AllowedFileExtensions, conf.IgnoreWrongExtension)
 
-	valData := buildValidationData(RESOURCES+PF3, PF3)
+	valData := buildValidationDataForImportProcess(RESOURCES+PF3, PF3)
 	validator.Validate(&valData)
 	assert.Equal(t, true, valData.ValidationFlags.IsFileTypeValid)
 
-	valData = buildValidationData(RESOURCES+PF2, PF2)
+	valData = buildValidationDataForImportProcess(RESOURCES+PF2, PF2)
 	validator.Validate(&valData)
 	assert.Equal(t, true, valData.ValidationFlags.IsFileTypeValid)
 
-	valData = buildValidationData(RESOURCES+BPMN1, BPMN1)
+	valData = buildValidationDataForImportProcess(RESOURCES+BPMN1, BPMN1)
 	validator.Validate(&valData)
 	assert.Equal(t, true, valData.ValidationFlags.IsFileTypeValid)
 
-	valData = buildValidationData(RESOURCES+WRONG1, WRONG1)
+	valData = buildValidationDataForImportProcess(RESOURCES+WRONG1, WRONG1)
 	validator.Validate(&valData)
 	assert.Equal(t, false, valData.ValidationFlags.IsFileTypeValid)
 
-	valData = buildValidationData(RESOURCES+WRONG2, WRONG2)
+	valData = buildValidationDataForImportProcess(RESOURCES+WRONG2, WRONG2)
 	validator.Validate(&valData)
 	assert.Equal(t, false, valData.ValidationFlags.IsFileTypeValid)
 }
