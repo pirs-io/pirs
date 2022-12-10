@@ -1,6 +1,7 @@
 package service
 
 import (
+	"go.mongodb.org/mongo-driver/bson/primitive"
 	"google.golang.org/grpc/codes"
 	"pirs.io/process/domain"
 	metadata "pirs.io/process/metadata/service"
@@ -28,16 +29,20 @@ func (ds *DownloadService) DownloadProcess(req *models.DownloadProcessRequestDat
 	if !isValid {
 		return createResponse(codes.InvalidArgument, nil)
 	}
-	// find in repo metadata
+
+	// find metadata
+	foundMetadata := ds.MetadataService.FindByURI(req.Ctx, req.Uri)
+	if foundMetadata.ID == primitive.NilObjectID {
+		return createResponse(codes.NotFound, nil)
+	}
 	// resolve deps
+	// todo
+
 	// find additional dependent metadata
+	// todo
 
 	// return result
-	customM := domain.NewMetadata()
-	customM.CustomData = domain.PetriflowMetadata{
-		ProcessIdentifier: "awdawdawd",
-	}
-	return createResponse(codes.OK, []domain.Metadata{*customM, *domain.NewMetadata(), *domain.NewMetadata(), *domain.NewMetadata(), *domain.NewMetadata(), *domain.NewMetadata()})
+	return createResponse(codes.OK, []domain.Metadata{foundMetadata})
 }
 
 func (ds *DownloadService) transformRequestDataToValidationData(reqData models.DownloadProcessRequestData) *valModels.DownloadProcessValidationData {

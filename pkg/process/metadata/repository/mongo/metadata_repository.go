@@ -59,3 +59,30 @@ func (m *MetadataRepository) FindNewestVersionByURI(ctx context.Context, uri str
 		return data[0].Version, nil
 	}
 }
+
+func (m *MetadataRepository) FindByURI(ctx context.Context, uri string) (domain.Metadata, error) {
+	var data []domain.Metadata
+	opts := options.MergeFindOptions(
+		options.Find().SetLimit(1),
+		options.Find().SetSkip(0),
+	)
+
+	cursor, err := m.Collection.Find(ctx, bson.M{"uri": uri}, opts)
+	if err != nil {
+		return domain.Metadata{}, err
+	}
+	if cursor == nil {
+		return domain.Metadata{}, fmt.Errorf("nil cursor value")
+	}
+
+	err = cursor.All(ctx, &data)
+	if err != nil {
+		return domain.Metadata{}, err
+	}
+
+	if len(data) == 0 {
+		return domain.Metadata{}, nil
+	} else {
+		return data[0], nil
+	}
+}

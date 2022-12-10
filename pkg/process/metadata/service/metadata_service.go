@@ -68,3 +68,15 @@ func (ms *MetadataService) FindNewestVersionByURI(ctx context.Context, uri strin
 	}
 	return ver
 }
+
+func (ms *MetadataService) FindByURI(ctx context.Context, uri string) domain.Metadata {
+	newCtx, cancel := context.WithTimeout(ctx, ms.contextTimeout)
+	defer cancel()
+
+	found, err := ms.repository.FindByURI(newCtx, uri)
+	if err != nil {
+		log.Error().Msg(status.Errorf(codes.Internal, "could not find the metadata in database: %v", err).Error())
+		return domain.Metadata{}
+	}
+	return found
+}

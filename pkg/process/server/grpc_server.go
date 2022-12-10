@@ -133,7 +133,12 @@ func (ps *processServer) DownloadProcess(req *grpcProto.DownloadProcessRequest, 
 	// todo
 
 	// main logic
+	ctx := stream.Context()
+	if ctx == nil {
+		ctx = context.Background()
+	}
 	reqData := models.DownloadProcessRequestData{
+		Ctx: ctx,
 		Uri: req.Uri,
 	}
 	response := ps.appContext.DownloadService.DownloadProcess(&reqData)
