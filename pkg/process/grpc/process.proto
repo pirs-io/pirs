@@ -11,6 +11,7 @@ service Process {
   rpc ImportPackage(ImportPackageRequest) returns (ImportPackageResponse) {}
   rpc RemoveProcess(RemoveProcessRequest) returns (RemoveProcessResponse) {}
   rpc DownloadProcess(DownloadProcessRequest) returns (stream DownloadProcessResponse) {}
+  rpc DownloadPackage(DownloadPackageRequest) returns (stream DownloadPackageResponse) {}
 }
 
 message ImportProcessRequest {
@@ -39,6 +40,13 @@ message DownloadProcessRequest {
   string uri = 1;
 }
 message DownloadProcessResponse {
+  string message = 1;
+  google.protobuf.Struct metadata = 2;
+}
+message DownloadPackageRequest {
+  string partial_uri = 1;
+}
+message DownloadPackageResponse {
   string message = 1;
   google.protobuf.Struct metadata = 2;
 }
