@@ -59,43 +59,71 @@ func TestImportProcessRequestValidator_Validate(t *testing.T) {
 func TestDownloadProcessRequestValidator_Validate(t *testing.T) {
 	rv := &DownloadProcessRequestValidator{}
 
-	valData := buildValidationDataForDownloadProcess("awd.awd.awd.awd:1")
+	valData := buildValidationDataForDownload("awd.awd.awd.awd:1")
 	rv.Validate(&valData)
 	assert.Equal(t, true, valData.ValidationFlags.IsRequestValid)
 
-	valData = buildValidationDataForDownloadProcess("awdawd.awd.awd:1")
+	valData = buildValidationDataForDownload("awdawd.awd.awd:1")
 	rv.Validate(&valData)
 	assert.Equal(t, false, valData.ValidationFlags.IsRequestValid)
 
-	valData = buildValidationDataForDownloadProcess("awd..awd.awd.awd:1")
+	valData = buildValidationDataForDownload("awd..awd.awd.awd:1")
 	rv.Validate(&valData)
 	assert.Equal(t, false, valData.ValidationFlags.IsRequestValid)
 
-	valData = buildValidationDataForDownloadProcess("awd.awd.awd:awd.1")
+	valData = buildValidationDataForDownload("awd.awd.awd:awd.1")
 	rv.Validate(&valData)
 	assert.Equal(t, false, valData.ValidationFlags.IsRequestValid)
 
-	valData = buildValidationDataForDownloadProcess(":awd.awd.awd.awd:1")
+	valData = buildValidationDataForDownload(":awd.awd.awd.awd:1")
 	rv.Validate(&valData)
 	assert.Equal(t, false, valData.ValidationFlags.IsRequestValid)
 
-	valData = buildValidationDataForDownloadProcess("...:")
+	valData = buildValidationDataForDownload("...:")
 	rv.Validate(&valData)
 	assert.Equal(t, false, valData.ValidationFlags.IsRequestValid)
 
-	valData = buildValidationDataForDownloadProcess("")
+	valData = buildValidationDataForDownload("")
 	rv.Validate(&valData)
 	assert.Equal(t, false, valData.ValidationFlags.IsRequestValid)
 
-	valData = buildValidationDataForDownloadProcess("awd.awd.awd.awd:1d")
+	valData = buildValidationDataForDownload("awd.awd.awd.awd:1d")
 	rv.Validate(&valData)
 	assert.Equal(t, false, valData.ValidationFlags.IsRequestValid)
 
-	valData = buildValidationDataForDownloadProcess("awd.awd.awd.awd:two")
+	valData = buildValidationDataForDownload("awd.awd.awd.awd:two")
 	rv.Validate(&valData)
 	assert.Equal(t, false, valData.ValidationFlags.IsRequestValid)
 
-	valData = buildValidationDataForDownloadProcess("awd.awd.awd:1.awd")
+	valData = buildValidationDataForDownload("awd.awd.awd:1.awd")
+	rv.Validate(&valData)
+	assert.Equal(t, false, valData.ValidationFlags.IsRequestValid)
+}
+
+func TestDownloadPackageRequestValidator_Validate(t *testing.T) {
+	rv := &DownloadPackageRequestValidator{}
+
+	valData := buildValidationDataForDownload("awd.awd.awd")
+	rv.Validate(&valData)
+	assert.Equal(t, true, valData.ValidationFlags.IsRequestValid)
+
+	valData = buildValidationDataForDownload("awd.awd.")
+	rv.Validate(&valData)
+	assert.Equal(t, false, valData.ValidationFlags.IsRequestValid)
+
+	valData = buildValidationDataForDownload("awd..awd")
+	rv.Validate(&valData)
+	assert.Equal(t, false, valData.ValidationFlags.IsRequestValid)
+
+	valData = buildValidationDataForDownload(":awd.awd.awd.awd:1")
+	rv.Validate(&valData)
+	assert.Equal(t, false, valData.ValidationFlags.IsRequestValid)
+
+	valData = buildValidationDataForDownload("..")
+	rv.Validate(&valData)
+	assert.Equal(t, false, valData.ValidationFlags.IsRequestValid)
+
+	valData = buildValidationDataForDownload("")
 	rv.Validate(&valData)
 	assert.Equal(t, false, valData.ValidationFlags.IsRequestValid)
 }
