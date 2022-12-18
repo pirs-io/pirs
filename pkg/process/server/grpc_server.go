@@ -139,9 +139,9 @@ func (ps *processServer) DownloadProcess(req *grpcProto.DownloadProcessRequest, 
 	if ctx == nil {
 		ctx = context.Background()
 	}
-	reqData := models.DownloadProcessRequestData{
-		Ctx: ctx,
-		Uri: req.Uri,
+	reqData := models.DownloadRequestData{
+		Ctx:       ctx,
+		TargetUri: req.Uri,
 	}
 	response := ps.appContext.DownloadService.DownloadProcess(&reqData)
 
@@ -192,9 +192,9 @@ func (ps *processServer) DownloadPackage(req *grpcProto.DownloadPackageRequest, 
 		ctx = context.Background()
 	}
 
-	reqData := models.DownloadPackageRequestData{
-		Ctx:        ctx,
-		PartialUri: req.PartialUri,
+	reqData := models.DownloadRequestData{
+		Ctx:       ctx,
+		TargetUri: req.PartialUri,
 	}
 
 	response := ps.appContext.DownloadService.DownloadPackage(&reqData)

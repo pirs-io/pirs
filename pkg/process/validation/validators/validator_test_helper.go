@@ -66,13 +66,13 @@ func buildValidationDataForImportProcess(path string, filename string) valModels
 	}
 }
 
-func buildValidationDataForDownloadProcess(uri string) valModels.DownloadProcessValidationData {
-	return valModels.DownloadProcessValidationData{
-		ReqData: models.DownloadProcessRequestData{
-			Ctx: context.Background(),
-			Uri: uri,
+func buildValidationDataForDownloadProcess(uri string) valModels.DownloadValidationData {
+	return valModels.DownloadValidationData{
+		ReqData: models.DownloadRequestData{
+			Ctx:       context.Background(),
+			TargetUri: uri,
 		},
-		ValidationFlags: valModels.DownloadProcessValidationFlags{},
+		ValidationFlags: valModels.DownloadValidationFlags{},
 	}
 }
 

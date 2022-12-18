@@ -6,26 +6,14 @@ import (
 	"pirs.io/process/domain"
 )
 
-// A DownloadProcessRequestData holds parsed Uri from GRPC request. It's created in GRPC server.
-type DownloadProcessRequestData struct {
-	Ctx context.Context
-	Uri string
+// A DownloadRequestData holds parsed Uri from GRPC request. It's created in GRPC server. todo
+type DownloadRequestData struct {
+	Ctx       context.Context
+	TargetUri string
 }
 
-// A DownloadProcessResponseData represents response from DownloadService to GRPC server. It's streamed in GRPC server.
-type DownloadProcessResponseData struct {
-	Status   codes.Code
-	Metadata []domain.Metadata
-}
-
-// A DownloadPackageRequestData todo
-type DownloadPackageRequestData struct {
-	Ctx        context.Context
-	PartialUri string
-}
-
-// A DownloadPackageResponseData todo
-type DownloadPackageResponseData struct {
+// A DownloadResponseData represents response from DownloadService to GRPC server. It's streamed in GRPC server. todo
+type DownloadResponseData struct {
 	Status   codes.Code
 	Metadata []domain.Metadata
 }

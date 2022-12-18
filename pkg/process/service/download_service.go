@@ -16,20 +16,20 @@ type DownloadService struct {
 	ValidationService *validation.ValidationService
 }
 
-// DownloadProcess handles models.DownloadProcessRequestData. If success, it returns models.DownloadProcessResponseData
+// DownloadProcess handles models.DownloadRequestData. If success, it returns models.DownloadResponseData
 // with codes.OK and found metadata. Otherwise, a response with error code and nil metadata are returned.
-func (ds *DownloadService) DownloadProcess(req *models.DownloadProcessRequestData) *models.DownloadProcessResponseData {
-	createResponse := func(code codes.Code, m []domain.Metadata) *models.DownloadProcessResponseData {
-		return &models.DownloadProcessResponseData{
+func (ds *DownloadService) DownloadProcess(req *models.DownloadRequestData) *models.DownloadResponseData {
+	createResponse := func(code codes.Code, m []domain.Metadata) *models.DownloadResponseData {
+		return &models.DownloadResponseData{
 			Status:   code,
 			Metadata: m,
 		}
 	}
 
 	// validate
-	valData := &valModels.DownloadProcessValidationData{
+	valData := &valModels.DownloadValidationData{
 		ReqData:         *req,
-		ValidationFlags: valModels.DownloadProcessValidationFlags{},
+		ValidationFlags: valModels.DownloadValidationFlags{},
 	}
 	isValid := ds.ValidationService.ValidateDownloadData(valData)
 	if !isValid {
@@ -37,7 +37,7 @@ func (ds *DownloadService) DownloadProcess(req *models.DownloadProcessRequestDat
 	}
 
 	// find metadata
-	foundMetadata := ds.MetadataService.FindByURI(req.Ctx, req.Uri)
+	foundMetadata := ds.MetadataService.FindByURI(req.Ctx, req.TargetUri)
 	if foundMetadata.ID == primitive.NilObjectID {
 		return createResponse(codes.NotFound, nil)
 	}
@@ -52,9 +52,9 @@ func (ds *DownloadService) DownloadProcess(req *models.DownloadProcessRequestDat
 }
 
 // DownloadPackage todo
-func (ds *DownloadService) DownloadPackage(req *models.DownloadPackageRequestData) *models.DownloadPackageResponseData {
-	createResponse := func(code codes.Code, m []domain.Metadata) *models.DownloadPackageResponseData {
-		return &models.DownloadPackageResponseData{
+func (ds *DownloadService) DownloadPackage(req *models.DownloadRequestData) *models.DownloadResponseData {
+	createResponse := func(code codes.Code, m []domain.Metadata) *models.DownloadResponseData {
+		return &models.DownloadResponseData{
 			Status:   code,
 			Metadata: m,
 		}

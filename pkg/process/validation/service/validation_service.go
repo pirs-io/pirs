@@ -71,13 +71,13 @@ func (vs *ValidationService) ValidatePackageData(data *models.ImportPackageValid
 }
 
 // ValidateDownloadData todo
-func (vs *ValidationService) ValidateDownloadData(data *models.DownloadProcessValidationData) bool {
+func (vs *ValidationService) ValidateDownloadData(data *models.DownloadValidationData) bool {
 	vs.chainStartDownloadProcess.Validate(data)
 	validationFlags := reflect.ValueOf(data.ValidationFlags)
 	// all validations must pass
 	for i := 0; i < validationFlags.NumField(); i++ {
 		if validationFlags.Field(i).Bool() == false {
-			log.Error().Msg(status.Errorf(codes.InvalidArgument, "uri %s is invalid: %s is false", data.ReqData.Uri, validationFlags.Type().Field(i).Name).Error())
+			log.Error().Msg(status.Errorf(codes.InvalidArgument, "uri %s is invalid: %s is false", data.ReqData.TargetUri, validationFlags.Type().Field(i).Name).Error())
 			return false
 		}
 	}

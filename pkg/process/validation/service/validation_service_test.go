@@ -51,8 +51,8 @@ func buildValidationChainForImportProcessTest(isFail bool) valModels.Validator {
 
 func TestValidationService_ValidateDownloadData(t *testing.T) {
 	valData := &valModels.DownloadProcessValidationData{
-		ReqData:         models.DownloadProcessRequestData{},
-		ValidationFlags: valModels.DownloadProcessValidationFlags{},
+		ReqData:         models.DownloadRequestData{},
+		ValidationFlags: valModels.DownloadValidationFlags{},
 	}
 
 	// is valid

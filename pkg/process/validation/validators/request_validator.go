@@ -48,12 +48,12 @@ func (rv *ImportPackageRequestValidator) Validate(data *models.ImportPackageVali
 }
 
 func (rv *DownloadProcessRequestValidator) Validate(data interface{}) {
-	typedData := data.(*models.DownloadProcessValidationData)
+	typedData := data.(*models.DownloadValidationData)
 	var isValid bool
 	defer rv.ExecuteNextIfPresent(typedData)
 	defer func() { typedData.ValidationFlags.IsRequestValid = isValid }()
 
-	if isValidUri(typedData.ReqData.Uri) {
+	if isValidUri(typedData.ReqData.TargetUri) {
 		isValid = true
 	} else {
 		isValid = false
