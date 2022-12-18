@@ -18,16 +18,19 @@ var (
 type ValidationService struct {
 	chainStartImportProcess   models.Validator
 	chainStartDownloadProcess models.Validator
+	chainStartDownloadPackage models.Validator
 }
 
 // NewValidationService creates instance of ValidationService with validation chains.
 func NewValidationService(rawExtensions string, ignoreWrongExtension bool) *ValidationService {
 	chainStartImportProcess := buildValidationChainForImportProcess(rawExtensions, ignoreWrongExtension)
 	chainStartDownloadProcess := buildValidationChainForDownloadProcess()
+	chainStartDownloadPackage := buildValidationChainForDownloadPackage()
 
 	return &ValidationService{
 		chainStartImportProcess:   chainStartImportProcess,
 		chainStartDownloadProcess: chainStartDownloadProcess,
+		chainStartDownloadPackage: chainStartDownloadPackage,
 	}
 }
 
@@ -44,9 +47,12 @@ func buildValidationChainForImportProcess(rawExtensions string, ignoreWrongExten
 }
 
 func buildValidationChainForDownloadProcess() models.Validator {
-	// define validators
 	requestValidator := &validators.DownloadProcessRequestValidator{}
+	return requestValidator
+}
 
+func buildValidationChainForDownloadPackage() models.Validator {
+	requestValidator := &validators.DownloadPackageRequestValidator{}
 	return requestValidator
 }
 
@@ -71,13 +77,17 @@ func (vs *ValidationService) ValidatePackageData(data *models.ImportPackageValid
 }
 
 // ValidateDownloadData todo
-func (vs *ValidationService) ValidateDownloadData(data *models.DownloadValidationData) bool {
-	vs.chainStartDownloadProcess.Validate(data)
+func (vs *ValidationService) ValidateDownloadData(data *models.DownloadValidationData, isProject bool) bool {
+	if isProject {
+		vs.chainStartDownloadPackage.Validate(data)
+	} else {
+		vs.chainStartDownloadProcess.Validate(data)
+	}
 	validationFlags := reflect.ValueOf(data.ValidationFlags)
 	// all validations must pass
 	for i := 0; i < validationFlags.NumField(); i++ {
 		if validationFlags.Field(i).Bool() == false {
-			log.Error().Msg(status.Errorf(codes.InvalidArgument, "uri %s is invalid: %s is false", data.ReqData.TargetUri, validationFlags.Type().Field(i).Name).Error())
+			log.Error().Msg(status.Errorf(codes.InvalidArgument, "target uri %s is invalid: %s is false", data.ReqData.TargetUri, validationFlags.Type().Field(i).Name).Error())
 			return false
 		}
 	}

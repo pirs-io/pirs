@@ -16,9 +16,9 @@ type DownloadService struct {
 	ValidationService *validation.ValidationService
 }
 
-// DownloadProcess handles models.DownloadRequestData. If success, it returns models.DownloadResponseData
+// DownloadProcesses handles models.DownloadRequestData. If success, it returns models.DownloadResponseData
 // with codes.OK and found metadata. Otherwise, a response with error code and nil metadata are returned.
-func (ds *DownloadService) DownloadProcess(req *models.DownloadRequestData) *models.DownloadResponseData {
+func (ds *DownloadService) DownloadProcesses(req *models.DownloadRequestData, isProject bool) *models.DownloadResponseData {
 	createResponse := func(code codes.Code, m []domain.Metadata) *models.DownloadResponseData {
 		return &models.DownloadResponseData{
 			Status:   code,
@@ -31,12 +31,13 @@ func (ds *DownloadService) DownloadProcess(req *models.DownloadRequestData) *mod
 		ReqData:         *req,
 		ValidationFlags: valModels.DownloadValidationFlags{},
 	}
-	isValid := ds.ValidationService.ValidateDownloadData(valData)
+	isValid := ds.ValidationService.ValidateDownloadData(valData, isProject)
 	if !isValid {
 		return createResponse(codes.InvalidArgument, nil)
 	}
 
 	// find metadata
+
 	foundMetadata := ds.MetadataService.FindByURI(req.Ctx, req.TargetUri)
 	if foundMetadata.ID == primitive.NilObjectID {
 		return createResponse(codes.NotFound, nil)
@@ -49,29 +50,4 @@ func (ds *DownloadService) DownloadProcess(req *models.DownloadRequestData) *mod
 
 	// return result
 	return createResponse(codes.OK, []domain.Metadata{foundMetadata})
-}
-
-// DownloadPackage todo
-func (ds *DownloadService) DownloadPackage(req *models.DownloadRequestData) *models.DownloadResponseData {
-	createResponse := func(code codes.Code, m []domain.Metadata) *models.DownloadResponseData {
-		return &models.DownloadResponseData{
-			Status:   code,
-			Metadata: m,
-		}
-	}
-
-	// validate
-	// todo
-
-	// find metadata
-	// todo
-
-	// resolve deps
-	// todo
-
-	// find additional dependent metadata
-	// todo
-
-	// return result
-	return createResponse(codes.OK, []domain.Metadata{})
 }

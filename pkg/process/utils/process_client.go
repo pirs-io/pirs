@@ -62,8 +62,8 @@ func downloadData(client mygrpc.ProcessClient, uri string) {
 	ctx, cancel := context.WithTimeout(context.Background(), 5*time.Second)
 	defer cancel()
 
-	req := &mygrpc.DownloadProcessRequest{
-		Uri: uri,
+	req := &mygrpc.DownloadRequest{
+		TargetUri: uri,
 	}
 	stream, err := client.DownloadProcess(ctx, req)
 	if err != nil {

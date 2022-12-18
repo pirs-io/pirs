@@ -25,6 +25,10 @@ type DownloadProcessRequestValidator struct {
 	next models.Validator
 }
 
+type DownloadPackageRequestValidator struct {
+	next models.Validator
+}
+
 // Validate takes models.ImportProcessValidationData and validates it in request context. If data is valid, it sets
 // field IsRequestValid of models.ValidationFlags to true. Otherwise it sets to false.
 func (rv *ImportProcessRequestValidator) Validate(data interface{}) {
@@ -47,6 +51,7 @@ func (rv *ImportPackageRequestValidator) Validate(data *models.ImportPackageVali
 	panic("not implemented")
 }
 
+// Validate todo
 func (rv *DownloadProcessRequestValidator) Validate(data interface{}) {
 	typedData := data.(*models.DownloadValidationData)
 	var isValid bool
@@ -54,6 +59,19 @@ func (rv *DownloadProcessRequestValidator) Validate(data interface{}) {
 	defer func() { typedData.ValidationFlags.IsRequestValid = isValid }()
 
 	if isValidUri(typedData.ReqData.TargetUri) {
+		isValid = true
+	} else {
+		isValid = false
+	}
+}
+
+func (rv *DownloadPackageRequestValidator) Validate(data interface{}) {
+	typedData := data.(*models.DownloadValidationData)
+	var isValid bool
+	defer rv.ExecuteNextIfPresent(typedData)
+	defer func() { typedData.ValidationFlags.IsRequestValid = isValid }()
+
+	if isValidPackageUri(typedData.ReqData.TargetUri) {
 		isValid = true
 	} else {
 		isValid = false
@@ -72,6 +90,12 @@ func (rv *DownloadProcessRequestValidator) ExecuteNextIfPresent(data interface{}
 	}
 }
 
+func (rv *DownloadPackageRequestValidator) ExecuteNextIfPresent(data interface{}) {
+	if rv.next != nil {
+		rv.next.Validate(data)
+	}
+}
+
 func (rv *ImportProcessRequestValidator) SetNext(validator models.Validator) {
 	rv.next = validator
 }
@@ -81,6 +105,10 @@ func (rv *ImportPackageRequestValidator) SetNext(validator models.Validator) {
 }
 
 func (rv *DownloadProcessRequestValidator) SetNext(validator models.Validator) {
+	rv.next = validator
+}
+
+func (rv *DownloadPackageRequestValidator) SetNext(validator models.Validator) {
 	rv.next = validator
 }
 
@@ -141,6 +169,27 @@ func isValidUri(uri string) bool {
 					if err != nil || !isValid {
 						return false
 					}
+				}
+			}
+			return true
+		} else {
+			return false
+		}
+	} else {
+		return false
+	}
+}
+func isValidPackageUri(uri string) bool {
+	if strings.Contains(uri, ".") {
+		splitUri := strings.Split(uri, ".")
+		if len(splitUri) == 3 {
+			for _, part := range splitUri {
+				if len(part) == 0 {
+					return false
+				}
+				isValid, err := regexp.MatchString(URI_REGEX, part)
+				if err != nil || !isValid {
+					return false
 				}
 			}
 			return true

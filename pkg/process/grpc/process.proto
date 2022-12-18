@@ -10,8 +10,8 @@ service Process {
   rpc ImportProcess(stream ImportProcessRequest) returns (ImportProcessResponse) {}
   rpc ImportPackage(ImportPackageRequest) returns (ImportPackageResponse) {}
   rpc RemoveProcess(RemoveProcessRequest) returns (RemoveProcessResponse) {}
-  rpc DownloadProcess(DownloadProcessRequest) returns (stream DownloadProcessResponse) {}
-  rpc DownloadPackage(DownloadPackageRequest) returns (stream DownloadPackageResponse) {}
+  rpc DownloadProcess(DownloadRequest) returns (stream DownloadResponse) {}
+  rpc DownloadPackage(DownloadRequest) returns (stream DownloadResponse) {}
 }
 
 message ImportProcessRequest {
@@ -36,17 +36,10 @@ message ImportPackageResponse {}
 message RemoveProcessRequest {}
 message RemoveProcessResponse {}
 
-message DownloadProcessRequest {
-  string uri = 1;
+message DownloadRequest {
+  string targetUri = 1;
 }
-message DownloadProcessResponse {
-  string message = 1;
-  google.protobuf.Struct metadata = 2;
-}
-message DownloadPackageRequest {
-  string partial_uri = 1;
-}
-message DownloadPackageResponse {
+message DownloadResponse {
   string message = 1;
   google.protobuf.Struct metadata = 2;
 }

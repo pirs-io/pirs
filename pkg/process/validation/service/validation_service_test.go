@@ -50,7 +50,7 @@ func buildValidationChainForImportProcessTest(isFail bool) valModels.Validator {
 }
 
 func TestValidationService_ValidateDownloadData(t *testing.T) {
-	valData := &valModels.DownloadProcessValidationData{
+	valData := &valModels.DownloadValidationData{
 		ReqData:         models.DownloadRequestData{},
 		ValidationFlags: valModels.DownloadValidationFlags{},
 	}
@@ -60,7 +60,7 @@ func TestValidationService_ValidateDownloadData(t *testing.T) {
 	vsSucess := &ValidationService{
 		chainStartDownloadProcess: chainSucess,
 	}
-	result := vsSucess.ValidateDownloadData(valData)
+	result := vsSucess.ValidateDownloadData(valData, false)
 	assert.Equal(t, true, result)
 
 	// is invalid
@@ -68,7 +68,7 @@ func TestValidationService_ValidateDownloadData(t *testing.T) {
 	vsFail := &ValidationService{
 		chainStartDownloadProcess: chainFail,
 	}
-	result = vsFail.ValidateDownloadData(valData)
+	result = vsFail.ValidateDownloadData(valData, false)
 	assert.Equal(t, false, result)
 }
 

@@ -130,7 +130,7 @@ func (ps *processServer) RemoveProcess(ctx context.Context, req *grpcProto.Remov
 
 // DownloadProcess handles request to download process metadata. It streams the response. First it sends success or fail
 // message and then metadata one by one.
-func (ps *processServer) DownloadProcess(req *grpcProto.DownloadProcessRequest, stream grpcProto.Process_DownloadProcessServer) error {
+func (ps *processServer) DownloadProcess(req *grpcProto.DownloadRequest, stream grpcProto.Process_DownloadProcessServer) error {
 	// authorization
 	// todo
 
@@ -139,50 +139,14 @@ func (ps *processServer) DownloadProcess(req *grpcProto.DownloadProcessRequest, 
 	if ctx == nil {
 		ctx = context.Background()
 	}
-	reqData := models.DownloadRequestData{
-		Ctx:       ctx,
-		TargetUri: req.Uri,
-	}
-	response := ps.appContext.DownloadService.DownloadProcess(&reqData)
+	reqData := extractDownloadRequest(req, ctx)
+	response := ps.appContext.DownloadService.DownloadProcesses(reqData, false)
 
-	// handle response
-	if response.Status == codes.OK {
-		err := stream.Send(&grpcProto.DownloadProcessResponse{
-			Message: "success: " + response.Status.String(),
-		})
-		if err != nil {
-			return err
-		}
-	} else {
-		err := stream.Send(&grpcProto.DownloadProcessResponse{
-			Message: "fail: " + response.Status.String(),
-		})
-		if err != nil {
-			return err
-		}
-		return nil
-	}
-
-	// send all metadata
-	for _, m := range response.Metadata {
-		grpcM, err := structpb.NewStruct(structs.ToMap(m))
-		if err != nil {
-			return err
-		}
-
-		err = stream.Send(&grpcProto.DownloadProcessResponse{
-			Metadata: grpcM,
-		})
-		if err != nil {
-			return err
-		}
-	}
-
-	return nil
+	return streamDownloadResponse(response, stream)
 }
 
 // DownloadPackage todo
-func (ps *processServer) DownloadPackage(req *grpcProto.DownloadPackageRequest, stream grpcProto.Process_DownloadPackageServer) error {
+func (ps *processServer) DownloadPackage(req *grpcProto.DownloadRequest, stream grpcProto.Process_DownloadPackageServer) error {
 	// authorization
 	// todo
 
@@ -192,23 +156,30 @@ func (ps *processServer) DownloadPackage(req *grpcProto.DownloadPackageRequest, 
 		ctx = context.Background()
 	}
 
-	reqData := models.DownloadRequestData{
+	reqData := extractDownloadRequest(req, ctx)
+	response := ps.appContext.DownloadService.DownloadProcesses(reqData, true)
+
+	return streamDownloadResponse(response, stream)
+}
+
+func extractDownloadRequest(req *grpcProto.DownloadRequest, ctx context.Context) *models.DownloadRequestData {
+	return &models.DownloadRequestData{
 		Ctx:       ctx,
-		TargetUri: req.PartialUri,
+		TargetUri: req.TargetUri,
 	}
+}
 
-	response := ps.appContext.DownloadService.DownloadPackage(&reqData)
-
+func streamDownloadResponse(response *models.DownloadResponseData, stream grpc.ServerStream) error {
 	// handle response
 	if response.Status == codes.OK {
-		err := stream.Send(&grpcProto.DownloadPackageResponse{
+		err := stream.SendMsg(&grpcProto.DownloadResponse{
 			Message: "success: " + response.Status.String(),
 		})
 		if err != nil {
 			return err
 		}
 	} else {
-		err := stream.Send(&grpcProto.DownloadPackageResponse{
+		err := stream.SendMsg(&grpcProto.DownloadResponse{
 			Message: "fail: " + response.Status.String(),
 		})
 		if err != nil {
@@ -224,7 +195,7 @@ func (ps *processServer) DownloadPackage(req *grpcProto.DownloadPackageRequest, 
 			return err
 		}
 
-		err = stream.Send(&grpcProto.DownloadPackageResponse{
+		err = stream.SendMsg(&grpcProto.DownloadResponse{
 			Metadata: grpcM,
 		})
 		if err != nil {
