@@ -181,6 +181,59 @@ func (ps *processServer) DownloadProcess(req *grpcProto.DownloadProcessRequest, 
 	return nil
 }
 
+// DownloadPackage todo
+func (ps *processServer) DownloadPackage(req *grpcProto.DownloadPackageRequest, stream grpcProto.Process_DownloadPackageServer) error {
+	// authorization
+	// todo
+
+	// main logic
+	ctx := stream.Context()
+	if ctx == nil {
+		ctx = context.Background()
+	}
+
+	reqData := models.DownloadPackageRequestData{
+		Ctx:        ctx,
+		PartialUri: req.PartialUri,
+	}
+
+	response := ps.appContext.DownloadService.DownloadPackage(&reqData)
+
+	// handle response
+	if response.Status == codes.OK {
+		err := stream.Send(&grpcProto.DownloadPackageResponse{
+			Message: "success: " + response.Status.String(),
+		})
+		if err != nil {
+			return err
+		}
+	} else {
+		err := stream.Send(&grpcProto.DownloadPackageResponse{
+			Message: "fail: " + response.Status.String(),
+		})
+		if err != nil {
+			return err
+		}
+		return nil
+	}
+
+	// send all metadata
+	for _, m := range response.Metadata {
+		grpcM, err := structpb.NewStruct(structs.ToMap(m))
+		if err != nil {
+			return err
+		}
+
+		err = stream.Send(&grpcProto.DownloadPackageResponse{
+			Metadata: grpcM,
+		})
+		if err != nil {
+			return err
+		}
+	}
+	return nil
+}
+
 // StartGrpc serves GRPC server on given host and port. If it cannot serve, an error is returned.
 func StartGrpc(host string, port int, isReflection bool) error {
 	flag.Parse()

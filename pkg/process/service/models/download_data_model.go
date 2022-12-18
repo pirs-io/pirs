@@ -17,3 +17,15 @@ type DownloadProcessResponseData struct {
 	Status   codes.Code
 	Metadata []domain.Metadata
 }
+
+// A DownloadPackageRequestData todo
+type DownloadPackageRequestData struct {
+	Ctx        context.Context
+	PartialUri string
+}
+
+// A DownloadPackageResponseData todo
+type DownloadPackageResponseData struct {
+	Status   codes.Code
+	Metadata []domain.Metadata
+}

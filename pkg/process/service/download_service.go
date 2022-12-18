@@ -27,7 +27,10 @@ func (ds *DownloadService) DownloadProcess(req *models.DownloadProcessRequestDat
 	}
 
 	// validate
-	valData := ds.transformRequestDataToValidationData(*req)
+	valData := &valModels.DownloadProcessValidationData{
+		ReqData:         *req,
+		ValidationFlags: valModels.DownloadProcessValidationFlags{},
+	}
 	isValid := ds.ValidationService.ValidateDownloadData(valData)
 	if !isValid {
 		return createResponse(codes.InvalidArgument, nil)
@@ -48,9 +51,27 @@ func (ds *DownloadService) DownloadProcess(req *models.DownloadProcessRequestDat
 	return createResponse(codes.OK, []domain.Metadata{foundMetadata})
 }
 
-func (ds *DownloadService) transformRequestDataToValidationData(reqData models.DownloadProcessRequestData) *valModels.DownloadProcessValidationData {
-	return &valModels.DownloadProcessValidationData{
-		ReqData:         reqData,
-		ValidationFlags: valModels.DownloadProcessValidationFlags{},
+// DownloadPackage todo
+func (ds *DownloadService) DownloadPackage(req *models.DownloadPackageRequestData) *models.DownloadPackageResponseData {
+	createResponse := func(code codes.Code, m []domain.Metadata) *models.DownloadPackageResponseData {
+		return &models.DownloadPackageResponseData{
+			Status:   code,
+			Metadata: m,
+		}
 	}
+
+	// validate
+	// todo
+
+	// find metadata
+	// todo
+
+	// resolve deps
+	// todo
+
+	// find additional dependent metadata
+	// todo
+
+	// return result
+	return createResponse(codes.OK, []domain.Metadata{})
 }
