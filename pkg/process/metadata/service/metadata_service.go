@@ -82,3 +82,16 @@ func (ms *MetadataService) FindByURI(ctx context.Context, uri string) domain.Met
 	}
 	return found
 }
+
+// FindAllInPackage todo
+func (ms *MetadataService) FindAllInPackage(ctx context.Context, packageUri string) []domain.Metadata {
+	newCtx, cancel := context.WithTimeout(ctx, ms.contextTimeout)
+	defer cancel()
+
+	foundList, err := ms.repository.FindAllInPackage(newCtx, packageUri)
+	if err != nil {
+		log.Error().Msg(status.Errorf(codes.Internal, "could not find the metadata in database: %v", err).Error())
+		return []domain.Metadata{}
+	}
+	return foundList
+}

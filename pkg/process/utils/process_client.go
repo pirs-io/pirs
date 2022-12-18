@@ -26,6 +26,7 @@ const (
 	PORT             = "8080"
 	UPLOAD_FILENAME1 = "uvod.pdf"
 	UPLOAD_FILENAME2 = "car.xml"
+	UPLOAD_FILENAME3 = "service.xml"
 	URI1             = "awd.awd.awd.awd:11"
 	URI2             = ""
 	CHUNK_SIZE       = 1024
@@ -45,20 +46,21 @@ func main() {
 	processClient := mygrpc.NewProcessClient(conn)
 
 	//importProcess(processClient)
-	downloadProcess(processClient)
+	//downloadProcess(processClient)
+	downloadPackage(processClient)
 }
 
 func downloadProcess(client mygrpc.ProcessClient) {
 	start := time.Now()
 	// Call endpoints here
 	for i := 0; i < MAX_DOWNLOAD; i++ {
-		downloadData(client, PARTIAL_URI+".car:1")
+		downloadProcessData(client, PARTIAL_URI+".car:1")
 	}
 	elapsed := time.Since(start)
 	log2.Info().Msgf("downloadProcess elapsed time: ", elapsed)
 }
 
-func downloadData(client mygrpc.ProcessClient, uri string) {
+func downloadProcessData(client mygrpc.ProcessClient, uri string) {
 	ctx, cancel := context.WithTimeout(context.Background(), 5*time.Second)
 	defer cancel()
 
@@ -101,11 +103,65 @@ func downloadData(client mygrpc.ProcessClient, uri string) {
 	log2.Info().Msgf("Downloaded metadata of %d processes", len(downloadedMetadata))
 }
 
+func downloadPackage(client mygrpc.ProcessClient) {
+	start := time.Now()
+	// Call endpoints here
+	for i := 0; i < MAX_DOWNLOAD; i++ {
+		downloadPackageData(client, PARTIAL_URI)
+	}
+	elapsed := time.Since(start)
+	log2.Info().Msgf("downloadPackage elapsed time: ", elapsed)
+}
+
+func downloadPackageData(client mygrpc.ProcessClient, packageUri string) {
+	ctx, cancel := context.WithTimeout(context.Background(), 5*time.Second)
+	defer cancel()
+
+	req := &mygrpc.DownloadRequest{
+		TargetUri: packageUri,
+	}
+	stream, err := client.DownloadPackage(ctx, req)
+	if err != nil {
+		return
+	}
+
+	resp, err := stream.Recv()
+	if err != nil {
+		log2.Error().Msgf("Cannot receive status response: %v", err)
+	}
+	if !strings.Contains(resp.Message, codes.OK.String()) {
+		log2.Error().Msgf("Downloading metadata failed with code: %s", resp.Message)
+		return
+	}
+	var downloadedMetadata []domain.Metadata
+	for {
+		resp, err = stream.Recv()
+		if err == io.EOF {
+			break
+		}
+		if err != nil {
+			log2.Error().Msgf("Downloading metadata failed with error: %v", err)
+			return
+		}
+
+		metadataFromResponse := domain.Metadata{}
+		jsonString, _ := json.Marshal(resp.Metadata)
+		err = json.Unmarshal(jsonString, &metadataFromResponse)
+		if err != nil {
+			return
+		}
+
+		downloadedMetadata = append(downloadedMetadata, metadataFromResponse)
+	}
+	log2.Info().Msgf("Downloaded metadata of %d processes", len(downloadedMetadata))
+}
+
 func importProcess(client mygrpc.ProcessClient) {
 	start := time.Now()
 	// Call endpoints here
 	for i := 0; i < MAX_IMPORT; i++ {
 		uploadFile(client, "./pkg/process/"+UPLOAD_FILENAME2, UPLOAD_FILENAME2)
+		uploadFile(client, "./pkg/process/"+UPLOAD_FILENAME3, UPLOAD_FILENAME3)
 	}
 	elapsed := time.Since(start)
 	log2.Info().Msgf("importProcess elapsed time: ", elapsed)

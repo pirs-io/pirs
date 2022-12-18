@@ -36,12 +36,23 @@ func (ds *DownloadService) DownloadProcesses(req *models.DownloadRequestData, is
 		return createResponse(codes.InvalidArgument, nil)
 	}
 
-	// find metadata
+	var metadataList []domain.Metadata
 
-	foundMetadata := ds.MetadataService.FindByURI(req.Ctx, req.TargetUri)
-	if foundMetadata.ID == primitive.NilObjectID {
-		return createResponse(codes.NotFound, nil)
+	// find metadata
+	if isProject {
+		foundMetadataList := ds.MetadataService.FindAllInPackage(req.Ctx, req.TargetUri)
+		if len(foundMetadataList) == 0 {
+			return createResponse(codes.NotFound, nil)
+		}
+		metadataList = append(metadataList, foundMetadataList...)
+	} else {
+		foundMetadata := ds.MetadataService.FindByURI(req.Ctx, req.TargetUri)
+		if foundMetadata.ID == primitive.NilObjectID {
+			return createResponse(codes.NotFound, nil)
+		}
+		metadataList = append(metadataList, foundMetadata)
 	}
+
 	// resolve deps
 	// todo
 
@@ -49,5 +60,5 @@ func (ds *DownloadService) DownloadProcesses(req *models.DownloadRequestData, is
 	// todo
 
 	// return result
-	return createResponse(codes.OK, []domain.Metadata{foundMetadata})
+	return createResponse(codes.OK, metadataList)
 }

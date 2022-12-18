@@ -7,6 +7,7 @@ import (
 	"go.mongodb.org/mongo-driver/mongo/options"
 	"pirs.io/process/db/mongo"
 	"pirs.io/process/domain"
+	"strings"
 )
 
 // A MetadataRepository holds DB and Collection instances. It's initialized in config package.
@@ -87,4 +88,58 @@ func (m *MetadataRepository) FindByURI(ctx context.Context, uri string) (domain.
 	} else {
 		return data[0], nil
 	}
+}
+
+// FindAllInPackage todo
+func (m *MetadataRepository) FindAllInPackage(ctx context.Context, packageUri string) ([]domain.Metadata, error) {
+	var data []domain.Metadata
+	opts := options.MergeFindOptions(
+		options.Find().SetSkip(0),
+		options.Find().SetSort(bson.D{{"created_at", -1}}),
+	)
+
+	//cursor, err := m.Collection.Find(ctx, bson.M{"uri_without_version": primitive.Regex{Pattern: packageUri, Options: ""}}, opts)
+	splitPackageUri := strings.Split(packageUri, ".")
+	cursor, err := m.Collection.Find(ctx, bson.M{"split_uri": bson.M{"$all": splitPackageUri}}, opts)
+	if err != nil {
+		return []domain.Metadata{}, err
+	}
+	if cursor == nil {
+		return []domain.Metadata{}, fmt.Errorf("nil cursor value")
+	}
+
+	err = cursor.All(ctx, &data)
+	if err != nil {
+		return []domain.Metadata{}, err
+	}
+
+	if len(data) == 0 {
+		return []domain.Metadata{}, nil
+	} else {
+		return filterOldVersionsOnSortedList(data), nil
+	}
+}
+
+func filterOldVersionsOnSortedList(metadataList []domain.Metadata) []domain.Metadata {
+	var visitedIdentifiers []string
+	var filteredMetadata []domain.Metadata
+
+	for _, metadata := range metadataList {
+		if contains(visitedIdentifiers, metadata.SplitURI[3]) {
+			continue
+		} else {
+			visitedIdentifiers = append(visitedIdentifiers, metadata.SplitURI[3])
+			filteredMetadata = append(filteredMetadata, metadata)
+		}
+	}
+	return filteredMetadata
+}
+
+func contains(s []string, str string) bool {
+	for _, v := range s {
+		if v == str {
+			return true
+		}
+	}
+	return false
 }
