@@ -30,7 +30,7 @@ type DownloadPackageRequestValidator struct {
 }
 
 // Validate takes models.ImportProcessValidationData and validates it in request context. If data is valid, it sets
-// field IsRequestValid of models.ValidationFlags to true. Otherwise it sets to false.
+// field IsRequestValid of models.ImportProcessValidationFlags to true. Otherwise it sets to false.
 func (rv *ImportProcessRequestValidator) Validate(data interface{}) {
 	typedData := data.(*models.ImportProcessValidationData)
 	var isValid bool
@@ -51,7 +51,8 @@ func (rv *ImportPackageRequestValidator) Validate(data *models.ImportPackageVali
 	panic("not implemented")
 }
 
-// Validate todo
+// Validate takes models.DownloadValidationData and validates it in request context. If data is valid, it sets
+// field IsRequestValid of models.DownloadValidationFlags to true. Otherwise it sets to false. It validates URI.
 func (rv *DownloadProcessRequestValidator) Validate(data interface{}) {
 	typedData := data.(*models.DownloadValidationData)
 	var isValid bool
@@ -65,6 +66,8 @@ func (rv *DownloadProcessRequestValidator) Validate(data interface{}) {
 	}
 }
 
+// Validate takes models.DownloadValidationData and validates it in request context. If data is valid, it sets
+// field IsRequestValid of models.DownloadValidationFlags to true. Otherwise it sets to false. It validates package URI.
 func (rv *DownloadPackageRequestValidator) Validate(data interface{}) {
 	typedData := data.(*models.DownloadValidationData)
 	var isValid bool

@@ -57,7 +57,7 @@ func buildValidationChainForDownloadPackage() models.Validator {
 }
 
 // ValidateProcessData validates models.ImportProcessValidationData by models.Validator implementations. It returns true,
-// if all the models.ValidationFlags are set to true. Otherwise, false is returned.
+// if all the models.ImportProcessValidationFlags are set to true. Otherwise, false is returned.
 func (vs *ValidationService) ValidateProcessData(data *models.ImportProcessValidationData) bool {
 	vs.chainStartImportProcess.Validate(data)
 	validationFlags := reflect.ValueOf(data.ValidationFlags)
@@ -76,7 +76,8 @@ func (vs *ValidationService) ValidatePackageData(data *models.ImportPackageValid
 	panic("not implemented")
 }
 
-// ValidateDownloadData todo
+// ValidateDownloadData validates models.DownloadValidationData by models.Validator implementations. It returns true,
+// if all the models.DownloadValidationFlags are set to true. Otherwise, false is returned.
 func (vs *ValidationService) ValidateDownloadData(data *models.DownloadValidationData, isProject bool) bool {
 	if isProject {
 		vs.chainStartDownloadPackage.Validate(data)

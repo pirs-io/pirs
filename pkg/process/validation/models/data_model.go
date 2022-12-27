@@ -21,13 +21,13 @@ type ImportProcessValidationFlags struct {
 type ImportPackageValidationData struct {
 }
 
-// A DownloadValidationData todo
+// A DownloadValidationData is wrapped of DownloadRequestData. It adds validation flags to request data.
 type DownloadValidationData struct {
 	ReqData         importModels.DownloadRequestData
 	ValidationFlags DownloadValidationFlags
 }
 
-// A DownloadValidationFlags todo
+// A DownloadValidationFlags contains fields, that are filled by corresponding Validator implementations.
 type DownloadValidationFlags struct {
 	IsRequestValid bool
 }

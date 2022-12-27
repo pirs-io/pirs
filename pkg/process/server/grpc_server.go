@@ -145,7 +145,8 @@ func (ps *processServer) DownloadProcess(req *grpcProto.DownloadRequest, stream 
 	return streamDownloadResponse(response, stream)
 }
 
-// DownloadPackage todo
+// DownloadPackage handles request to download package metadata. It streams the the response. First it sends success of
+// fail message and then metadata one by one.
 func (ps *processServer) DownloadPackage(req *grpcProto.DownloadRequest, stream grpcProto.Process_DownloadPackageServer) error {
 	// authorization
 	// todo

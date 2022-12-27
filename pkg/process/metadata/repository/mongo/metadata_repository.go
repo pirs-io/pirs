@@ -90,7 +90,8 @@ func (m *MetadataRepository) FindByURI(ctx context.Context, uri string) (domain.
 	}
 }
 
-// FindAllInPackage todo
+// FindAllInPackage finds all the metadata based on given package URI. Package URI is URI without process identifier and
+// process version. Versions of metadata are the newest.
 func (m *MetadataRepository) FindAllInPackage(ctx context.Context, packageUri string) ([]domain.Metadata, error) {
 	var data []domain.Metadata
 	opts := options.MergeFindOptions(
@@ -116,11 +117,11 @@ func (m *MetadataRepository) FindAllInPackage(ctx context.Context, packageUri st
 	if len(data) == 0 {
 		return []domain.Metadata{}, nil
 	} else {
-		return filterOldVersionsOnSortedList(data), nil
+		return filterNewVersionsOnSortedList(data), nil
 	}
 }
 
-func filterOldVersionsOnSortedList(metadataList []domain.Metadata) []domain.Metadata {
+func filterNewVersionsOnSortedList(metadataList []domain.Metadata) []domain.Metadata {
 	var visitedIdentifiers []string
 	var filteredMetadata []domain.Metadata
 
