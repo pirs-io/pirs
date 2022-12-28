@@ -4,7 +4,6 @@ package grpc;
 option go_package = "./;grpc";
 
 service Storage {
-
   rpc UploadProcess(stream ProcessUploadRequest) returns (stream ProcessUploadResponse) {}
   rpc DownloadProcess(ProcessDownloadRequest) returns (stream ProcessDownloadResponse) {}
   rpc ProcessHistory(ProcessHistoryRequest) returns (ProcessHistoryResponse) {}
@@ -30,6 +29,8 @@ message ProcessMetadata {
   string filename = 2;
   Encoding encoding = 5;
   ProcessType type = 6;
+  int32 file_size_bytes = 7;
+  string checksum = 8;
 }
 
 message ProcessDownloadRequest {
@@ -66,11 +67,3 @@ enum UploadStatus {
   SUCCESS = 2;
   FAILED = 3;
 }
-// getProcessCommitForTag returns slice of all commits that affected given processId (process version is searched by tag)
-    func (c *GitClient) getProcessCommitForTag(processId *pb.ProcessId) (*object.Commit, error) {
-tag, err := c.repo.Tag(processId.FullProcessIdWithVersionTag())
-    if err != nil {
-return nil, err
-    }
-return c.repo.CommitObject(tag.Hash())
-    }
