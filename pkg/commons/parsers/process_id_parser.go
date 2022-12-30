@@ -1,8 +1,9 @@
-package grpc
+package parsers
 
 import (
 	"errors"
 	"github.com/rs/zerolog/log"
+	"path/filepath"
 	"strconv"
 	"strings"
 )
@@ -46,12 +47,12 @@ func ParseProcessId(processId string) (*ProcessId, error) {
 }
 
 func (r *ProcessId) ProcessWithinProject() *string {
-	var res = r.Project + "/" + r.Process
+	var res = filepath.Join(r.Tenant, r.Project, r.Process)
 	return &res
 }
 
 func (r *ProcessId) FullProcessIdWithVersionTag() string {
-	return strings.Join([]string{r.Organization, r.Tenant, r.Project, r.Process}, ".") + "_" + strconv.Itoa(int(r.Version))
+	return strings.Join([]string{r.Organization, r.Tenant, r.Project, r.Process}, ".") + ":" + strconv.Itoa(int(r.Version))
 }
 
 func (r *ProcessId) FullProcessIdWithoutVersionTag() string {

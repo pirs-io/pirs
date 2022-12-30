@@ -1,6 +1,7 @@
 package adapter
 
 import (
+	"github.com/go-git/go-billy/v5/osfs"
 	"golang.org/x/net/context"
 	"io"
 	"pirs.io/commons"
@@ -26,6 +27,7 @@ func MakeStorageAdapter(ctx context.Context, provider storage.Provider) (IStorag
 				RepoRootPath: config.GetContext().AppConfig.RepoRootPath,
 				Tenant:       config.GetContext().AppConfig.Tenant,
 				ChunkSize:    config.GetContext().AppConfig.ChunkSize,
+				DataFS:       osfs.New(config.GetContext().AppConfig.RepoRootPath),
 			},
 		}
 		err := gitAdapter.GitClient.InitializeStorage()

@@ -4,7 +4,6 @@ import (
 	"bytes"
 	"github.com/rs/zerolog/log"
 	"io"
-	"os"
 )
 
 func StreamFileFromPipe(r *io.PipeReader, chunkSize int64, chunkCallback func(chunk []byte) error) error {
@@ -36,8 +35,8 @@ func StreamFileFromPipe(r *io.PipeReader, chunkSize int64, chunkCallback func(ch
 	return nil
 }
 
-func StreamFileToPipe(fd *os.File, chunkSize int64, pipeWriter *io.PipeWriter) (err error) {
-	defer func(fd *os.File) {
+func StreamFileToPipe(fd io.ReadCloser, chunkSize int64, pipeWriter *io.PipeWriter) (err error) {
+	defer func(fd io.ReadCloser) {
 		err = fd.Close()
 		if err != nil {
 			log.Err(err)
