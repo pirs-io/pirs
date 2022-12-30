@@ -66,8 +66,9 @@ func downloadProcessData(client mygrpc.ProcessClient, uri string) {
 
 	req := &mygrpc.DownloadRequest{
 		TargetUri: uri,
+		IsPackage: false,
 	}
-	stream, err := client.DownloadProcess(ctx, req)
+	stream, err := client.Download(ctx, req)
 	if err != nil {
 		return
 	}
@@ -119,8 +120,9 @@ func downloadPackageData(client mygrpc.ProcessClient, packageUri string) {
 
 	req := &mygrpc.DownloadRequest{
 		TargetUri: packageUri,
+		IsPackage: true,
 	}
-	stream, err := client.DownloadPackage(ctx, req)
+	stream, err := client.Download(ctx, req)
 	if err != nil {
 		return
 	}
@@ -182,13 +184,13 @@ func uploadFile(processClient mygrpc.ProcessClient, processPath string, filename
 	ctx, cancel := context.WithTimeout(context.Background(), 5*time.Second)
 	defer cancel()
 
-	stream, err := processClient.ImportProcess(ctx)
+	stream, err := processClient.Import(ctx)
 	if err != nil {
 		log2.Fatal().Msgf("cannot upload file: ", err)
 	}
 
-	req := &mygrpc.ImportProcessRequest{
-		Data: &mygrpc.ImportProcessRequest_FileInfo{
+	req := &mygrpc.ImportRequest{
+		Data: &mygrpc.ImportRequest_FileInfo{
 			FileInfo: &mygrpc.FileInfo{
 				FileName: filename,
 			},
@@ -213,8 +215,8 @@ func uploadFile(processClient mygrpc.ProcessClient, processPath string, filename
 			log2.Fatal().Msgf("cannot read chunk to buffer: ", err)
 		}
 
-		req := &mygrpc.ImportProcessRequest{
-			Data: &mygrpc.ImportProcessRequest_ChunkData{
+		req := &mygrpc.ImportRequest{
+			Data: &mygrpc.ImportRequest_ChunkData{
 				ChunkData: buffer[:n],
 			},
 		}

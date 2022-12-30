@@ -11,6 +11,7 @@ import (
 type DownloadRequestData struct {
 	Ctx       context.Context
 	TargetUri string
+	IsPackage bool
 }
 
 // A DownloadResponseData represents response from DownloadService to GRPC server. It's streamed in GRPC server. Contains

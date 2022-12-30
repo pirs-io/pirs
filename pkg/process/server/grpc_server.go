@@ -30,20 +30,20 @@ type processServer struct {
 	appContext *config.ApplicationContext
 }
 
-// ImportProcess handles request to import process file along with metadata. It authorizes user, validates request,
+// Import handles request to import process file along with metadata. It authorizes user, validates request,
 // extracts metadata, generates response. If success, a success message is sent to the client. Otherwise, a fail message
 // is sent.
-func (ps *processServer) ImportProcess(stream grpcProto.Process_ImportProcessServer) error {
-	importProcessResponse := grpcProto.ImportProcessResponse{}
-	createFailureResponse := func(response *grpcProto.ImportProcessResponse, filename string) {
+func (ps *processServer) Import(stream grpcProto.Process_ImportServer) error {
+	importProcessResponse := grpcProto.ImportResponse{}
+	createFailureResponse := func(response *grpcProto.ImportResponse, filename string) {
 		importProcessResponse.Message = "failed to upload file: " + filename
 		importProcessResponse.TotalSize = 0
 	}
-	createSuccessResponse := func(response *grpcProto.ImportProcessResponse, filename string, filesize uint32) {
+	createSuccessResponse := func(response *grpcProto.ImportResponse, filename string, filesize uint32) {
 		importProcessResponse.Message = "successfully uploaded file: " + filename
 		importProcessResponse.TotalSize = filesize
 	}
-	defer func(stream grpcProto.Process_ImportProcessServer, response *grpcProto.ImportProcessResponse) {
+	defer func(stream grpcProto.Process_ImportServer, response *grpcProto.ImportResponse) {
 		err := stream.SendAndClose(response)
 		if err != nil {
 			log.Error().Msg(status.Errorf(codes.Unavailable, "could not send response and close stream connection: %v", err).Error())
@@ -118,19 +118,9 @@ func (ps *processServer) ImportProcess(stream grpcProto.Process_ImportProcessSer
 	return nil
 }
 
-func (ps *processServer) ImportPackage(ctx context.Context, req *grpcProto.ImportPackageRequest) (*grpcProto.ImportPackageResponse, error) {
-	// todo
-	return nil, status.Errorf(codes.Unimplemented, "method ImportPackage not implemented")
-}
-
-func (ps *processServer) RemoveProcess(ctx context.Context, req *grpcProto.RemoveProcessRequest) (*grpcProto.RemoveProcessResponse, error) {
-	// todo
-	return nil, status.Errorf(codes.Unimplemented, "method RemoveProcess not implemented")
-}
-
-// DownloadProcess handles request to download process metadata. It streams the response. First it sends success or fail
+// Download handles request to download process or package metadata. It streams the response. First it sends success or fail
 // message and then metadata one by one.
-func (ps *processServer) DownloadProcess(req *grpcProto.DownloadRequest, stream grpcProto.Process_DownloadProcessServer) error {
+func (ps *processServer) Download(req *grpcProto.DownloadRequest, stream grpcProto.Process_DownloadServer) error {
 	// authorization
 	// todo
 
@@ -140,25 +130,7 @@ func (ps *processServer) DownloadProcess(req *grpcProto.DownloadRequest, stream 
 		ctx = context.Background()
 	}
 	reqData := extractDownloadRequest(req, ctx)
-	response := ps.appContext.DownloadService.DownloadProcesses(reqData, false)
-
-	return streamDownloadResponse(response, stream)
-}
-
-// DownloadPackage handles request to download package metadata. It streams the the response. First it sends success of
-// fail message and then metadata one by one.
-func (ps *processServer) DownloadPackage(req *grpcProto.DownloadRequest, stream grpcProto.Process_DownloadPackageServer) error {
-	// authorization
-	// todo
-
-	// main logic
-	ctx := stream.Context()
-	if ctx == nil {
-		ctx = context.Background()
-	}
-
-	reqData := extractDownloadRequest(req, ctx)
-	response := ps.appContext.DownloadService.DownloadProcesses(reqData, true)
+	response := ps.appContext.DownloadService.DownloadProcesses(reqData)
 
 	return streamDownloadResponse(response, stream)
 }
@@ -167,6 +139,7 @@ func extractDownloadRequest(req *grpcProto.DownloadRequest, ctx context.Context)
 	return &models.DownloadRequestData{
 		Ctx:       ctx,
 		TargetUri: req.TargetUri,
+		IsPackage: req.IsPackage,
 	}
 }
 

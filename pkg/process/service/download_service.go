@@ -18,7 +18,7 @@ type DownloadService struct {
 
 // DownloadProcesses handles models.DownloadRequestData. If success, it returns models.DownloadResponseData
 // with codes.OK and found metadata. Otherwise, a response with error code and nil metadata are returned.
-func (ds *DownloadService) DownloadProcesses(req *models.DownloadRequestData, isProject bool) *models.DownloadResponseData {
+func (ds *DownloadService) DownloadProcesses(req *models.DownloadRequestData) *models.DownloadResponseData {
 	createResponse := func(code codes.Code, m []domain.Metadata) *models.DownloadResponseData {
 		return &models.DownloadResponseData{
 			Status:   code,
@@ -31,7 +31,7 @@ func (ds *DownloadService) DownloadProcesses(req *models.DownloadRequestData, is
 		ReqData:         *req,
 		ValidationFlags: valModels.DownloadValidationFlags{},
 	}
-	isValid := ds.ValidationService.ValidateDownloadData(valData, isProject)
+	isValid := ds.ValidationService.ValidateDownloadData(valData)
 	if !isValid {
 		return createResponse(codes.InvalidArgument, nil)
 	}
@@ -39,7 +39,7 @@ func (ds *DownloadService) DownloadProcesses(req *models.DownloadRequestData, is
 	var metadataList []domain.Metadata
 
 	// find metadata
-	if isProject {
+	if req.IsPackage {
 		foundMetadataList := ds.MetadataService.FindAllInPackage(req.Ctx, req.TargetUri)
 		if len(foundMetadataList) == 0 {
 			return createResponse(codes.NotFound, nil)

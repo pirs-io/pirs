@@ -78,8 +78,8 @@ func (vs *ValidationService) ValidatePackageData(data *models.ImportPackageValid
 
 // ValidateDownloadData validates models.DownloadValidationData by models.Validator implementations. It returns true,
 // if all the models.DownloadValidationFlags are set to true. Otherwise, false is returned.
-func (vs *ValidationService) ValidateDownloadData(data *models.DownloadValidationData, isProject bool) bool {
-	if isProject {
+func (vs *ValidationService) ValidateDownloadData(data *models.DownloadValidationData) bool {
+	if data.ReqData.IsPackage {
 		vs.chainStartDownloadPackage.Validate(data)
 	} else {
 		vs.chainStartDownloadProcess.Validate(data)

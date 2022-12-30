@@ -7,21 +7,19 @@ option go_package = "./;grpc";
 import "google/protobuf/struct.proto";
 
 service Process {
-  rpc ImportProcess(stream ImportProcessRequest) returns (ImportProcessResponse) {}
-  rpc ImportPackage(ImportPackageRequest) returns (ImportPackageResponse) {}
-  rpc RemoveProcess(RemoveProcessRequest) returns (RemoveProcessResponse) {}
-  rpc DownloadProcess(DownloadRequest) returns (stream DownloadResponse) {}
-  rpc DownloadPackage(DownloadRequest) returns (stream DownloadResponse) {}
+  rpc Import(stream ImportRequest) returns (ImportResponse) {}
+  rpc Download(DownloadRequest) returns (stream DownloadResponse) {}
 }
 
-message ImportProcessRequest {
-  string partial_uri = 1;
+message ImportRequest {
+  bool isPackage = 1;
+  string partial_uri = 2;
   oneof data {
-    FileInfo file_info = 2;
-    bytes chunk_data = 3;
+    FileInfo file_info = 3;
+    bytes chunk_data = 4;
   };
 }
-message ImportProcessResponse {
+message ImportResponse {
   string message = 1;
   uint32 totalSize = 2;
 }
@@ -30,14 +28,9 @@ message FileInfo {
   string fileName = 1;
 }
 
-message ImportPackageRequest {}
-message ImportPackageResponse {}
-
-message RemoveProcessRequest {}
-message RemoveProcessResponse {}
-
 message DownloadRequest {
-  string targetUri = 1;
+  bool isPackage = 1;
+  string targetUri = 2;
 }
 message DownloadResponse {
   string message = 1;
