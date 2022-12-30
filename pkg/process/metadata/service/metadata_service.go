@@ -38,16 +38,13 @@ func NewMetadataService(r mongo.MetadataRepository, t time.Duration, bMapping ma
 }
 
 // CreateMetadata is wrapper to extract metadata using extractor.
-func (ms *MetadataService) CreateMetadata(req models.ImportProcessRequestData) domain.Metadata {
+func (ms *MetadataService) CreateMetadata(req models.ImportRequestData) domain.Metadata {
 	return ms.extractor.ExtractMetadata(req)
 }
 
 // InsertOne passes given domain.Metadata to the repository layer along with added context timeout.
 func (ms *MetadataService) InsertOne(c context.Context, m *domain.Metadata) primitive.ObjectID {
-	ctx, cancel := context.WithTimeout(c, ms.contextTimeout)
-	defer cancel()
-
-	res, err := ms.repository.InsertOne(ctx, m)
+	res, err := ms.repository.InsertOne(c, m)
 	if err != nil {
 		log.Error().Msg(status.Errorf(codes.Internal, "could not insert metadata into database: %v", err).Error())
 		return primitive.NilObjectID
@@ -58,10 +55,7 @@ func (ms *MetadataService) InsertOne(c context.Context, m *domain.Metadata) prim
 // FindNewestVersionByURI passes given uri to the repository layer along with added context timeout. If repository returns
 // an error, 0 is returned. Otherwise, a version from repository is returned.
 func (ms *MetadataService) FindNewestVersionByURI(ctx context.Context, uri string) uint32 {
-	newCtx, cancel := context.WithTimeout(ctx, ms.contextTimeout)
-	defer cancel()
-
-	ver, err := ms.repository.FindNewestVersionByURI(newCtx, uri)
+	ver, err := ms.repository.FindNewestVersionByURI(ctx, uri)
 	if err != nil {
 		log.Error().Msg(status.Errorf(codes.Internal, "could not find the newest version in database: %v", err).Error())
 		return 0
@@ -72,10 +66,7 @@ func (ms *MetadataService) FindNewestVersionByURI(ctx context.Context, uri strin
 // FindByURI passes given uri to the repository layer along with added context timeout. If repository returns an error,
 // empty metadata is returned. Otherwise, found metadata is returned.
 func (ms *MetadataService) FindByURI(ctx context.Context, uri string) domain.Metadata {
-	newCtx, cancel := context.WithTimeout(ctx, ms.contextTimeout)
-	defer cancel()
-
-	found, err := ms.repository.FindByURI(newCtx, uri)
+	found, err := ms.repository.FindByURI(ctx, uri)
 	if err != nil {
 		log.Error().Msg(status.Errorf(codes.Internal, "could not find the metadata in database: %v", err).Error())
 		return domain.Metadata{}
@@ -86,10 +77,7 @@ func (ms *MetadataService) FindByURI(ctx context.Context, uri string) domain.Met
 // FindAllInPackage passes given package URI to the repository layer along with added context timeout. If repository
 // returns an error, empty metadata is returned. Otherwise, found metadata is returned.
 func (ms *MetadataService) FindAllInPackage(ctx context.Context, packageUri string) []domain.Metadata {
-	newCtx, cancel := context.WithTimeout(ctx, ms.contextTimeout)
-	defer cancel()
-
-	foundList, err := ms.repository.FindAllInPackage(newCtx, packageUri)
+	foundList, err := ms.repository.FindAllInPackage(ctx, packageUri)
 	if err != nil {
 		log.Error().Msg(status.Errorf(codes.Internal, "could not find the metadata in database: %v", err).Error())
 		return []domain.Metadata{}

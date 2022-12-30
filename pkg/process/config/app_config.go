@@ -130,16 +130,16 @@ func createApplicationContext(conf ProcessAppConfig) (appContext *ApplicationCon
 		parseCustomMetadataMappingFromCsv(conf.PetriflowMetadataCsv),
 		parseCustomMetadataMappingFromCsv(conf.BPMNMetadataCsv),
 	)
+	storageService, err := service.NewStorageService(conf.ProcessStorageHost, conf.ProcessStoragePort, conf.ChunkSize)
+	if err != nil {
+		log.Error().Msgf("Process-Storage service was not correctly initialized: %v", err)
+	}
 
 	return &ApplicationContext{
 		ImportService: &service.ImportService{
-			ProcessStorageClient: &service.StorageService{
-				Port:      conf.ProcessStoragePort,
-				Host:      conf.ProcessStorageHost,
-				ChunkSize: conf.ChunkSize,
-			},
-			ValidationService: validationService,
-			MetadataService:   metadataService,
+			ProcessStorageClient: storageService,
+			ValidationService:    validationService,
+			MetadataService:      metadataService,
 		},
 		DownloadService: &service.DownloadService{
 			ValidationService: validationService,

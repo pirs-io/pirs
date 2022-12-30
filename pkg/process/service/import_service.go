@@ -16,54 +16,79 @@ type ImportService struct {
 	MetadataService      *metadata.MetadataService
 }
 
-// ImportProcess handles models.ImportProcessRequestData. If success, it returns models.ImportProcessResponseData with codes.OK. Otherwise,
+// ImportProcesses handles models.ImportProcessRequestData. If success, it returns models.ImportProcessResponseData with codes.OK. Otherwise,
 // a response with error code is returned.
-func (is *ImportService) ImportProcess(req *models.ImportProcessRequestData) *models.ImportProcessResponseData {
-	createResponse := func(code codes.Code) *models.ImportProcessResponseData {
-		return &models.ImportProcessResponseData{
+func (is *ImportService) ImportProcesses(forRequests <-chan models.ImportRequestData, forResponse chan<- models.ImportResponseData) {
+	createResponse := func(code codes.Code) models.ImportResponseData {
+		return models.ImportResponseData{
 			Status: code,
 		}
 	}
-	// validate process data
-	valData := is.transformRequestDataToValidationData(*req)
-	isValid := is.ValidationService.ValidateProcessData(valData)
-	if !isValid {
-		return createResponse(codes.InvalidArgument)
+
+	resourceChan := make(chan ResourceAdapter)
+	responseChan := make(chan error)
+	isGoroutineRunning := false
+	defer func() {
+		close(resourceChan)
+		<-responseChan
+		close(forResponse)
+	}()
+
+	for req := range forRequests {
+		// must be inside loop because of context instance
+		if !isGoroutineRunning {
+			go is.ProcessStorageClient.SaveFiles(req.Ctx, resourceChan, responseChan)
+			isGoroutineRunning = true
+		}
+		// validate process data
+		valData := is.transformRequestDataToValidationData(req)
+		isValid := is.ValidationService.ValidateProcessData(valData)
+		if !isValid {
+			forResponse <- createResponse(codes.InvalidArgument)
+			return
+		}
+
+		// create metadata
+		m := is.MetadataService.CreateMetadata(req)
+		if m.ID == primitive.NilObjectID {
+			forResponse <- createResponse(codes.Internal)
+			return
+		}
+
+		// check version
+		foundVersion := is.MetadataService.FindNewestVersionByURI(req.Ctx, m.URIWithoutVersion)
+		m.UpdateVersion(foundVersion + 1)
+
+		// resolve and save deps
+		// todo
+
+		// save file in process-storage
+		resource := ResourceAdapter{
+			Metadata: m,
+			FileData: req.ProcessData.Bytes(),
+		}
+		resourceChan <- resource
+		if <-responseChan != nil {
+			forResponse <- createResponse(codes.Aborted)
+			return
+		}
+
+		// save metadata
+		insertedID := is.MetadataService.InsertOne(req.Ctx, &m)
+		if insertedID == primitive.NilObjectID {
+			forResponse <- createResponse(codes.Internal)
+			return
+		} else {
+			forResponse <- createResponse(codes.OK)
+		}
 	}
-	// create metadata
-	m := is.MetadataService.CreateMetadata(*req)
-	if m.ID == primitive.NilObjectID {
-		return createResponse(codes.Internal)
-	}
-	// check version
-	foundVersion := is.MetadataService.FindNewestVersionByURI(req.Ctx, m.URIWithoutVersion)
-	m.UpdateVersion(foundVersion + 1)
-	// resolve and save deps
-	// todo
-	// save file in process-storage
-	err := is.ProcessStorageClient.SaveFile(req.Ctx, m, req.ProcessData.Bytes())
-	if err != nil {
-		return createResponse(codes.Aborted)
-	}
-	// save metadata
-	insertedID := is.MetadataService.InsertOne(req.Ctx, &m)
-	if insertedID == primitive.NilObjectID {
-		return createResponse(codes.Internal)
-	}
-	// apply grace period
-	// todo
-	// create response
-	return createResponse(codes.OK)
+
+	return
 }
 
-func (is *ImportService) transformRequestDataToValidationData(reqData models.ImportProcessRequestData) *valModels.ImportProcessValidationData {
+func (is *ImportService) transformRequestDataToValidationData(reqData models.ImportRequestData) *valModels.ImportProcessValidationData {
 	return &valModels.ImportProcessValidationData{
 		ReqData:         reqData,
-		ValidationFlags: valModels.ImportProcessValidationFlags{},
+		ValidationFlags: valModels.ImportValidationFlags{},
 	}
-}
-
-func (is *ImportService) ImportPackage() (*models.ImportPackageResponseData, error) {
-	// todo
-	panic("Not implemented")
 }

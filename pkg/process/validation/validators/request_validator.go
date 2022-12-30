@@ -12,12 +12,8 @@ const (
 	VERSION_REGEX  = "^[\\d]+$"
 )
 
-// An ImportProcessRequestValidator contains next validator instance. It's implementation of models.Validator
-type ImportProcessRequestValidator struct {
-	next models.Validator
-}
-
-type ImportPackageRequestValidator struct {
+// An ImportRequestValidator contains next validator instance. It's implementation of models.Validator
+type ImportRequestValidator struct {
 	next models.Validator
 }
 
@@ -31,7 +27,7 @@ type DownloadPackageRequestValidator struct {
 
 // Validate takes models.ImportProcessValidationData and validates it in request context. If data is valid, it sets
 // field IsRequestValid of models.ImportProcessValidationFlags to true. Otherwise it sets to false.
-func (rv *ImportProcessRequestValidator) Validate(data interface{}) {
+func (rv *ImportRequestValidator) Validate(data interface{}) {
 	typedData := data.(*models.ImportProcessValidationData)
 	var isValid bool
 	defer rv.ExecuteNextIfPresent(typedData)
@@ -44,11 +40,6 @@ func (rv *ImportProcessRequestValidator) Validate(data interface{}) {
 	} else {
 		isValid = false
 	}
-}
-
-func (rv *ImportPackageRequestValidator) Validate(data *models.ImportPackageValidationData) {
-	// todo
-	panic("not implemented")
 }
 
 // Validate takes models.DownloadValidationData and validates it in request context. If data is valid, it sets
@@ -81,7 +72,7 @@ func (rv *DownloadPackageRequestValidator) Validate(data interface{}) {
 	}
 }
 
-func (rv *ImportProcessRequestValidator) ExecuteNextIfPresent(data interface{}) {
+func (rv *ImportRequestValidator) ExecuteNextIfPresent(data interface{}) {
 	if rv.next != nil {
 		rv.next.Validate(data)
 	}
@@ -99,11 +90,7 @@ func (rv *DownloadPackageRequestValidator) ExecuteNextIfPresent(data interface{}
 	}
 }
 
-func (rv *ImportProcessRequestValidator) SetNext(validator models.Validator) {
-	rv.next = validator
-}
-
-func (rv *ImportPackageRequestValidator) SetNext(validator models.Validator) {
+func (rv *ImportRequestValidator) SetNext(validator models.Validator) {
 	rv.next = validator
 }
 

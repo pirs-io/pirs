@@ -55,14 +55,14 @@ func buildValidationDataForImportProcess(path string, filename string) valModels
 	}
 
 	return valModels.ImportProcessValidationData{
-		ReqData: models.ImportProcessRequestData{
+		ReqData: models.ImportRequestData{
 			Ctx:             context.Background(),
 			PartialUri:      PARTIAL_URI,
 			ProcessFileName: filename,
 			ProcessData:     *bytes.NewBuffer(data),
 			ProcessSize:     totalSize,
 		},
-		ValidationFlags: valModels.ImportProcessValidationFlags{},
+		ValidationFlags: valModels.ImportValidationFlags{},
 	}
 }
 

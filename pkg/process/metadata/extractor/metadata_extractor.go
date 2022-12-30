@@ -30,7 +30,7 @@ type MetadataExtractor struct {
 // ExtractMetadata extracts values from models.ImportProcessRequestData and file content, which is stored in request.
 // If enums.ProcessType is determined successfully, a CustomData is initialized by mapping. Otherwise, CustomData is empty.
 // If an error occurs, empty domain.Metadata is returned. Otherwise, initialized domain.Metadata is returned.
-func (me *MetadataExtractor) ExtractMetadata(req models.ImportProcessRequestData) domain.Metadata {
+func (me *MetadataExtractor) ExtractMetadata(req models.ImportRequestData) domain.Metadata {
 	data := req.ProcessData.Bytes()
 	doc, err := xmlquery.Parse(bytes.NewReader(data))
 	if err != nil {

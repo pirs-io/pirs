@@ -23,7 +23,7 @@ type ValidationService struct {
 
 // NewValidationService creates instance of ValidationService with validation chains.
 func NewValidationService(rawExtensions string, ignoreWrongExtension bool) *ValidationService {
-	chainStartImportProcess := buildValidationChainForImportProcess(rawExtensions, ignoreWrongExtension)
+	chainStartImportProcess := buildValidationChainForImport(rawExtensions, ignoreWrongExtension)
 	chainStartDownloadProcess := buildValidationChainForDownloadProcess()
 	chainStartDownloadPackage := buildValidationChainForDownloadPackage()
 
@@ -34,9 +34,9 @@ func NewValidationService(rawExtensions string, ignoreWrongExtension bool) *Vali
 	}
 }
 
-func buildValidationChainForImportProcess(rawExtensions string, ignoreWrongExtension bool) models.Validator {
+func buildValidationChainForImport(rawExtensions string, ignoreWrongExtension bool) models.Validator {
 	// define validators
-	requestValidator := &validators.ImportProcessRequestValidator{}
+	requestValidator := &validators.ImportRequestValidator{}
 	fileTypeValidator := validators.NewFileTypeValidator(rawExtensions, ignoreWrongExtension)
 	schemaValidator := &validators.SchemaValidator{}
 	// create chain
@@ -69,11 +69,6 @@ func (vs *ValidationService) ValidateProcessData(data *models.ImportProcessValid
 		}
 	}
 	return true
-}
-
-func (vs *ValidationService) ValidatePackageData(data *models.ImportPackageValidationData) {
-	// todo
-	panic("not implemented")
 }
 
 // ValidateDownloadData validates models.DownloadValidationData by models.Validator implementations. It returns true,

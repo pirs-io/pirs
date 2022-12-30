@@ -2,6 +2,7 @@ package service
 
 import (
 	"bytes"
+	"errors"
 	"flag"
 	"golang.org/x/net/context"
 	"google.golang.org/grpc"
@@ -24,21 +25,36 @@ type StorageService struct {
 	Port      string
 	Host      string
 	ChunkSize int
+	client    mygrpc.StorageClient
 }
 
-// SaveFile takes domain.Metadata with array of bytes of process file and streams this data with grpc.StorageClient.
-// On success no error is returned. If it fails, an error is returned.
-func (ss *StorageService) SaveFile(reqCtx context.Context, m domain.Metadata, fileData []byte) error {
-	client, err := ss.createClient()
-	if err != nil {
-		return err
-	}
+type ResourceAdapter struct {
+	Metadata domain.Metadata
+	FileData []byte
+}
 
-	reqMetadata := ss.transformMetadataToRequest(&m)
-	stream, err := client.UploadProcess(reqCtx)
+func NewStorageService(host string, port string, chunkSize int) (*StorageService, error) {
+	service := &StorageService{
+		Host:      host,
+		Port:      port,
+		ChunkSize: chunkSize,
+	}
+	client, err := service.createClient()
 	if err != nil {
-		log.Error().Msgf("could not establish stream connection: %v", err)
-		return err
+		return service, err
+	}
+	service.client = client
+	return service, nil
+}
+
+// SaveFiles takes domain.Metadata with array of bytes of process file and streams this data with grpc.StorageClient.
+// On success no error is returned. If it fails, an error is returned.
+func (ss *StorageService) SaveFiles(reqCtx context.Context, forResource <-chan ResourceAdapter, forResponse chan<- error) {
+	defer close(forResponse)
+	stream, err := ss.establishConnection(reqCtx)
+	if err != nil {
+		forResponse <- err
+		return
 	}
 
 	waitc := make(chan struct{})
@@ -57,26 +73,55 @@ func (ss *StorageService) SaveFile(reqCtx context.Context, m domain.Metadata, fi
 		}
 	}()
 
-	err = ss.sendMetadataRequest(stream, reqMetadata)
-	if err != nil {
-		return err
+	for resource := range forResource {
+		// todo checksum
+		reqMetadata := ss.transformMetadataToRequest(&resource.Metadata)
+		err = ss.sendMetadataRequest(stream, reqMetadata)
+		if err != nil {
+			forResponse <- err
+			return
+		}
+
+		sync := make(chan bool)
+		c := ss.createFileChunksAsync(resource.FileData, sync)
+		err = ss.sendFileChunks(stream, c, sync)
+		if err != nil {
+			forResponse <- err
+			return
+		} else {
+			forResponse <- nil
+		}
+	}
+	_ = ss.destroyConnection(stream)
+	// wait to receive final response from process-storage
+	<-waitc
+
+	return
+}
+
+func (ss *StorageService) establishConnection(ctx context.Context) (mygrpc.Storage_UploadProcessClient, error) {
+	var err error
+
+	if ss.client == nil {
+		err = errors.New("Process-Storage client is not initialized")
+		log.Error().Msg(err.Error())
+		return nil, err
 	}
 
-	sync := make(chan bool)
-	c := ss.createFileChunksAsync(fileData, sync)
-	err = ss.sendFileChunks(stream, c, sync)
+	stream, err := ss.client.UploadProcess(ctx)
 	if err != nil {
-		return err
+		log.Error().Msgf("could not establish stream connection: %v", err)
+		return nil, err
 	}
+	return stream, nil
+}
 
-	err = stream.CloseSend()
+func (ss *StorageService) destroyConnection(stream mygrpc.Storage_UploadProcessClient) error {
+	err := stream.CloseSend()
 	if err != nil {
 		log.Error().Msgf("cannot close stream connection: %v", err)
 		return err
 	}
-	// wait for goroutine to handle all the data and end.
-	<-waitc
-
 	return nil
 }
 

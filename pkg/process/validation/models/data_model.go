@@ -7,18 +7,15 @@ import (
 // ImportProcessValidationData is wrapper of ImportProcessRequestData. It adds validation flags to request data.
 type ImportProcessValidationData struct {
 	// ReqData mustn't be a pointer. It has to be a copy.
-	ReqData         importModels.ImportProcessRequestData
-	ValidationFlags ImportProcessValidationFlags
+	ReqData         importModels.ImportRequestData
+	ValidationFlags ImportValidationFlags
 }
 
-// A ImportProcessValidationFlags contains fields, that are filled by corresponding Validator implementations.
-type ImportProcessValidationFlags struct {
+// A ImportValidationFlags contains fields, that are filled by corresponding Validator implementations.
+type ImportValidationFlags struct {
 	IsRequestValid  bool
 	IsFileTypeValid bool
 	IsSchemaValid   bool
-}
-
-type ImportPackageValidationData struct {
 }
 
 // A DownloadValidationData is wrapped of DownloadRequestData. It adds validation flags to request data.

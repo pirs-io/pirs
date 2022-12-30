@@ -18,7 +18,7 @@ import (
 	"pirs.io/process/config"
 	grpcProto "pirs.io/process/grpc"
 	"pirs.io/process/service/models"
-	"time"
+	"strconv"
 )
 
 var (
@@ -34,88 +34,135 @@ type processServer struct {
 // extracts metadata, generates response. If success, a success message is sent to the client. Otherwise, a fail message
 // is sent.
 func (ps *processServer) Import(stream grpcProto.Process_ImportServer) error {
-	importProcessResponse := grpcProto.ImportResponse{}
+	response := grpcProto.ImportResponse{}
 	createFailureResponse := func(response *grpcProto.ImportResponse, filename string) {
-		importProcessResponse.Message = "failed to upload file: " + filename
-		importProcessResponse.TotalSize = 0
+		response.Message = "failed to upload file: " + filename
+		response.TotalSize = 0
 	}
-	createSuccessResponse := func(response *grpcProto.ImportResponse, filename string, filesize uint32) {
-		importProcessResponse.Message = "successfully uploaded file: " + filename
-		importProcessResponse.TotalSize = filesize
+	createSuccessResponse := func(response *grpcProto.ImportResponse, totalSize uint32, totalFiles int) {
+		if totalFiles == 1 {
+			response.Message = "successfully uploaded " + strconv.FormatInt(int64(totalFiles), 10) + " file."
+		} else {
+			response.Message = "successfully uploaded " + strconv.FormatInt(int64(totalFiles), 10) + " files."
+		}
+		response.TotalSize = totalSize
 	}
 	defer func(stream grpcProto.Process_ImportServer, response *grpcProto.ImportResponse) {
 		err := stream.SendAndClose(response)
 		if err != nil {
 			log.Error().Msg(status.Errorf(codes.Unavailable, "could not send response and close stream connection: %v", err).Error())
 		}
-	}(stream, &importProcessResponse)
+	}(stream, &response)
 
-	// receive request
-	req, err := stream.Recv()
-	if err != nil {
-		log.Error().Msg(status.Errorf(codes.Unknown, "cannot receive process info").Error())
-		createFailureResponse(&importProcessResponse, "unknown")
-		return err
-	}
-	// authorization
-	// todo
-	// extract req
-	filename := req.GetFileInfo().GetFileName()
-	partialUri := req.GetPartialUri()
-	processData := bytes.Buffer{}
-	processSize := 0
-	for {
-		req, err = stream.Recv()
-		if err == io.EOF {
-			break
-		} else if err != nil {
-			log.Error().Msg(status.Errorf(codes.Unknown, "cannot receive chunk data: %v", err).Error())
-			createFailureResponse(&importProcessResponse, filename)
-			return err
-		}
-		chunk := req.GetChunkData()
-		size := len(chunk)
-
-		processSize += size
-		if processSize > ps.appContext.AppConfig.UploadFileMaxSize*1024 {
-			err = errors.New(status.Errorf(codes.ResourceExhausted, "file exceeds max size: %d kB",
-				ps.appContext.AppConfig.UploadFileMaxSize).Error())
-			log.Error().Msg(err.Error())
-			createFailureResponse(&importProcessResponse, filename)
-			return err
-		}
-		_, err = processData.Write(chunk)
-		if err != nil {
-			log.Error().Msg(status.Errorf(codes.Internal, "cannot write chunk data: %v", err).Error())
-			createFailureResponse(&importProcessResponse, filename)
-			return err
-		}
-	}
 	ctx := stream.Context()
 	if ctx == nil {
 		ctx = context.Background()
 	}
-	// todo tmp timeout with cancel
-	ctx, cancel := context.WithTimeout(ctx, 10*time.Hour)
-	defer cancel()
 
-	reqData := models.ImportProcessRequestData{
-		Ctx:             ctx,
-		PartialUri:      partialUri,
-		ProcessFileName: filename,
-		ProcessData:     processData,
-		ProcessSize:     processSize,
-	}
-	// handle request
-	responseData := ps.appContext.ImportService.ImportProcess(&reqData)
+	requestChan := make(chan models.ImportRequestData)
+	responseChan := make(chan models.ImportResponseData)
+	defer func() {
+		close(requestChan)
+		<-responseChan
+	}()
+	go ps.appContext.ImportService.ImportProcesses(requestChan, responseChan)
 
-	// handle response
-	if responseData.Status == codes.OK {
-		createSuccessResponse(&importProcessResponse, filename, uint32(processSize))
-	} else {
-		createFailureResponse(&importProcessResponse, filename)
+	currentFileName := ""
+	currentPartialUri := ""
+	currentData := bytes.Buffer{}
+	currentProcessSize := 0
+	totalSize := 0
+	totalFiles := 0
+	// Receive metadata and bytes. Iteration is one process file.
+	for {
+		// receive request
+		req, err := stream.Recv()
+		if err == io.EOF {
+			// handle previous received file if needed
+			if currentFileName != "" && currentData.Len() != 0 {
+				totalSize = totalSize + currentProcessSize
+				reqData := models.ImportRequestData{
+					Ctx:             ctx,
+					PartialUri:      currentPartialUri,
+					ProcessFileName: currentFileName,
+					ProcessData:     currentData,
+					ProcessSize:     currentProcessSize,
+					IsLast:          true,
+				}
+				// handle request
+				requestChan <- reqData
+
+				// handle response
+				if (<-responseChan).Status != codes.OK {
+					createFailureResponse(&response, currentFileName)
+					return err
+				}
+			}
+			createSuccessResponse(&response, uint32(totalSize), totalFiles)
+			return nil
+		} else if err != nil {
+			log.Error().Msgf("cannot receive from the stream: %v", err)
+			if req.GetFileInfo() != nil {
+				createFailureResponse(&response, req.GetFileInfo().FileName)
+			} else {
+				createFailureResponse(&response, currentFileName)
+			}
+			return err
+		}
+
+		// authorization (just once I think)
+		// todo
+
+		if req.GetFileInfo() != nil {
+			// handle previous received file if needed
+			if currentFileName != "" && currentData.Len() != 0 {
+				reqData := models.ImportRequestData{
+					Ctx:             ctx,
+					PartialUri:      currentPartialUri,
+					ProcessFileName: currentFileName,
+					ProcessData:     currentData,
+					ProcessSize:     currentProcessSize,
+					IsLast:          false,
+				}
+				// handle request
+				requestChan <- reqData
+
+				// handle response
+				if (<-responseChan).Status != codes.OK {
+					createFailureResponse(&response, currentFileName)
+					return err
+				}
+			}
+
+			// new file - reinitialize variables
+			totalFiles = totalFiles + 1
+			totalSize = totalSize + currentProcessSize
+			currentData = bytes.Buffer{}
+			currentProcessSize = 0
+
+			// get request metadata
+			currentFileName = req.GetFileInfo().GetFileName()
+			currentPartialUri = req.GetPartialUri()
+		} else {
+			chunk := req.GetChunkData()
+			size := len(chunk)
+
+			currentProcessSize += size
+			if currentProcessSize > ps.appContext.AppConfig.UploadFileMaxSize*1024 {
+				err = errors.New(status.Errorf(codes.ResourceExhausted, "file exceeds max size: %d kB",
+					ps.appContext.AppConfig.UploadFileMaxSize).Error())
+				log.Error().Msg(err.Error())
+				createFailureResponse(&response, currentFileName)
+				return err
+			}
+			_, err = currentData.Write(chunk)
+			if err != nil {
+				log.Error().Msg(status.Errorf(codes.Internal, "cannot write chunk data: %v", err).Error())
+				createFailureResponse(&response, currentFileName)
+				return err
+			}
+		}
 	}
-	return nil
 }
 
 // Download handles request to download process or package metadata. It streams the response. First it sends success or fail
