@@ -95,8 +95,6 @@ func (ss *StorageService) SaveFiles(reqCtx context.Context, forResource <-chan R
 	_ = ss.destroyConnection(stream)
 	// wait to receive final response from process-storage
 	<-waitc
-
-	return
 }
 
 func (ss *StorageService) establishConnection(ctx context.Context) (mygrpc.Storage_UploadProcessClient, error) {

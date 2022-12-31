@@ -67,6 +67,10 @@ func (is *ImportService) ImportProcesses(forRequests <-chan models.ImportRequest
 			Metadata: m,
 			FileData: req.ProcessData.Bytes(),
 		}
+		if <-responseChan != nil {
+			forResponse <- createResponse(codes.Aborted)
+			return
+		}
 		resourceChan <- resource
 		if <-responseChan != nil {
 			forResponse <- createResponse(codes.Aborted)
@@ -82,8 +86,6 @@ func (is *ImportService) ImportProcesses(forRequests <-chan models.ImportRequest
 			forResponse <- createResponse(codes.OK)
 		}
 	}
-
-	return
 }
 
 func (is *ImportService) transformRequestDataToValidationData(reqData models.ImportRequestData) *valModels.ImportProcessValidationData {
