@@ -1,6 +1,7 @@
 package storage
 
 import (
+	"context"
 	"errors"
 	"github.com/go-git/go-billy/v5"
 	"github.com/go-git/go-billy/v5/osfs"
@@ -11,7 +12,6 @@ import (
 	"github.com/go-git/go-git/v5/storage/filesystem"
 	"github.com/pelletier/go-toml/v2"
 	"github.com/samber/lo"
-	"golang.org/x/net/context"
 	"google.golang.org/grpc/codes"
 	"google.golang.org/grpc/status"
 	"io"
