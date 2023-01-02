@@ -3,6 +3,7 @@ package commons
 import (
 	"fmt"
 	"github.com/spf13/viper"
+	"reflect"
 )
 
 type BaseConfig interface {
@@ -25,4 +26,11 @@ func GetAppConfig[T BaseConfig](configFilePath string, c *T) (res *T, err error)
 		return nil, err
 	}
 	return c, nil
+}
+
+func PrintConfigFields(config BaseConfig) {
+	reflected := reflect.ValueOf(config)
+	for i := 0; i < reflected.NumField(); i++ {
+		fmt.Printf("%s: %v\n", reflected.Type().Field(i).Name, reflected.Field(i).Interface())
+	}
 }
