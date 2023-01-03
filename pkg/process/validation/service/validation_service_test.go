@@ -10,8 +10,8 @@ import (
 
 func TestValidationService_ValidateProcessData(t *testing.T) {
 	valData := &valModels.ImportProcessValidationData{
-		ReqData:         models.ImportProcessRequestData{},
-		ValidationFlags: valModels.ImportProcessValidationFlags{},
+		ReqData:         models.ImportRequestData{},
+		ValidationFlags: valModels.ImportValidationFlags{},
 	}
 
 	// is valid
@@ -60,7 +60,7 @@ func TestValidationService_ValidateDownloadData(t *testing.T) {
 	vsSucess := &ValidationService{
 		chainStartDownloadProcess: chainSucess,
 	}
-	result := vsSucess.ValidateDownloadData(valData, false)
+	result := vsSucess.ValidateDownloadData(valData)
 	assert.Equal(t, true, result)
 
 	// is invalid
@@ -68,7 +68,7 @@ func TestValidationService_ValidateDownloadData(t *testing.T) {
 	vsFail := &ValidationService{
 		chainStartDownloadProcess: chainFail,
 	}
-	result = vsFail.ValidateDownloadData(valData, false)
+	result = vsFail.ValidateDownloadData(valData)
 	assert.Equal(t, false, result)
 }
 

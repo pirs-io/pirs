@@ -6,7 +6,7 @@ import (
 )
 
 func TestImportProcessRequestValidator_Validate(t *testing.T) {
-	rv := &ImportProcessRequestValidator{}
+	rv := &ImportRequestValidator{}
 
 	valData := buildValidationDataForImportProcess(RESOURCES+PF1, PF1)
 	rv.Validate(&valData)

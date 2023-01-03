@@ -30,7 +30,7 @@ func (rv *ImportProcessRequestValidator) SetNext(validator models.Validator) {
 }
 
 func (rv *DownloadProcessRequestValidator) Validate(data interface{}) {
-	typedData := data.(*models.DownloadProcessValidationData)
+	typedData := data.(*models.DownloadValidationData)
 	typedData.ValidationFlags.IsRequestValid = rv.MockResult
 	rv.ExecuteNextIfPresent(data)
 }

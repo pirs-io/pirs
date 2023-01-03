@@ -104,7 +104,7 @@ func parseMetadataMappingFromCsv(csvPath string) map[string]string {
 	return mapping
 }
 
-func buildRequestData(path string, filename string) models.ImportProcessRequestData {
+func buildRequestData(path string, filename string) models.ImportRequestData {
 	file, err := os.Open(path)
 	if err != nil {
 		log_test.Fatal().Msg(err.Error())
@@ -130,7 +130,7 @@ func buildRequestData(path string, filename string) models.ImportProcessRequestD
 		log_test.Fatal().Msg(err.Error())
 	}
 
-	return models.ImportProcessRequestData{
+	return models.ImportRequestData{
 		Ctx:             context.Background(),
 		PartialUri:      PARTIAL_URI,
 		ProcessFileName: filename,
