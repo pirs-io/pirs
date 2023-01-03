@@ -34,6 +34,7 @@ type ResourceAdapter struct {
 	FileData []byte
 }
 
+// NewStorageService constructs StorageService instance with a client for Process-Storage microservice.
 func NewStorageService(host string, port string, chunkSize int) (*StorageService, error) {
 	service := &StorageService{
 		Host:      host,
