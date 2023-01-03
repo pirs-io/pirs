@@ -30,7 +30,7 @@ func TestStorageService_transformMetadataToRequest(t *testing.T) {
 	m.Encoding = "UTF-8"
 	m.ProcessType = enums.Petriflow
 
-	reqM := ss.transformMetadataToRequest(m)
+	reqM := ss.transformMetadataToRequest(m, "")
 
 	assert.Equal(t, m.URI, reqM.Metadata.ProcessId)
 	assert.Equal(t, m.FileName, reqM.Metadata.Filename)
