@@ -48,30 +48,16 @@ func NewStorageService(host string, port string, chunkSize int) (*StorageService
 }
 
 // SaveFiles takes domain.Metadata with array of bytes of process file and streams this data with grpc.StorageClient.
-// On success no error is returned. If it fails, an error is returned.
+// On success no error is returned. If it fails, an error is returned. todo
 func (ss *StorageService) SaveFiles(reqCtx context.Context, forResource <-chan ResourceAdapter, forResponse chan<- error) {
 	defer close(forResponse)
 	stream, err := ss.establishConnection(reqCtx)
 	if err != nil {
 		forResponse <- err
 		return
+	} else {
+		forResponse <- nil
 	}
-
-	waitc := make(chan struct{})
-	go func() {
-		for {
-			in, err := stream.Recv()
-			if err == io.EOF {
-				close(waitc)
-				return
-			}
-			if err != nil {
-				log.Error().Msgf("client.RouteChat failed: %v", err)
-				return
-			}
-			log.Debug().Msg(string(in.Status))
-		}
-	}()
 
 	for resource := range forResource {
 		// todo checksum
@@ -87,14 +73,11 @@ func (ss *StorageService) SaveFiles(reqCtx context.Context, forResource <-chan R
 		err = ss.sendFileChunks(stream, c, sync)
 		if err != nil {
 			forResponse <- err
-			return
 		} else {
-			forResponse <- nil
+			_ = ss.destroyConnection(stream)
+			forResponse <- ss.checkResponse(stream)
 		}
 	}
-	_ = ss.destroyConnection(stream)
-	// wait to receive final response from process-storage
-	<-waitc
 }
 
 func (ss *StorageService) establishConnection(ctx context.Context) (mygrpc.Storage_UploadProcessClient, error) {
@@ -120,10 +103,10 @@ func (ss *StorageService) destroyConnection(stream mygrpc.Storage_UploadProcessC
 		log.Error().Msgf("cannot close stream connection: %v", err)
 		return err
 	}
-	return nil
+	return ss.checkResponse(stream)
 }
 
-// sendMetadataRequest takes stream and metadata. This data get wrapped and sent through the stream.
+// sendMetadataRequest takes stream and metadata. This data get wrapped and sent through the stream. todo
 func (ss *StorageService) sendMetadataRequest(stream mygrpc.Storage_UploadProcessClient, metadata *mygrpc.ProcessFileData_Metadata) error {
 	if err := stream.Send(&mygrpc.ProcessUploadRequest{
 		Data: &mygrpc.ProcessFileData{
@@ -132,9 +115,17 @@ func (ss *StorageService) sendMetadataRequest(stream mygrpc.Storage_UploadProces
 	}); err != nil {
 		log.Error().Msg(err.Error())
 		return err
-	} else {
-		return nil
 	}
+	return ss.checkResponse(stream)
+}
+
+func (ss *StorageService) checkResponse(stream mygrpc.Storage_UploadProcessClient) error {
+	_, err := stream.Recv()
+	if err != nil && err != io.EOF {
+		log.Error().Msgf("client.RouteChat failed: %v", err)
+		return err
+	}
+	return nil
 }
 
 // sendFileChunks takes stream, c channel to read bytes to send and sync channel where it signals to createFileChunksAsync,
@@ -150,6 +141,11 @@ func (ss *StorageService) sendFileChunks(stream mygrpc.Storage_UploadProcessClie
 		})
 		if err != nil {
 			log.Error().Msgf("cannot send chunk to server: %v, %v", err, stream.RecvMsg(nil))
+			close(sync)
+			return err
+		}
+		err = ss.checkResponse(stream)
+		if err != nil {
 			close(sync)
 			return err
 		}

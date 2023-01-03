@@ -17,7 +17,7 @@ type ImportService struct {
 }
 
 // ImportProcesses handles models.ImportProcessRequestData. If success, it returns models.ImportProcessResponseData with codes.OK. Otherwise,
-// a response with error code is returned.
+// a response with error code is returned. todo
 func (is *ImportService) ImportProcesses(forRequests <-chan models.ImportRequestData, forResponse chan<- models.ImportResponseData) {
 	createResponse := func(code codes.Code) models.ImportResponseData {
 		return models.ImportResponseData{
@@ -39,6 +39,10 @@ func (is *ImportService) ImportProcesses(forRequests <-chan models.ImportRequest
 		if !isGoroutineRunning {
 			go is.ProcessStorageClient.SaveFiles(req.Ctx, resourceChan, responseChan)
 			isGoroutineRunning = true
+			if <-responseChan != nil {
+				forResponse <- createResponse(codes.Unavailable)
+				return
+			}
 		}
 		// validate process data
 		valData := is.transformRequestDataToValidationData(req)
@@ -66,10 +70,6 @@ func (is *ImportService) ImportProcesses(forRequests <-chan models.ImportRequest
 		resource := ResourceAdapter{
 			Metadata: m,
 			FileData: req.ProcessData.Bytes(),
-		}
-		if <-responseChan != nil {
-			forResponse <- createResponse(codes.Aborted)
-			return
 		}
 		resourceChan <- resource
 		if <-responseChan != nil {

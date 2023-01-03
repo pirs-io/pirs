@@ -32,12 +32,11 @@ type processServer struct {
 
 // Import handles request to import process file along with metadata. It authorizes user, validates request,
 // extracts metadata, generates response. If success, a success message is sent to the client. Otherwise, a fail message
-// is sent.
+// is sent. todo
 func (ps *processServer) Import(stream grpcProto.Process_ImportServer) error {
 	response := grpcProto.ImportResponse{}
-	createFailureResponse := func(response *grpcProto.ImportResponse, filename string) {
-		response.Message = "failed to upload file: " + filename
-		response.TotalSize = 0
+	createFailureResponse := func(code codes.Code, filename string) error {
+		return status.Error(code, "failed to upload file: "+filename)
 	}
 	createSuccessResponse := func(response *grpcProto.ImportResponse, totalSize uint32, totalFiles int) {
 		if totalFiles == 1 {
@@ -93,9 +92,9 @@ func (ps *processServer) Import(stream grpcProto.Process_ImportServer) error {
 				requestChan <- reqData
 
 				// handle response
-				if (<-responseChan).Status != codes.OK {
-					createFailureResponse(&response, currentFileName)
-					return err
+				state := (<-responseChan).Status
+				if state != codes.OK {
+					return createFailureResponse(state, currentFileName)
 				}
 			}
 			createSuccessResponse(&response, uint32(totalSize), totalFiles)
@@ -103,11 +102,10 @@ func (ps *processServer) Import(stream grpcProto.Process_ImportServer) error {
 		} else if err != nil {
 			log.Error().Msgf("cannot receive from the stream: %v", err)
 			if req.GetFileInfo() != nil {
-				createFailureResponse(&response, req.GetFileInfo().FileName)
+				return createFailureResponse(codes.Unavailable, req.GetFileInfo().FileName)
 			} else {
-				createFailureResponse(&response, currentFileName)
+				return createFailureResponse(codes.Unavailable, currentFileName)
 			}
-			return err
 		}
 
 		// authorization (just once I think)
@@ -128,9 +126,9 @@ func (ps *processServer) Import(stream grpcProto.Process_ImportServer) error {
 				requestChan <- reqData
 
 				// handle response
-				if (<-responseChan).Status != codes.OK {
-					createFailureResponse(&response, currentFileName)
-					return err
+				state := (<-responseChan).Status
+				if state != codes.OK {
+					return createFailureResponse(state, currentFileName)
 				}
 			}
 
@@ -152,14 +150,12 @@ func (ps *processServer) Import(stream grpcProto.Process_ImportServer) error {
 				err = errors.New(status.Errorf(codes.ResourceExhausted, "file exceeds max size: %d kB",
 					ps.appContext.AppConfig.UploadFileMaxSize).Error())
 				log.Error().Msg(err.Error())
-				createFailureResponse(&response, currentFileName)
-				return err
+				return createFailureResponse(codes.ResourceExhausted, currentFileName)
 			}
 			_, err = currentData.Write(chunk)
 			if err != nil {
 				log.Error().Msg(status.Errorf(codes.Internal, "cannot write chunk data: %v", err).Error())
-				createFailureResponse(&response, currentFileName)
-				return err
+				return createFailureResponse(codes.Internal, currentFileName)
 			}
 		}
 	}

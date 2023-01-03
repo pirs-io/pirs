@@ -163,10 +163,6 @@ func importProcess(client mygrpc.ProcessClient) {
 	// Call endpoints here
 	for i := 0; i < MAX_IMPORT; i++ {
 		uploadFile(client, "./pkg/process/"+UPLOAD_FILENAME2, UPLOAD_FILENAME2)
-		uploadFile(client, "./pkg/process/"+UPLOAD_FILENAME3, UPLOAD_FILENAME3)
-		uploadFile(client, "./pkg/process/"+UPLOAD_FILENAME3, UPLOAD_FILENAME3)
-		uploadFile(client, "./pkg/process/"+UPLOAD_FILENAME3, UPLOAD_FILENAME3)
-		uploadFile(client, "./pkg/process/"+UPLOAD_FILENAME3, UPLOAD_FILENAME3)
 	}
 	elapsed := time.Since(start)
 	log2.Info().Msgf("importProcess elapsed time: ", elapsed)

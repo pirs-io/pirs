@@ -13,7 +13,7 @@ func main() {
 	appConfig := config.InitApp(configFilePath)
 	err := server.StartGrpc(appConfig.GrpcIp, appConfig.GrpcPort, appConfig.UseGrpcReflection)
 	if err != nil {
-		log.Error().Msg("Failed to start Process service.")
+		log.Error().Msgf("Failed to start Process service: %v", err)
 		return
 	}
 }
