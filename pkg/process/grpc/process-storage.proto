@@ -4,10 +4,9 @@ package grpc;
 option go_package = "./;grpc";
 
 service Storage {
-
   rpc UploadProcess(stream ProcessUploadRequest) returns (stream ProcessUploadResponse) {}
   rpc DownloadProcess(ProcessDownloadRequest) returns (stream ProcessDownloadResponse) {}
-
+  rpc ProcessHistory(ProcessHistoryRequest) returns (ProcessHistoryResponse) {}
 }
 
 message ProcessUploadRequest {
@@ -18,18 +17,20 @@ message ProcessUploadResponse {
   UploadStatus status = 1;
 }
 
-message ProcessMetadata {
-  string process_id = 1;
-  string filename = 2;
-  string project_id = 3;
-  Encoding encoding = 4;
-  ProcessType type = 5;
-}
 message ProcessFileData {
   oneof data {
     ProcessMetadata metadata = 1;
     bytes chunk = 2;
   }
+}
+
+message ProcessMetadata {
+  string process_id = 1; // format: organization.tenant.project.process:version
+  string filename = 2;
+  Encoding encoding = 5;
+  ProcessType type = 6;
+  int32 file_size_bytes = 7;
+  string checksum = 8;
 }
 
 message ProcessDownloadRequest {
@@ -38,6 +39,17 @@ message ProcessDownloadRequest {
 
 message ProcessDownloadResponse {
   ProcessFileData data = 1;
+}
+
+message ProcessHistoryRequest {
+  string process_id = 1;
+}
+
+message ProcessHistoryResponse {
+  string process_id = 1;
+  int64 last_modified = 2;
+  string modified_by = 3;
+  int64 version = 4;
 }
 
 enum Encoding {
