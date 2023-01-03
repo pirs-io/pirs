@@ -63,8 +63,9 @@ func (ss *StorageService) SaveFiles(reqCtx context.Context, forResource <-chan R
 	}
 
 	for resource := range forResource {
-		// todo checksum
-		reqMetadata := ss.transformMetadataToRequest(&resource.Metadata)
+		rawHash := commons.HashBytesToSHA256(resource.FileData)
+		stringHash := commons.ConvertBytesToString(rawHash)
+		reqMetadata := ss.transformMetadataToRequest(&resource.Metadata, stringHash)
 		err = ss.sendMetadataRequest(stream, reqMetadata)
 		if err != nil {
 			forResponse <- err
@@ -186,13 +187,14 @@ func (ss *StorageService) createFileChunksAsync(fileData []byte, sync <-chan boo
 	return c
 }
 
-func (ss *StorageService) transformMetadataToRequest(m *domain.Metadata) *mygrpc.ProcessFileData_Metadata {
+func (ss *StorageService) transformMetadataToRequest(m *domain.Metadata, checksum string) *mygrpc.ProcessFileData_Metadata {
 	return &mygrpc.ProcessFileData_Metadata{
 		Metadata: &mygrpc.ProcessMetadata{
 			ProcessId: m.URI,
 			Filename:  m.FileName,
 			Encoding:  ss.transformEncoding(m.Encoding),
 			Type:      ss.transformProcessType(m.ProcessType),
+			Checksum:  checksum,
 		},
 	}
 }
