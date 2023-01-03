@@ -30,9 +30,10 @@ type processServer struct {
 	appContext *config.ApplicationContext
 }
 
-// Import handles request to import process file along with metadata. It authorizes user, validates request,
-// extracts metadata, generates response. If success, a success message is sent to the client. Otherwise, a fail message
-// is sent. todo
+// Import handles input, that is sent through the opened stream. The input can be metadata or chunks of content. Before
+// chunks must arrive metadata of that chunks. It creates goroutine of service.ImportService's method. Channels are used
+// to communicate with this goroutine. On success, success message is send to the stream. On failure, error with GRPC
+// status code is returned.
 func (ps *processServer) Import(stream grpcProto.Process_ImportServer) error {
 	response := grpcProto.ImportResponse{}
 	createFailureResponse := func(code codes.Code, filename string) error {

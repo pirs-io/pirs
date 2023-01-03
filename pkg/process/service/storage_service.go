@@ -28,6 +28,7 @@ type StorageService struct {
 	client    mygrpc.StorageClient
 }
 
+// A ResourceAdapter is wrapper for metadata and file data. It is intended for StorageService.SaveFiles.
 type ResourceAdapter struct {
 	Metadata domain.Metadata
 	FileData []byte
@@ -47,8 +48,9 @@ func NewStorageService(host string, port string, chunkSize int) (*StorageService
 	return service, nil
 }
 
-// SaveFiles takes domain.Metadata with array of bytes of process file and streams this data with grpc.StorageClient.
-// On success no error is returned. If it fails, an error is returned. todo
+// SaveFiles runs in a separate goroutine. It waits for resources coming through the forResource channel. Resource is
+// ResourceAdapter, which is a wrapper for metadata and []bytes. On success no error is sent to the caller (more likely
+// ImportService). If it fails, an error is sent through the forResponse channel.
 func (ss *StorageService) SaveFiles(reqCtx context.Context, forResource <-chan ResourceAdapter, forResponse chan<- error) {
 	defer close(forResponse)
 	stream, err := ss.establishConnection(reqCtx)

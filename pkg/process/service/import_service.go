@@ -16,8 +16,9 @@ type ImportService struct {
 	MetadataService      *metadata.MetadataService
 }
 
-// ImportProcesses handles models.ImportProcessRequestData. If success, it returns models.ImportProcessResponseData with codes.OK. Otherwise,
-// a response with error code is returned. todo
+// ImportProcesses runs in a separate goroutine. It's created from GRPC server endpoint method. It waits for requests
+// coming through forRequests channel. Once a request is received, it handles it and sends to the lower level services.
+// On success, codes.OK is sent through the forResponse channel. On failure, non-codes.OK is sent through the channel.
 func (is *ImportService) ImportProcesses(forRequests <-chan models.ImportRequestData, forResponse chan<- models.ImportResponseData) {
 	createResponse := func(code codes.Code) models.ImportResponseData {
 		return models.ImportResponseData{
