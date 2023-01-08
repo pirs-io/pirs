@@ -9,7 +9,7 @@ import (
 )
 
 func TestValidationService_ValidateProcessData(t *testing.T) {
-	valData := &valModels.ImportProcessValidationData{
+	valData := &valModels.ImportValidationData{
 		ReqData:         models.ImportRequestData{},
 		ValidationFlags: valModels.ImportValidationFlags{},
 	}
@@ -33,7 +33,7 @@ func TestValidationService_ValidateProcessData(t *testing.T) {
 
 func buildValidationChainForImportProcessTest(isFail bool) valModels.Validator {
 	// define validators
-	requestValidator := &mockTesting.ImportProcessRequestValidator{
+	requestValidator := &mockTesting.ImportRequestValidator{
 		MockResult: !isFail,
 	}
 	fileTypeValidator := &mockTesting.FileTypeValidator{
@@ -74,7 +74,7 @@ func TestValidationService_ValidateDownloadData(t *testing.T) {
 
 func buildValidationChainForDownloadProcessTest(isFail bool) valModels.Validator {
 	// define validators
-	requestValidator := &mockTesting.DownloadProcessRequestValidator{
+	requestValidator := &mockTesting.DownloadRequestValidator{
 		MockResult: !isFail,
 	}
 

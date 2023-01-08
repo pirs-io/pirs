@@ -25,10 +25,10 @@ type DownloadPackageRequestValidator struct {
 	next models.Validator
 }
 
-// Validate takes models.ImportProcessValidationData and validates it in request context. If data is valid, it sets
+// Validate takes models.ImportValidationData and validates it in request context. If data is valid, it sets
 // field IsRequestValid of models.ImportProcessValidationFlags to true. Otherwise it sets to false.
-func (rv *ImportRequestValidator) Validate(data interface{}) {
-	typedData := data.(*models.ImportProcessValidationData)
+func (rv *ImportRequestValidator) Validate(data models.Validable) {
+	typedData := data.(*models.ImportValidationData)
 	var isValid bool
 	defer rv.ExecuteNextIfPresent(typedData)
 	defer func() { typedData.ValidationFlags.IsRequestValid = isValid }()
@@ -44,7 +44,7 @@ func (rv *ImportRequestValidator) Validate(data interface{}) {
 
 // Validate takes models.DownloadValidationData and validates it in request context. If data is valid, it sets
 // field IsRequestValid of models.DownloadValidationFlags to true. Otherwise it sets to false. It validates URI.
-func (rv *DownloadProcessRequestValidator) Validate(data interface{}) {
+func (rv *DownloadProcessRequestValidator) Validate(data models.Validable) {
 	typedData := data.(*models.DownloadValidationData)
 	var isValid bool
 	defer rv.ExecuteNextIfPresent(typedData)
@@ -59,7 +59,7 @@ func (rv *DownloadProcessRequestValidator) Validate(data interface{}) {
 
 // Validate takes models.DownloadValidationData and validates it in request context. If data is valid, it sets
 // field IsRequestValid of models.DownloadValidationFlags to true. Otherwise it sets to false. It validates package URI.
-func (rv *DownloadPackageRequestValidator) Validate(data interface{}) {
+func (rv *DownloadPackageRequestValidator) Validate(data models.Validable) {
 	typedData := data.(*models.DownloadValidationData)
 	var isValid bool
 	defer rv.ExecuteNextIfPresent(typedData)
@@ -72,19 +72,19 @@ func (rv *DownloadPackageRequestValidator) Validate(data interface{}) {
 	}
 }
 
-func (rv *ImportRequestValidator) ExecuteNextIfPresent(data interface{}) {
+func (rv *ImportRequestValidator) ExecuteNextIfPresent(data models.Validable) {
 	if rv.next != nil {
 		rv.next.Validate(data)
 	}
 }
 
-func (rv *DownloadProcessRequestValidator) ExecuteNextIfPresent(data interface{}) {
+func (rv *DownloadProcessRequestValidator) ExecuteNextIfPresent(data models.Validable) {
 	if rv.next != nil {
 		rv.next.Validate(data)
 	}
 }
 
-func (rv *DownloadPackageRequestValidator) ExecuteNextIfPresent(data interface{}) {
+func (rv *DownloadPackageRequestValidator) ExecuteNextIfPresent(data models.Validable) {
 	if rv.next != nil {
 		rv.next.Validate(data)
 	}

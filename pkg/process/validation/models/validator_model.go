@@ -1,7 +1,11 @@
 package models
 
 type Validator interface {
-	Validate(interface{})
+	Validate(Validable)
 	SetNext(Validator)
-	ExecuteNextIfPresent(interface{})
+	ExecuteNextIfPresent(Validable)
+}
+
+type Validable interface {
+	IsValidable()
 }

@@ -28,7 +28,7 @@ var (
 	log_test = commons.GetLoggerFor("ValidatorTest")
 )
 
-func buildValidationDataForImportProcess(path string, filename string) valModels.ImportProcessValidationData {
+func buildValidationDataForImportProcess(path string, filename string) valModels.ImportValidationData {
 	file, err := os.Open(path)
 	if err != nil {
 		log_test.Fatal().Msg(err.Error())
@@ -54,7 +54,7 @@ func buildValidationDataForImportProcess(path string, filename string) valModels
 		log_test.Fatal().Msg(err.Error())
 	}
 
-	return valModels.ImportProcessValidationData{
+	return valModels.ImportValidationData{
 		ReqData: models.ImportRequestData{
 			Ctx:             context.Background(),
 			PartialUri:      PARTIAL_URI,

@@ -56,9 +56,9 @@ func buildValidationChainForDownloadPackage() models.Validator {
 	return requestValidator
 }
 
-// ValidateProcessData validates models.ImportProcessValidationData by models.Validator implementations. It returns true,
+// ValidateProcessData validates models.ImportValidationData by models.Validator implementations. It returns true,
 // if all the models.ImportProcessValidationFlags are set to true. Otherwise, false is returned.
-func (vs *ValidationService) ValidateProcessData(data *models.ImportProcessValidationData) bool {
+func (vs *ValidationService) ValidateProcessData(data *models.ImportValidationData) bool {
 	vs.chainStartImportProcess.Validate(data)
 	validationFlags := reflect.ValueOf(data.ValidationFlags)
 	// all validations must pass

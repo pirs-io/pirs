@@ -89,8 +89,8 @@ func (is *ImportService) ImportProcesses(forRequests <-chan models.ImportRequest
 	}
 }
 
-func (is *ImportService) transformRequestDataToValidationData(reqData models.ImportRequestData) *valModels.ImportProcessValidationData {
-	return &valModels.ImportProcessValidationData{
+func (is *ImportService) transformRequestDataToValidationData(reqData models.ImportRequestData) *valModels.ImportValidationData {
+	return &valModels.ImportValidationData{
 		ReqData:         reqData,
 		ValidationFlags: valModels.ImportValidationFlags{},
 	}

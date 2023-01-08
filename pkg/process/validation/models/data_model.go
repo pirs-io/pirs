@@ -4,12 +4,14 @@ import (
 	importModels "pirs.io/process/service/models"
 )
 
-// ImportProcessValidationData is wrapper of ImportProcessRequestData. It adds validation flags to request data.
-type ImportProcessValidationData struct {
+// ImportValidationData is wrapper of ImportRequestData. It adds validation flags to request data.
+type ImportValidationData struct {
 	// ReqData mustn't be a pointer. It has to be a copy.
 	ReqData         importModels.ImportRequestData
 	ValidationFlags ImportValidationFlags
 }
+
+func (vd *ImportValidationData) IsValidable() {}
 
 // A ImportValidationFlags contains fields, that are filled by corresponding Validator implementations.
 type ImportValidationFlags struct {
@@ -23,6 +25,8 @@ type DownloadValidationData struct {
 	ReqData         importModels.DownloadRequestData
 	ValidationFlags DownloadValidationFlags
 }
+
+func (vd *DownloadValidationData) IsValidable() {}
 
 // A DownloadValidationFlags contains fields, that are filled by corresponding Validator implementations.
 type DownloadValidationFlags struct {

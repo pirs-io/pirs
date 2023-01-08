@@ -9,10 +9,10 @@ type SchemaValidator struct {
 	next models.Validator
 }
 
-// Validate takes models.ImportProcessValidationData and validates it in schema context. If data is valid, it sets
+// Validate takes models.ImportValidationData and validates it in schema context. If data is valid, it sets
 // field IsSchemaValid of models.ValidationFlags to true. Otherwise it sets to false.
-func (sv *SchemaValidator) Validate(data interface{}) {
-	typedData := data.(*models.ImportProcessValidationData)
+func (sv *SchemaValidator) Validate(data models.Validable) {
+	typedData := data.(*models.ImportValidationData)
 	var isValid bool
 	defer sv.ExecuteNextIfPresent(typedData)
 	defer func() { typedData.ValidationFlags.IsSchemaValid = isValid }()
@@ -25,7 +25,7 @@ func (sv *SchemaValidator) Validate(data interface{}) {
 	isValid = true
 }
 
-func (sv *SchemaValidator) ExecuteNextIfPresent(data interface{}) {
+func (sv *SchemaValidator) ExecuteNextIfPresent(data models.Validable) {
 	if sv.next != nil {
 		sv.next.Validate(data)
 	}

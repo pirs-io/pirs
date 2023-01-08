@@ -4,42 +4,42 @@ import (
 	"pirs.io/process/validation/models"
 )
 
-// ImportProcessRequestValidator request
-type ImportProcessRequestValidator struct {
+// ImportRequestValidator request
+type ImportRequestValidator struct {
 	MockResult bool
 	next       models.Validator
 }
 
-type DownloadProcessRequestValidator struct {
+type DownloadRequestValidator struct {
 	MockResult bool
 	next       models.Validator
 }
 
-func (rv *ImportProcessRequestValidator) Validate(data interface{}) {
-	typedData := data.(*models.ImportProcessValidationData)
+func (rv *ImportRequestValidator) Validate(data models.Validable) {
+	typedData := data.(*models.ImportValidationData)
 	typedData.ValidationFlags.IsRequestValid = rv.MockResult
 	rv.ExecuteNextIfPresent(data)
 }
-func (rv *ImportProcessRequestValidator) ExecuteNextIfPresent(data interface{}) {
+func (rv *ImportRequestValidator) ExecuteNextIfPresent(data models.Validable) {
 	if rv.next != nil {
 		rv.next.Validate(data)
 	}
 }
-func (rv *ImportProcessRequestValidator) SetNext(validator models.Validator) {
+func (rv *ImportRequestValidator) SetNext(validator models.Validator) {
 	rv.next = validator
 }
 
-func (rv *DownloadProcessRequestValidator) Validate(data interface{}) {
+func (rv *DownloadRequestValidator) Validate(data models.Validable) {
 	typedData := data.(*models.DownloadValidationData)
 	typedData.ValidationFlags.IsRequestValid = rv.MockResult
 	rv.ExecuteNextIfPresent(data)
 }
-func (rv *DownloadProcessRequestValidator) ExecuteNextIfPresent(data interface{}) {
+func (rv *DownloadRequestValidator) ExecuteNextIfPresent(data models.Validable) {
 	if rv.next != nil {
 		rv.next.Validate(data)
 	}
 }
-func (rv *DownloadProcessRequestValidator) SetNext(validator models.Validator) {
+func (rv *DownloadRequestValidator) SetNext(validator models.Validator) {
 	rv.next = validator
 }
 
@@ -49,12 +49,12 @@ type FileTypeValidator struct {
 	next       models.Validator
 }
 
-func (ft *FileTypeValidator) Validate(data interface{}) {
-	typedData := data.(*models.ImportProcessValidationData)
+func (ft *FileTypeValidator) Validate(data models.Validable) {
+	typedData := data.(*models.ImportValidationData)
 	typedData.ValidationFlags.IsFileTypeValid = ft.MockResult
 	ft.ExecuteNextIfPresent(data)
 }
-func (ft *FileTypeValidator) ExecuteNextIfPresent(data interface{}) {
+func (ft *FileTypeValidator) ExecuteNextIfPresent(data models.Validable) {
 	if ft.next != nil {
 		ft.next.Validate(data)
 	}
@@ -69,12 +69,12 @@ type SchemaValidator struct {
 	next       models.Validator
 }
 
-func (sv *SchemaValidator) Validate(data interface{}) {
-	typedData := data.(*models.ImportProcessValidationData)
+func (sv *SchemaValidator) Validate(data models.Validable) {
+	typedData := data.(*models.ImportValidationData)
 	typedData.ValidationFlags.IsSchemaValid = sv.MockResult
 	sv.ExecuteNextIfPresent(data)
 }
-func (sv *SchemaValidator) ExecuteNextIfPresent(data interface{}) {
+func (sv *SchemaValidator) ExecuteNextIfPresent(data models.Validable) {
 	if sv.next != nil {
 		sv.next.Validate(data)
 	}
