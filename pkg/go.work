@@ -2,6 +2,7 @@ go 1.19
 
 use (
 	./commons
+	./dependency-management
 	./process
 	./process-storage
 	./tools/file-uploader
