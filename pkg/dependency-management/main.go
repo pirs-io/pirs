@@ -1,4 +1,4 @@
-package dependency_management
+package main
 
 import (
 	"pirs.io/commons"
