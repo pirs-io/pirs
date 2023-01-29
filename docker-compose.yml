@@ -8,6 +8,13 @@ services:
       dockerfile: tracker/Dockerfile.dev
     ports:
       - "50004:50004"
+  process:
+    image: pirs.process:latest
+    build:
+      context: ./pkg
+      dockerfile: process/Dockerfile.dev
+    ports:
+      - "8090:8090"
   process-storage:
     image: pirs.process-storage:latest
     build:
