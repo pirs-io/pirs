@@ -7,14 +7,14 @@ option go_package = "./;grpc";
 import "google/protobuf/struct.proto";
 
 service DependencyManagement {
-  rpc Detect(stream DetectRequest) returns (DetectResponse) {}
+  rpc Detect(stream DetectRequest) returns (stream DetectResponse) {}
   rpc Resolve(stream ResolveRequest) returns (stream ResolveResponse) {}
 }
 
 message DetectRequest {
   oneof data {
-    FileInfo file_info = 3;
-    bytes chunk_data = 4;
+    string countAndChecksum = 1;
+    bytes chunk_data = 2;
   };
 }
 
@@ -30,9 +30,4 @@ message ResolveRequest {
 message ResolveResponse {
   string message = 1;
   google.protobuf.Struct metadata = 2;
-}
-
-message FileInfo {
-  string fileName = 1;
-  string checksum = 2;
 }

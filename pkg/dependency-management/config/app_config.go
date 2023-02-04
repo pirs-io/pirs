@@ -2,6 +2,7 @@ package config
 
 import (
 	"pirs.io/commons"
+	"pirs.io/dependency-management/service"
 )
 
 var (
@@ -14,13 +15,15 @@ type DependencyAppConfig struct {
 	GrpcIp            string `mapstructure:"GRPC_IP"`
 	GrpcPort          int    `mapstructure:"GRPC_PORT"`
 	UseGrpcReflection bool   `mapstructure:"USE_GRPC_REFLECTION"`
+	StreamSeparator   string `mapstructure:"STREAM_SEPARATOR"`
 }
 
 func (p DependencyAppConfig) IsConfig() {}
 
 // An ApplicationContext contains initialized config struct and all the main services
 type ApplicationContext struct {
-	AppConfig *DependencyAppConfig
+	AppConfig        *DependencyAppConfig
+	DetectionService *service.DetectionService
 }
 
 // GetContext returns ApplicationContext instance, that is stored in a variable depAppCtx
@@ -49,5 +52,7 @@ func InitApp(configFilePath string) (conf *DependencyAppConfig) {
 }
 
 func createApplicationContext(conf DependencyAppConfig) (appContext *ApplicationContext, err error) {
-	return &ApplicationContext{}, nil
+	return &ApplicationContext{
+		DetectionService: &service.DetectionService{},
+	}, nil
 }

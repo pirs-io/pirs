@@ -45,7 +45,7 @@ func (c *dependencyManagementClient) Detect(ctx context.Context, opts ...grpc.Ca
 
 type DependencyManagement_DetectClient interface {
 	Send(*DetectRequest) error
-	CloseAndRecv() (*DetectResponse, error)
+	Recv() (*DetectResponse, error)
 	grpc.ClientStream
 }
 
@@ -57,10 +57,7 @@ func (x *dependencyManagementDetectClient) Send(m *DetectRequest) error {
 	return x.ClientStream.SendMsg(m)
 }
 
-func (x *dependencyManagementDetectClient) CloseAndRecv() (*DetectResponse, error) {
-	if err := x.ClientStream.CloseSend(); err != nil {
-		return nil, err
-	}
+func (x *dependencyManagementDetectClient) Recv() (*DetectResponse, error) {
 	m := new(DetectResponse)
 	if err := x.ClientStream.RecvMsg(m); err != nil {
 		return nil, err
@@ -136,7 +133,7 @@ func _DependencyManagement_Detect_Handler(srv interface{}, stream grpc.ServerStr
 }
 
 type DependencyManagement_DetectServer interface {
-	SendAndClose(*DetectResponse) error
+	Send(*DetectResponse) error
 	Recv() (*DetectRequest, error)
 	grpc.ServerStream
 }
@@ -145,7 +142,7 @@ type dependencyManagementDetectServer struct {
 	grpc.ServerStream
 }
 
-func (x *dependencyManagementDetectServer) SendAndClose(m *DetectResponse) error {
+func (x *dependencyManagementDetectServer) Send(m *DetectResponse) error {
 	return x.ServerStream.SendMsg(m)
 }
 
@@ -194,6 +191,7 @@ var DependencyManagement_ServiceDesc = grpc.ServiceDesc{
 		{
 			StreamName:    "Detect",
 			Handler:       _DependencyManagement_Detect_Handler,
+			ServerStreams: true,
 			ClientStreams: true,
 		},
 		{
