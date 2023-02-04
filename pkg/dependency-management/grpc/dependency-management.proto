@@ -8,6 +8,7 @@ import "google/protobuf/struct.proto";
 
 service DependencyManagement {
   rpc Detect(stream DetectRequest) returns (DetectResponse) {}
+  rpc Resolve(stream ResolveRequest) returns (stream ResolveResponse) {}
 }
 
 message DetectRequest {
@@ -18,6 +19,15 @@ message DetectRequest {
 }
 
 message DetectResponse {
+  string message = 1;
+  google.protobuf.Struct metadata = 2;
+}
+
+message ResolveRequest {
+  string resolve_uri = 1;
+}
+
+message ResolveResponse {
   string message = 1;
   google.protobuf.Struct metadata = 2;
 }

@@ -23,6 +23,7 @@ const _ = grpc.SupportPackageIsVersion7
 // For semantics around ctx use and closing/ending streaming RPCs, please refer to https://pkg.go.dev/google.golang.org/grpc/?tab=doc#ClientConn.NewStream.
 type DependencyManagementClient interface {
 	Detect(ctx context.Context, opts ...grpc.CallOption) (DependencyManagement_DetectClient, error)
+	Resolve(ctx context.Context, opts ...grpc.CallOption) (DependencyManagement_ResolveClient, error)
 }
 
 type dependencyManagementClient struct {
@@ -67,11 +68,43 @@ func (x *dependencyManagementDetectClient) CloseAndRecv() (*DetectResponse, erro
 	return m, nil
 }
 
+func (c *dependencyManagementClient) Resolve(ctx context.Context, opts ...grpc.CallOption) (DependencyManagement_ResolveClient, error) {
+	stream, err := c.cc.NewStream(ctx, &DependencyManagement_ServiceDesc.Streams[1], "/grpc.DependencyManagement/Resolve", opts...)
+	if err != nil {
+		return nil, err
+	}
+	x := &dependencyManagementResolveClient{stream}
+	return x, nil
+}
+
+type DependencyManagement_ResolveClient interface {
+	Send(*ResolveRequest) error
+	Recv() (*ResolveResponse, error)
+	grpc.ClientStream
+}
+
+type dependencyManagementResolveClient struct {
+	grpc.ClientStream
+}
+
+func (x *dependencyManagementResolveClient) Send(m *ResolveRequest) error {
+	return x.ClientStream.SendMsg(m)
+}
+
+func (x *dependencyManagementResolveClient) Recv() (*ResolveResponse, error) {
+	m := new(ResolveResponse)
+	if err := x.ClientStream.RecvMsg(m); err != nil {
+		return nil, err
+	}
+	return m, nil
+}
+
 // DependencyManagementServer is the server API for DependencyManagement service.
 // All implementations must embed UnimplementedDependencyManagementServer
 // for forward compatibility
 type DependencyManagementServer interface {
 	Detect(DependencyManagement_DetectServer) error
+	Resolve(DependencyManagement_ResolveServer) error
 	mustEmbedUnimplementedDependencyManagementServer()
 }
 
@@ -81,6 +114,9 @@ type UnimplementedDependencyManagementServer struct {
 
 func (UnimplementedDependencyManagementServer) Detect(DependencyManagement_DetectServer) error {
 	return status.Errorf(codes.Unimplemented, "method Detect not implemented")
+}
+func (UnimplementedDependencyManagementServer) Resolve(DependencyManagement_ResolveServer) error {
+	return status.Errorf(codes.Unimplemented, "method Resolve not implemented")
 }
 func (UnimplementedDependencyManagementServer) mustEmbedUnimplementedDependencyManagementServer() {}
 
@@ -121,6 +157,32 @@ func (x *dependencyManagementDetectServer) Recv() (*DetectRequest, error) {
 	return m, nil
 }
 
+func _DependencyManagement_Resolve_Handler(srv interface{}, stream grpc.ServerStream) error {
+	return srv.(DependencyManagementServer).Resolve(&dependencyManagementResolveServer{stream})
+}
+
+type DependencyManagement_ResolveServer interface {
+	Send(*ResolveResponse) error
+	Recv() (*ResolveRequest, error)
+	grpc.ServerStream
+}
+
+type dependencyManagementResolveServer struct {
+	grpc.ServerStream
+}
+
+func (x *dependencyManagementResolveServer) Send(m *ResolveResponse) error {
+	return x.ServerStream.SendMsg(m)
+}
+
+func (x *dependencyManagementResolveServer) Recv() (*ResolveRequest, error) {
+	m := new(ResolveRequest)
+	if err := x.ServerStream.RecvMsg(m); err != nil {
+		return nil, err
+	}
+	return m, nil
+}
+
 // DependencyManagement_ServiceDesc is the grpc.ServiceDesc for DependencyManagement service.
 // It's only intended for direct use with grpc.RegisterService,
 // and not to be introspected or modified (even as a copy)
@@ -132,6 +194,12 @@ var DependencyManagement_ServiceDesc = grpc.ServiceDesc{
 		{
 			StreamName:    "Detect",
 			Handler:       _DependencyManagement_Detect_Handler,
+			ClientStreams: true,
+		},
+		{
+			StreamName:    "Resolve",
+			Handler:       _DependencyManagement_Resolve_Handler,
+			ServerStreams: true,
 			ClientStreams: true,
 		},
 	},

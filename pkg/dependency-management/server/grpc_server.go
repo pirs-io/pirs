@@ -25,6 +25,10 @@ func (ds *dependencyServer) Detect(stream grpcProto.DependencyManagement_DetectS
 	panic("not implemented")
 }
 
+func (ds *dependencyServer) Resolve(stream grpcProto.DependencyManagement_ResolveServer) error {
+	panic("not implemented")
+}
+
 // StartGrpc serves GRPC server on given host and port. If it cannot serve, an error is returned.
 func StartGrpc(host string, port int, isReflection bool) error {
 	flag.Parse()
