@@ -27,21 +27,31 @@ func (is *ImportService) ImportProcesses(forRequests <-chan models.ImportRequest
 		}
 	}
 
-	resourceChan := make(chan ResourceAdapter)
-	responseChan := make(chan error)
+	resourceChanSS := make(chan models.ResourceAdapter)
+	responseChanSS := make(chan error)
+	resourceChanDS := make(chan []byte)
+	responseChanDS := make(chan models.ResponseAdapter)
 	isGoroutineRunning := false
 	defer func() {
-		close(resourceChan)
-		<-responseChan
+		close(resourceChanDS)
+		<-responseChanDS
+		close(resourceChanSS)
+		<-responseChanSS
 		close(forResponse)
 	}()
 
 	for req := range forRequests {
 		// must be inside loop because of context instance
 		if !isGoroutineRunning {
-			go is.ProcessStorageClient.SaveFiles(req.Ctx, resourceChan, responseChan)
+			go is.ProcessStorageClient.SaveFiles(req.Ctx, resourceChanSS, responseChanSS)
+			go is.DependencyService.Detect(req.Ctx, resourceChanDS, responseChanDS)
 			isGoroutineRunning = true
-			if <-responseChan != nil {
+
+			if (<-responseChanDS).Err != nil {
+				forResponse <- createResponse(codes.Unavailable)
+				return
+			}
+			if <-responseChanSS != nil {
 				forResponse <- createResponse(codes.Unavailable)
 				return
 			}
@@ -66,15 +76,27 @@ func (is *ImportService) ImportProcesses(forRequests <-chan models.ImportRequest
 		m.UpdateVersion(foundVersion + 1)
 
 		// resolve and save deps
-		// todo
+		resourceChanDS <- req.ProcessData.Bytes()
+		for {
+			respDs := <-responseChanDS
+			if respDs.Err != nil {
+				forResponse <- createResponse(codes.Aborted)
+				return
+			}
+			if respDs.Metadata.ID == primitive.NilObjectID {
+				break
+			}
+			// todo handle dependency metadata (save in current metadata as dependant)
+		}
 
 		// save file in process-storage
-		resource := ResourceAdapter{
+		resource := models.ResourceAdapter{
 			Metadata: m,
 			FileData: req.ProcessData.Bytes(),
 		}
-		resourceChan <- resource
-		if <-responseChan != nil {
+
+		resourceChanSS <- resource
+		if <-responseChanSS != nil {
 			forResponse <- createResponse(codes.Aborted)
 			return
 		}

@@ -2,9 +2,11 @@ package service
 
 import (
 	"flag"
+	"golang.org/x/net/context"
 	"google.golang.org/grpc"
 	"google.golang.org/grpc/credentials/insecure"
 	mygrpc "pirs.io/process/grpc"
+	"pirs.io/process/service/models"
 )
 
 type DependencyService struct {
@@ -38,4 +40,11 @@ func (ds *DependencyService) createClient() (mygrpc.DependencyManagementClient, 
 	}
 
 	return mygrpc.NewDependencyManagementClient(conn), nil
+}
+
+// Detect todo
+func (ds *DependencyService) Detect(reqCtx context.Context, forResource <-chan []byte, forResponse chan<- models.ResponseAdapter) {
+	// todo establish connection
+	// todo send data
+	// todo receive data
 }
