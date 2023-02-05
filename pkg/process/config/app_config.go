@@ -21,26 +21,28 @@ var (
 
 // A ProcessAppConfig contains loaded data from ENV config file
 type ProcessAppConfig struct {
-	GrpcIp                string `mapstructure:"GRPC_IP"`
-	GrpcPort              int    `mapstructure:"GRPC_PORT"`
-	UseGrpcReflection     bool   `mapstructure:"USE_GRPC_REFLECTION"`
-	UploadFileMaxSize     int    `mapstructure:"UPLOAD_FILE_MAX_SIZE"`
-	ChunkSize             int    `mapstructure:"CHUNK_SIZE"`
-	AllowedFileExtensions string `mapstructure:"ALLOWED_FILE_EXTENSIONS"`
-	MongoHost             string `mapstructure:"MONGO_HOST"`
-	MongoPort             string `mapstructure:"MONGO_PORT"`
-	MongoUser             string `mapstructure:"MONGO_USER"`
-	MongoPass             string `mapstructure:"MONGO_PASS"`
-	MongoName             string `mapstructure:"MONGO_NAME"`
-	MongoDrop             bool   `mapstructure:"MONGO_DROP"`
-	ContextTimeout        int    `mapstructure:"CONTEXT_TIMEOUT"`
-	MetadataCollection    string `mapstructure:"METADATA_COLLECTION"`
-	BasicMetadataCsv      string `mapstructure:"BASIC_METADATA_CSV"`
-	PetriflowMetadataCsv  string `mapstructure:"PETRIFLOW_METADATA_CSV"`
-	BPMNMetadataCsv       string `mapstructure:"BPMN_METADATA_CSV"`
-	IgnoreWrongExtension  bool   `mapstructure:"IGNORE_WRONG_EXTENSION"`
-	ProcessStoragePort    string `mapstructure:"PROCESS_STORAGE_PORT"`
-	ProcessStorageHost    string `mapstructure:"PROCESS_STORAGE_HOST"`
+	GrpcIp                   string `mapstructure:"GRPC_IP"`
+	GrpcPort                 int    `mapstructure:"GRPC_PORT"`
+	UseGrpcReflection        bool   `mapstructure:"USE_GRPC_REFLECTION"`
+	UploadFileMaxSize        int    `mapstructure:"UPLOAD_FILE_MAX_SIZE"`
+	ChunkSize                int    `mapstructure:"CHUNK_SIZE"`
+	AllowedFileExtensions    string `mapstructure:"ALLOWED_FILE_EXTENSIONS"`
+	MongoHost                string `mapstructure:"MONGO_HOST"`
+	MongoPort                string `mapstructure:"MONGO_PORT"`
+	MongoUser                string `mapstructure:"MONGO_USER"`
+	MongoPass                string `mapstructure:"MONGO_PASS"`
+	MongoName                string `mapstructure:"MONGO_NAME"`
+	MongoDrop                bool   `mapstructure:"MONGO_DROP"`
+	ContextTimeout           int    `mapstructure:"CONTEXT_TIMEOUT"`
+	MetadataCollection       string `mapstructure:"METADATA_COLLECTION"`
+	BasicMetadataCsv         string `mapstructure:"BASIC_METADATA_CSV"`
+	PetriflowMetadataCsv     string `mapstructure:"PETRIFLOW_METADATA_CSV"`
+	BPMNMetadataCsv          string `mapstructure:"BPMN_METADATA_CSV"`
+	IgnoreWrongExtension     bool   `mapstructure:"IGNORE_WRONG_EXTENSION"`
+	ProcessStoragePort       string `mapstructure:"PROCESS_STORAGE_PORT"`
+	ProcessStorageHost       string `mapstructure:"PROCESS_STORAGE_HOST"`
+	DependencyManagementPort string `mapstructure:"DEPENDENCY_MANAGEMENT_PORT"`
+	DependencyManagementHost string `mapstructure:"DEPENDENCY_MANAGEMENT_HOST"`
 }
 
 func (p ProcessAppConfig) IsConfig() {}
@@ -135,15 +137,22 @@ func createApplicationContext(conf ProcessAppConfig) (appContext *ApplicationCon
 		log.Error().Msgf("Process-Storage service was not correctly initialized: %v", err)
 	}
 
+	dependencyService, err := service.NewDependencyService(conf.DependencyManagementHost, conf.DependencyManagementPort)
+	if err != nil {
+		log.Error().Msgf("Process-Storage service was not correctly initialized: %v", err)
+	}
+
 	return &ApplicationContext{
 		ImportService: &service.ImportService{
 			ProcessStorageClient: storageService,
 			ValidationService:    validationService,
 			MetadataService:      metadataService,
+			DependencyService:    dependencyService,
 		},
 		DownloadService: &service.DownloadService{
 			ValidationService: validationService,
 			MetadataService:   metadataService,
+			DependencyService: dependencyService,
 		},
 	}, nil
 }

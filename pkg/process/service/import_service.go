@@ -14,6 +14,7 @@ type ImportService struct {
 	ProcessStorageClient *StorageService
 	ValidationService    *validation.ValidationService
 	MetadataService      *metadata.MetadataService
+	DependencyService    *DependencyService
 }
 
 // ImportProcesses runs in a separate goroutine. It's created from GRPC server endpoint method. It waits for requests

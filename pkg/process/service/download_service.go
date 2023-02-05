@@ -14,6 +14,7 @@ import (
 type DownloadService struct {
 	MetadataService   *metadata.MetadataService
 	ValidationService *validation.ValidationService
+	DependencyService *DependencyService
 }
 
 // DownloadProcesses handles models.DownloadRequestData. If success, it returns models.DownloadResponseData
