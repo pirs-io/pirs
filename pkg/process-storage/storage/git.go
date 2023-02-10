@@ -116,11 +116,6 @@ func (c *GitClient) SaveFile(processMetadata *pb.ProcessMetadata, file []byte) e
 	}
 	_, err = c.commitAndTagFile(worktree, *processId, commitMessage)
 	if err != nil {
-		if err == git.ErrTagExists {
-			log.Warn().Msg("Specified process version already exists, nothing will be updated")
-			return ErrProcessAlreadyExists
-		}
-		log.Error().Msg(err.Error())
 		return err
 	}
 	log.Info().Msgf("process %s successfully saved", processId.FullProcessIdWithVersionTag())
@@ -276,7 +271,14 @@ func (c *GitClient) createRepository() (*git.Repository, error) {
 }
 
 func (c *GitClient) commitAndTagFile(tree *git.Worktree, processId parsers.ProcessId, commitMessage UploadActionSummary) (*string, error) {
-	_, err := tree.Add(*processId.ProcessWithinProject())
+	versionTag := processId.FullProcessIdWithVersionTag()
+	tag, err := c.repo.Tag(versionTag)
+	if tag != nil {
+		log.Error().Msgf("Tag: %s already exists!", versionTag)
+		return nil, ErrProcessAlreadyExists
+	}
+
+	_, err = tree.Add(*processId.ProcessWithinProject())
 	if err != nil {
 		return nil, err
 	}
@@ -302,7 +304,6 @@ func (c *GitClient) commitAndTagFile(tree *git.Worktree, processId parsers.Proce
 		log.Err(err)
 		return nil, err
 	}
-	versionTag := processId.FullProcessIdWithVersionTag()
 	_, err = c.repo.CreateTag(versionTag, head.Hash(), nil)
 	if err != nil {
 		return nil, err
