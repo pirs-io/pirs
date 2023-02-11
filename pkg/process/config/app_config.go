@@ -26,6 +26,7 @@ type ProcessAppConfig struct {
 	UseGrpcReflection        bool   `mapstructure:"USE_GRPC_REFLECTION"`
 	UploadFileMaxSize        int    `mapstructure:"UPLOAD_FILE_MAX_SIZE"`
 	ChunkSize                int    `mapstructure:"CHUNK_SIZE"`
+	StreamSeparator          string `mapstructure:"STREAM_SEPARATOR"`
 	AllowedFileExtensions    string `mapstructure:"ALLOWED_FILE_EXTENSIONS"`
 	MongoHost                string `mapstructure:"MONGO_HOST"`
 	MongoPort                string `mapstructure:"MONGO_PORT"`
@@ -137,9 +138,14 @@ func createApplicationContext(conf ProcessAppConfig) (appContext *ApplicationCon
 		log.Error().Msgf("Process-Storage service was not correctly initialized: %v", err)
 	}
 
-	dependencyService, err := service.NewDependencyService(conf.DependencyManagementHost, conf.DependencyManagementPort)
+	dependencyService, err := service.NewDependencyService(
+		conf.DependencyManagementHost,
+		conf.DependencyManagementPort,
+		conf.StreamSeparator,
+		conf.ChunkSize,
+	)
 	if err != nil {
-		log.Error().Msgf("Process-Storage service was not correctly initialized: %v", err)
+		log.Error().Msgf("Dependency service was not correctly initialized: %v", err)
 	}
 
 	return &ApplicationContext{

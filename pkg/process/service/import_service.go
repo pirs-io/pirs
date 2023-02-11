@@ -85,8 +85,10 @@ func (is *ImportService) ImportProcesses(forRequests <-chan models.ImportRequest
 			}
 			if respDs.Metadata.ID == primitive.NilObjectID {
 				break
+			} else {
+				println("import service: handling received metadata (putting in current metadata as dependants)...")
+				// todo
 			}
-			// todo handle dependency metadata (save in current metadata as dependant)
 		}
 
 		// save file in process-storage
