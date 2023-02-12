@@ -29,7 +29,10 @@ type dependencyServer struct {
 	appContext *config.ApplicationContext
 }
 
-// Detect todo
+// Detect is bi-directional streaming endpoint. First it expects checksum with number of chunks, that are going to be
+// sent in pattern: <count>;<checksum>. Then it accepts all the chunks within the counter initialized to received number
+// of chunks. After data were handled, it streams results (metadata) to the client. If last metadata is default value, no
+// more metadata will be streamed. If an error occurs, connection is shutdown and error sent to the client.
 func (ds *dependencyServer) Detect(stream grpcProto.DependencyManagement_DetectServer) error {
 	ctx := stream.Context()
 	if ctx == nil {

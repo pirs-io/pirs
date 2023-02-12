@@ -7,8 +7,10 @@ import (
 	"pirs.io/process/domain"
 )
 
+// DetectionService todo
 type DetectionService struct{}
 
+// Detect todo
 func (ds *DetectionService) Detect(request models.DetectRequestData) models.DetectResponseData {
 	isValid := isValidChecksum(request.ProcessData.Bytes(), request.CheckSum)
 	if isValid {

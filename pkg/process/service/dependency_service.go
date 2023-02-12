@@ -19,6 +19,9 @@ import (
 	"strings"
 )
 
+// A DependencyService detects and resolves dependencies. Host and Port describes dependency-management service instance.
+// Separator is used as separator in streaming (separating total chunks and checksum). ChunkSize is used to calculate number
+// of chunks and to devide array of bytes into chunks
 type DependencyService struct {
 	Host      string
 	Port      string
@@ -31,6 +34,7 @@ var (
 	logDs = commons.GetLoggerFor("DependencyService")
 )
 
+// NewDependencyService creates instance with params. It also creates client for dependency-management service instance.
 func NewDependencyService(hostname string, port string, sep string, chunkSize int) (*DependencyService, error) {
 	service := &DependencyService{
 		Host:      hostname,
@@ -60,15 +64,17 @@ func (ds *DependencyService) createClient() (mygrpc.DependencyManagementClient, 
 	return mygrpc.NewDependencyManagementClient(conn), nil
 }
 
-// Detect todo
+// Detect is a client service for client.Detect endpoint. It is run as goroutine by ImportService. First it establishes
+// bi-directional stream connection with dependency-management service. It accepts file data as an array of bytes via
+// forResource channel. Then it handles that data and sends to dependency-management service. Then metadata are received
+// and sent to parent ImportService via forResponse channel. If any error occurs during opened stream connection an error
+// is sent to ImportService and stream connection is shutdown.
 func (ds *DependencyService) Detect(reqCtx context.Context, forResource <-chan []byte, forResponse chan<- models.ResponseAdapter) {
 	defer close(forResponse)
-	// init stream
+	// open stream
 	stream, err := ds.establishDetectConnection(reqCtx)
 	if err != nil {
-		forResponse <- models.ResponseAdapter{
-			Err: err,
-		}
+		forResponse <- models.ResponseAdapter{Err: err}
 		return
 	} else {
 		forResponse <- models.ResponseAdapter{}
@@ -84,9 +90,7 @@ func (ds *DependencyService) Detect(reqCtx context.Context, forResource <-chan [
 			nil,
 		)
 		if err != nil {
-			forResponse <- models.ResponseAdapter{
-				Err: err,
-			}
+			forResponse <- models.ResponseAdapter{Err: err}
 			return
 		}
 
@@ -100,24 +104,13 @@ func (ds *DependencyService) Detect(reqCtx context.Context, forResource <-chan [
 			}
 			if err != nil {
 				logDs.Error().Msgf("cannot read chunk to buffer: ", err)
-				forResponse <- models.ResponseAdapter{
-					Err: err,
-				}
+				forResponse <- models.ResponseAdapter{Err: err}
 				return
 			}
 
-			req := &mygrpc.DetectRequest{
-				Data: &mygrpc.DetectRequest_ChunkData{
-					ChunkData: buffer[:n],
-				},
-			}
-
-			err = stream.Send(req)
+			err = ds.sendDetectRequest(stream, "", buffer[:n])
 			if err != nil {
-				logDs.Error().Msgf("cannot send chunk to server: ", err, stream.RecvMsg(nil))
-				forResponse <- models.ResponseAdapter{
-					Err: err,
-				}
+				forResponse <- models.ResponseAdapter{Err: err}
 				return
 			}
 		}
@@ -125,25 +118,20 @@ func (ds *DependencyService) Detect(reqCtx context.Context, forResource <-chan [
 		response, err := stream.Recv()
 		if err != nil {
 			logDs.Error().Msgf("cannot receive from the stream: ", err, stream.RecvMsg(nil))
-			forResponse <- models.ResponseAdapter{
-				Err: err,
-			}
+			forResponse <- models.ResponseAdapter{Err: err}
 			return
 		}
 		if strings.Contains(response.Message, "fail") {
 			logDs.Error().Msgf("dependencies failed to detect: ", err, stream.RecvMsg(nil))
-			forResponse <- models.ResponseAdapter{
-				Err: errors.New(response.Message),
-			}
+			forResponse <- models.ResponseAdapter{Err: errors.New(response.Message)}
 			continue
 		}
+		// receive metadata
 		for {
 			response, err = stream.Recv()
 			if err != nil {
 				logDs.Error().Msgf("cannot receive from the stream: ", err, stream.RecvMsg(nil))
-				forResponse <- models.ResponseAdapter{
-					Err: err,
-				}
+				forResponse <- models.ResponseAdapter{Err: err}
 				return
 			}
 
@@ -152,14 +140,10 @@ func (ds *DependencyService) Detect(reqCtx context.Context, forResource <-chan [
 			err = json.Unmarshal(jsonString, &metadataFromResponse)
 			if err != nil {
 				logDs.Error().Msgf("cannot handle received metadata: %v", err)
-				forResponse <- models.ResponseAdapter{
-					Err: err,
-				}
+				forResponse <- models.ResponseAdapter{Err: err}
 				return
 			}
-			forResponse <- models.ResponseAdapter{
-				Metadata: metadataFromResponse,
-			}
+			forResponse <- models.ResponseAdapter{Metadata: metadataFromResponse}
 			if metadataFromResponse.ID == primitive.NilObjectID {
 				break
 			}
