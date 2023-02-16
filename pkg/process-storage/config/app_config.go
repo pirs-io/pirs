@@ -15,7 +15,7 @@ type ProcessStorageAppConfig struct {
 	StorageProvider storage.Provider `mapstructure:"STORAGE_PROVIDER"`
 	RepoRootPath    string           `mapstructure:"GIT_ROOT"`
 	Tenant          string           `mapstructure:"TENANT"`
-	ChunkSize       int64            `mapstructure:"CHUNK_SIZE"`
+	ChunkSize       int64            `mapstructure:"CHUNK_SIZE_BYTES"`
 }
 
 func (t ProcessStorageAppConfig) IsConfig() {}
@@ -35,7 +35,7 @@ func InitApp(configFilePath string) (conf *ProcessStorageAppConfig) {
 	// create app context
 	appCtx, contextErr := createApplicationContext(*conf)
 	if contextErr != nil {
-		log.Fatal().Msgf("Error intializing app context")
+		log.Fatal().Msgf("Error initializing app context")
 	}
 	trackerApplicationContext = appCtx
 
