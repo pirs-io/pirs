@@ -1,12 +1,14 @@
 version: "3.3"
 
 services:
-# microservices
+  # microservices
   process:
     image: pirs.process:latest
     build:
       context: ./pkg
       dockerfile: process/Dockerfile
+    env_file:
+      - ./pkg/process/example.env
     ports:
       - "8081:8081"
 
@@ -15,10 +17,16 @@ services:
     build:
       context: ./pkg
       dockerfile: process-storage/Dockerfile
+    environment:
+      - "GRPC_PORT=50051"
+      - "STORAGE_PROVIDER=1"
+      - "GIT_ROOT=/data/pirs/git"
+      - "TENANT=dudak"
+      - "CHUNK_SIZE=1024"
     ports:
-      - "8080:8080"
+      - "50051:50051"
     volumes:
-      - ./data/pirs/git:/data/pirs/git
+      - c:\Users\pavol\pirs\git:/data/pirs/git
 
 ## support services
 #  redis:
