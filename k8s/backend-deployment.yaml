@@ -1,0 +1,73 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: process-storage
+  labels:
+    app: process-storage
+spec:
+  replicas: 1
+  template:
+    metadata:
+      name: process-storage
+      labels:
+        app: process-storage
+    spec:
+      containers:
+        - name: process-storage
+          image: pirs/process-storage
+          imagePullPolicy: IfNotPresent
+          ports:
+            - containerPort: 50051
+              name: process-storage_port
+      restartPolicy: Always
+  selector:
+    matchLabels:
+      app: process-storage
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: process-storage_service
+spec:
+  selector:
+    app: process-storage_service
+  ports:
+    - name: process-storage_service_port
+      protocol: TCP
+      port: 50051
+      targetPort: process-storage_port
+  type: NodePort
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: process_service
+spec:
+  selector:
+    app: process_service
+  ports:
+    - port: 8080
+  type: NodePort
+---
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: process
+  labels:
+    app: process
+spec:
+  replicas: 1
+  template:
+    metadata:
+      name: process
+      labels:
+        app: process
+    spec:
+      containers:
+        - name: process
+          image: pirs/process
+          imagePullPolicy: IfNotPresent
+      restartPolicy: Always
+  selector:
+    matchLabels:
+      app: process
