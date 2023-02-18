@@ -12,9 +12,10 @@ service DependencyManagement {
 }
 
 message DetectRequest {
+  int32 process_type = 1;
   oneof data {
-    string countAndChecksum = 1;
-    bytes chunk_data = 2;
+    string countAndChecksum = 2;
+    bytes chunk_data = 3;
   };
 }
 
