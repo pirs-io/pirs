@@ -27,7 +27,7 @@ type Metadata struct {
 	CustomData        interface{}        `bson:"custom_data" json:"custom_data"`
 }
 
-// A NestedMetadata todo
+// A NestedMetadata represents dependency of Metadata. It contains reduced fields of Metadata for simplicity.
 type NestedMetadata struct {
 	ID          primitive.ObjectID `bson:"_id" json:"id"`
 	URI         string             `bson:"uri" json:"uri"`
@@ -38,7 +38,7 @@ type NestedMetadata struct {
 	ProcessType enums.ProcessType  `bson:"process_type" json:"process_type"`
 }
 
-// A DependencyMetadata todo
+// A DependencyMetadata is a wrapper for an array of NestedMetadata.
 type DependencyMetadata struct {
 	Dependencies []NestedMetadata `bson:"dependecies" json:"dependencies"`
 }
@@ -92,7 +92,7 @@ func (m *Metadata) UpdateProcessIdentifier(newIdentifier string) {
 	m.BuildURI()
 }
 
-// TransformToNestedMetadata todo
+// TransformToNestedMetadata transforms Metadata to NestedMetadata. Returns pointer to NestedMetadata instance.
 func (m *Metadata) TransformToNestedMetadata() *NestedMetadata {
 	return &NestedMetadata{
 		ID:          m.ID,
