@@ -12,6 +12,7 @@ import (
 	"io"
 	"math"
 	"pirs.io/commons"
+	"pirs.io/commons/enums"
 	"pirs.io/process/domain"
 	mygrpc "pirs.io/process/grpc"
 	"pirs.io/process/service/models"
@@ -69,7 +70,7 @@ func (ds *DependencyService) createClient() (mygrpc.DependencyManagementClient, 
 // forResource channel. Then it handles that data and sends to dependency-management service. Then metadata are received
 // and sent to parent ImportService via forResponse channel. If any error occurs during opened stream connection an error
 // is sent to ImportService and stream connection is shutdown.
-func (ds *DependencyService) Detect(reqCtx context.Context, forResource <-chan []byte, forResponse chan<- models.ResponseAdapter) {
+func (ds *DependencyService) Detect(reqCtx context.Context, forResource <-chan models.DetectResourceAdapter, forResponse chan<- models.ResponseAdapter) {
 	defer close(forResponse)
 	// open stream
 	stream, err := ds.establishDetectConnection(reqCtx)
@@ -81,12 +82,13 @@ func (ds *DependencyService) Detect(reqCtx context.Context, forResource <-chan [
 	}
 
 	for resource := range forResource {
-		// send checksum
-		rawHash := commons.HashBytesToSHA256(resource)
+		// send request metadata
+		rawHash := commons.HashBytesToSHA256(resource.FileData)
 		checksum := commons.ConvertBytesToString(rawHash)
-		totalChunks := uint64(math.Ceil(float64(len(resource)) / float64(ds.ChunkSize)))
+		totalChunks := uint64(math.Ceil(float64(len(resource.FileData)) / float64(ds.ChunkSize)))
 		err = ds.sendDetectRequest(stream,
 			strconv.FormatUint(totalChunks, 10)+ds.Separator+checksum,
+			resource.ProcessType,
 			nil,
 		)
 		if err != nil {
@@ -95,7 +97,7 @@ func (ds *DependencyService) Detect(reqCtx context.Context, forResource <-chan [
 		}
 
 		// send chunks
-		reader := bytes.NewReader(resource)
+		reader := bytes.NewReader(resource.FileData)
 		buffer := make([]byte, ds.ChunkSize)
 		for {
 			n, err := reader.Read(buffer)
@@ -108,7 +110,7 @@ func (ds *DependencyService) Detect(reqCtx context.Context, forResource <-chan [
 				return
 			}
 
-			err = ds.sendDetectRequest(stream, "", buffer[:n])
+			err = ds.sendDetectRequest(stream, "", -1, buffer[:n])
 			if err != nil {
 				forResponse <- models.ResponseAdapter{Err: err}
 				return
@@ -170,10 +172,11 @@ func (ds *DependencyService) establishDetectConnection(ctx context.Context) (myg
 	return stream, nil
 }
 
-func (ds *DependencyService) sendDetectRequest(stream mygrpc.DependencyManagement_DetectClient, countAndChecksum string, chunk []byte) error {
+func (ds *DependencyService) sendDetectRequest(stream mygrpc.DependencyManagement_DetectClient, countAndChecksum string, processType enums.ProcessType, chunk []byte) error {
 	var err error
 	if countAndChecksum != "" {
 		err = stream.Send(&mygrpc.DetectRequest{
+			ProcessType: int32(processType.Int()),
 			Data: &mygrpc.DetectRequest_CountAndChecksum{
 				CountAndChecksum: countAndChecksum,
 			},

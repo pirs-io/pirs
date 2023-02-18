@@ -3,6 +3,7 @@ package models
 import (
 	"bytes"
 	"google.golang.org/grpc/codes"
+	"pirs.io/commons/enums"
 	"pirs.io/process/domain"
 )
 
@@ -10,6 +11,7 @@ import (
 // is checksum of ProcessData.
 type DetectRequestData struct {
 	CheckSum    string
+	ProcessType enums.ProcessType
 	ProcessData bytes.Buffer
 }
 
@@ -18,4 +20,9 @@ type DetectRequestData struct {
 type DetectResponseData struct {
 	Status   codes.Code
 	Metadata []domain.Metadata
+}
+
+// A Detector todo
+type Detector interface {
+	Detect(buffer bytes.Buffer) []domain.Metadata
 }

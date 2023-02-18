@@ -12,6 +12,7 @@ import (
 	"io"
 	"net"
 	"pirs.io/commons"
+	"pirs.io/commons/enums"
 	"pirs.io/commons/structs"
 	"pirs.io/dependency-management/config"
 	"pirs.io/dependency-management/detection/models"
@@ -40,6 +41,7 @@ func (ds *dependencyServer) Detect(stream grpcProto.DependencyManagement_DetectS
 	}
 
 	var currentCheckSum string
+	var currentProcessType enums.ProcessType
 	var currentChunks []byte
 	var currentTotalChunks int
 	var chunkCounter int
@@ -67,6 +69,7 @@ func (ds *dependencyServer) Detect(stream grpcProto.DependencyManagement_DetectS
 				return err
 			}
 			currentCheckSum = splitInput[1]
+			currentProcessType = enums.ProcessType(req.GetProcessType())
 		} else {
 			chunkCounter += 1
 			if chunkCounter <= currentTotalChunks {
@@ -75,6 +78,7 @@ func (ds *dependencyServer) Detect(stream grpcProto.DependencyManagement_DetectS
 				if chunkCounter == currentTotalChunks {
 					data := models.DetectRequestData{
 						CheckSum:    currentCheckSum,
+						ProcessType: currentProcessType,
 						ProcessData: *bytes.NewBuffer(currentChunks),
 					}
 					response := ds.appContext.DetectionService.Detect(data)

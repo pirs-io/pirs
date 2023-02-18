@@ -30,7 +30,7 @@ func (is *ImportService) ImportProcesses(forRequests <-chan models.ImportRequest
 
 	resourceChanSS := make(chan models.ResourceAdapter)
 	responseChanSS := make(chan error)
-	resourceChanDS := make(chan []byte)
+	resourceChanDS := make(chan models.DetectResourceAdapter)
 	responseChanDS := make(chan models.ResponseAdapter)
 	isGoroutineRunning := false
 	defer func() {
@@ -77,7 +77,10 @@ func (is *ImportService) ImportProcesses(forRequests <-chan models.ImportRequest
 		m.UpdateVersion(foundVersion + 1)
 
 		// resolve and save deps
-		resourceChanDS <- req.ProcessData.Bytes()
+		resourceChanDS <- models.DetectResourceAdapter{
+			ProcessType: m.ProcessType,
+			FileData:    req.ProcessData.Bytes(),
+		}
 		var currentDependencies []domain.NestedMetadata
 		for {
 			respDs := <-responseChanDS

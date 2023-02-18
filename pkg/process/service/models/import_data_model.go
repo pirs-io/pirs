@@ -4,6 +4,7 @@ import (
 	"bytes"
 	"golang.org/x/net/context"
 	"google.golang.org/grpc/codes"
+	"pirs.io/commons/enums"
 	"pirs.io/process/domain"
 )
 
@@ -27,6 +28,12 @@ type ImportResponseData struct {
 type ResourceAdapter struct {
 	Metadata domain.Metadata
 	FileData []byte
+}
+
+// A DetectResourceAdapter todo
+type DetectResourceAdapter struct {
+	ProcessType enums.ProcessType
+	FileData    []byte
 }
 
 // A ResponseAdapter is wrapper for metadata and error.

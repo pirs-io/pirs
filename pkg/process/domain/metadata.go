@@ -2,7 +2,7 @@ package domain
 
 import (
 	"go.mongodb.org/mongo-driver/bson/primitive"
-	"pirs.io/process/enums"
+	"pirs.io/commons/enums"
 	"strconv"
 	"strings"
 	"time"
