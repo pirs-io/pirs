@@ -13,6 +13,7 @@ type DetectionService struct {
 	detectorChain models.Detector
 }
 
+// NewDetectionService todo
 func NewDetectionService() *DetectionService {
 	service := DetectionService{}
 	service.detectorChain = buildDetectorChain()
@@ -36,21 +37,21 @@ func (ds *DetectionService) Detect(request models.DetectRequestData) models.Dete
 			Status: codes.InvalidArgument,
 		}
 	}
+	// find dependencies
+	dependencies := ds.detectorChain.Detect(request.ProcessType, request.ProcessData)
+	dependencies = append(dependencies, domain.Metadata{})
 
-	// call detector chain and get metadata
-	// append empty metadata
-	// return array
-
-	println("detecting dependencies....")
-	// todo
-	return models.DetectResponseData{
-		Status: codes.OK,
-		Metadata: []domain.Metadata{
-			*domain.NewMetadata(),
-			*domain.NewMetadata(),
-			*domain.NewMetadata(),
-			{},
-		},
+	// return dependencies
+	if len(dependencies) == 0 {
+		return models.DetectResponseData{
+			Status:   codes.NotFound,
+			Metadata: dependencies,
+		}
+	} else {
+		return models.DetectResponseData{
+			Status:   codes.OK,
+			Metadata: dependencies,
+		}
 	}
 }
 

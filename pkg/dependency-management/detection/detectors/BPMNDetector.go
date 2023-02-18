@@ -2,6 +2,7 @@ package detectors
 
 import (
 	"bytes"
+	"pirs.io/commons/enums"
 	"pirs.io/dependency-management/detection/models"
 	"pirs.io/process/domain"
 )
@@ -12,7 +13,11 @@ type BPMNDetector struct {
 }
 
 // Detect todo
-func (bd *BPMNDetector) Detect(data bytes.Buffer) []domain.Metadata {
+func (bd *BPMNDetector) Detect(processType enums.ProcessType, data bytes.Buffer) []domain.Metadata {
+	if !bd.IsProcessTypeEqual(processType) {
+		return bd.ExecuteNextIfPresent(processType, data)
+	}
+
 	return []domain.Metadata{}
 }
 
@@ -22,9 +27,14 @@ func (bd *BPMNDetector) SetNext(detector models.Detector) {
 }
 
 // ExecuteNextIfPresent todo
-func (bd *BPMNDetector) ExecuteNextIfPresent(data bytes.Buffer) []domain.Metadata {
+func (bd *BPMNDetector) ExecuteNextIfPresent(processType enums.ProcessType, data bytes.Buffer) []domain.Metadata {
 	if bd.next != nil {
-		return bd.next.Detect(data)
+		return bd.next.Detect(processType, data)
 	}
 	return []domain.Metadata{}
+}
+
+// IsProcessTypeEqual todo
+func (bd *BPMNDetector) IsProcessTypeEqual(toCheck enums.ProcessType) bool {
+	return enums.BPMN == toCheck
 }

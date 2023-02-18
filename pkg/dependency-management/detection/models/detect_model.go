@@ -24,7 +24,8 @@ type DetectResponseData struct {
 
 // A Detector todo
 type Detector interface {
-	Detect(bytes.Buffer) []domain.Metadata
+	Detect(enums.ProcessType, bytes.Buffer) []domain.Metadata
 	SetNext(Detector)
-	ExecuteNextIfPresent(bytes.Buffer) []domain.Metadata
+	ExecuteNextIfPresent(enums.ProcessType, bytes.Buffer) []domain.Metadata
+	IsProcessTypeEqual(enums.ProcessType) bool
 }
