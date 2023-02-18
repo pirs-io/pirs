@@ -27,10 +27,20 @@ type Metadata struct {
 	CustomData        interface{}        `bson:"custom_data" json:"custom_data"`
 }
 
-// todo change to nested-documents
+// A NestedMetadata todo
+type NestedMetadata struct {
+	ID          primitive.ObjectID `bson:"_id" json:"id"`
+	URI         string             `bson:"uri" json:"uri"`
+	CreatedAt   time.Time          `bson:"created_at" json:"created_at"`
+	FileName    string             `bson:"file_name" json:"file_name"`
+	FileSize    int                `bson:"file_size" json:"file_size"`
+	Publisher   string             `bson:"publisher" json:"publisher"`
+	ProcessType enums.ProcessType  `bson:"process_type" json:"process_type"`
+}
+
+// A DependencyMetadata todo
 type DependencyMetadata struct {
-	ParentID primitive.ObjectID   `bson:"parent_id" json:"parent_id"`
-	ChildIDs []primitive.ObjectID `bson:"child_ids" json:"child_ids"`
+	Dependencies []NestedMetadata `bson:"dependecies" json:"dependencies"`
 }
 
 // PetriflowMetadata is Metadata.CustomData field.
@@ -80,4 +90,17 @@ func (m *Metadata) UpdateVersion(newVersion uint32) {
 func (m *Metadata) UpdateProcessIdentifier(newIdentifier string) {
 	m.SplitURI[3] = newIdentifier
 	m.BuildURI()
+}
+
+// TransformToNestedMetadata todo
+func (m *Metadata) TransformToNestedMetadata() *NestedMetadata {
+	return &NestedMetadata{
+		ID:          m.ID,
+		URI:         m.URI,
+		CreatedAt:   m.CreatedAt,
+		FileName:    m.FileName,
+		FileSize:    m.FileSize,
+		Publisher:   m.Publisher,
+		ProcessType: m.ProcessType,
+	}
 }

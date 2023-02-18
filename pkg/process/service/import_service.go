@@ -3,6 +3,7 @@ package service
 import (
 	"go.mongodb.org/mongo-driver/bson/primitive"
 	"google.golang.org/grpc/codes"
+	"pirs.io/process/domain"
 	metadata "pirs.io/process/metadata/service"
 	"pirs.io/process/service/models"
 	valModels "pirs.io/process/validation/models"
@@ -77,6 +78,7 @@ func (is *ImportService) ImportProcesses(forRequests <-chan models.ImportRequest
 
 		// resolve and save deps
 		resourceChanDS <- req.ProcessData.Bytes()
+		var currentDependencies []domain.NestedMetadata
 		for {
 			respDs := <-responseChanDS
 			if respDs.Err != nil {
@@ -86,10 +88,11 @@ func (is *ImportService) ImportProcesses(forRequests <-chan models.ImportRequest
 			if respDs.Metadata.ID == primitive.NilObjectID {
 				break
 			} else {
-				println("import service: handling received metadata (putting in current metadata as dependants)...")
-				// todo
+				nested := respDs.Metadata.TransformToNestedMetadata()
+				currentDependencies = append(currentDependencies, *nested)
 			}
 		}
+		m.DependencyData = domain.DependencyMetadata{Dependencies: currentDependencies}
 
 		// save file in process-storage
 		resource := models.ResourceAdapter{
