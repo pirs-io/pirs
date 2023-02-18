@@ -1,9 +1,9 @@
-package service
+package detection
 
 import (
 	"google.golang.org/grpc/codes"
 	"pirs.io/commons"
-	"pirs.io/dependency-management/service/models"
+	"pirs.io/dependency-management/detection/models"
 	"pirs.io/process/domain"
 )
 
@@ -12,23 +12,24 @@ type DetectionService struct{}
 
 // Detect todo
 func (ds *DetectionService) Detect(request models.DetectRequestData) models.DetectResponseData {
+	// validate bytes
 	isValid := isValidChecksum(request.ProcessData.Bytes(), request.CheckSum)
-	if isValid {
-		println("detecting dependencies....")
-		// todo
-		return models.DetectResponseData{
-			Status: codes.OK,
-			Metadata: []domain.Metadata{
-				*domain.NewMetadata(),
-				*domain.NewMetadata(),
-				*domain.NewMetadata(),
-				{},
-			},
-		}
-	} else {
+	if !isValid {
 		return models.DetectResponseData{
 			Status: codes.InvalidArgument,
 		}
+	}
+
+	println("detecting dependencies....")
+	// todo
+	return models.DetectResponseData{
+		Status: codes.OK,
+		Metadata: []domain.Metadata{
+			*domain.NewMetadata(),
+			*domain.NewMetadata(),
+			*domain.NewMetadata(),
+			{},
+		},
 	}
 }
 

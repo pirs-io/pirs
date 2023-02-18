@@ -2,7 +2,7 @@ package config
 
 import (
 	"pirs.io/commons"
-	"pirs.io/dependency-management/service"
+	"pirs.io/dependency-management/detection"
 )
 
 var (
@@ -23,7 +23,7 @@ func (p DependencyAppConfig) IsConfig() {}
 // An ApplicationContext contains initialized config struct and all the main services
 type ApplicationContext struct {
 	AppConfig        *DependencyAppConfig
-	DetectionService *service.DetectionService
+	DetectionService *detection.DetectionService
 }
 
 // GetContext returns ApplicationContext instance, that is stored in a variable depAppCtx
@@ -53,6 +53,6 @@ func InitApp(configFilePath string) (conf *DependencyAppConfig) {
 
 func createApplicationContext(conf DependencyAppConfig) (appContext *ApplicationContext, err error) {
 	return &ApplicationContext{
-		DetectionService: &service.DetectionService{},
+		DetectionService: &detection.DetectionService{},
 	}, nil
 }

@@ -14,8 +14,8 @@ import (
 	"pirs.io/commons"
 	"pirs.io/commons/structs"
 	"pirs.io/dependency-management/config"
+	"pirs.io/dependency-management/detection/models"
 	grpcProto "pirs.io/dependency-management/grpc"
-	"pirs.io/dependency-management/service/models"
 	"strconv"
 	"strings"
 )
