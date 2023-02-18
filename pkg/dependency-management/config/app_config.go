@@ -53,6 +53,6 @@ func InitApp(configFilePath string) (conf *DependencyAppConfig) {
 
 func createApplicationContext(conf DependencyAppConfig) (appContext *ApplicationContext, err error) {
 	return &ApplicationContext{
-		DetectionService: &detection.DetectionService{},
+		DetectionService: detection.NewDetectionService(),
 	}, nil
 }

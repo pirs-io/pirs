@@ -25,4 +25,6 @@ type DetectResponseData struct {
 // A Detector todo
 type Detector interface {
 	Detect(bytes.Buffer) []domain.Metadata
+	SetNext(Detector)
+	ExecuteNextIfPresent(bytes.Buffer) []domain.Metadata
 }
