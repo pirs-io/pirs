@@ -7,7 +7,8 @@ import (
 	"pirs.io/process/domain"
 )
 
-// A BPMNDetector todo
+// A BPMNDetector represents structure for dependency detection of process type enums.BPMN. It contains field next,
+// which is a pointer on the next models.Detector within chain of responsibility pattern.
 type BPMNDetector struct {
 	next models.Detector
 }
@@ -21,12 +22,12 @@ func (bd *BPMNDetector) Detect(processType enums.ProcessType, data bytes.Buffer)
 	return []domain.Metadata{}
 }
 
-// SetNext todo
+// SetNext sets next models.Detector within chain of responsibility.
 func (bd *BPMNDetector) SetNext(detector models.Detector) {
 	bd.next = detector
 }
 
-// ExecuteNextIfPresent todo
+// ExecuteNextIfPresent executes next models.Detector if exists.
 func (bd *BPMNDetector) ExecuteNextIfPresent(processType enums.ProcessType, data bytes.Buffer) []domain.Metadata {
 	if bd.next != nil {
 		return bd.next.Detect(processType, data)
@@ -34,7 +35,7 @@ func (bd *BPMNDetector) ExecuteNextIfPresent(processType enums.ProcessType, data
 	return []domain.Metadata{}
 }
 
-// IsProcessTypeEqual todo
+// IsProcessTypeEqual checks if enums.ProcessType is equal to handler type
 func (bd *BPMNDetector) IsProcessTypeEqual(toCheck enums.ProcessType) bool {
 	return enums.BPMN == toCheck
 }

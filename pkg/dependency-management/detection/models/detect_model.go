@@ -22,7 +22,7 @@ type DetectResponseData struct {
 	Metadata []domain.Metadata
 }
 
-// A Detector todo
+// A Detector is an interface for dependency detector.
 type Detector interface {
 	Detect(enums.ProcessType, bytes.Buffer) []domain.Metadata
 	SetNext(Detector)

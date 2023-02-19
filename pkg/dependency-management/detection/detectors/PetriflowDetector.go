@@ -20,12 +20,16 @@ var (
 	log = commons.GetLoggerFor("petriflowDetector")
 )
 
-// A PetriflowDetector todo
+// A PetriflowDetector represents structure for dependency detection of process type enums.Petriflow. It contains field next,
+// which is a pointer on the next models.Detector within chain of responsibility pattern.
 type PetriflowDetector struct {
 	next models.Detector
 }
 
-// Detect todo
+// Detect is a handler for dependency detection out of process data. The input is enums.ProcessType and bytes.Buffer.
+// If enums.ProcessType is not the type of this handler, function ExecuteNextIfPresent is called. It searches for action
+// tags and sends tags one by one into handleAction goroutine. These goroutines send dependencies one by one. Every
+// dependency is collected and returned in the end.
 func (pd *PetriflowDetector) Detect(processType enums.ProcessType, data bytes.Buffer) []domain.Metadata {
 	if !pd.IsProcessTypeEqual(processType) {
 		return pd.ExecuteNextIfPresent(processType, data)
@@ -65,12 +69,12 @@ func (pd *PetriflowDetector) Detect(processType enums.ProcessType, data bytes.Bu
 	return dependencies
 }
 
-// SetNext todo
+// SetNext sets next models.Detector within chain of responsibility.
 func (pd *PetriflowDetector) SetNext(detector models.Detector) {
 	pd.next = detector
 }
 
-// ExecuteNextIfPresent todo
+// ExecuteNextIfPresent executes next models.Detector if exists.
 func (pd *PetriflowDetector) ExecuteNextIfPresent(processType enums.ProcessType, data bytes.Buffer) []domain.Metadata {
 	if pd.next != nil {
 		return pd.next.Detect(processType, data)
@@ -78,7 +82,7 @@ func (pd *PetriflowDetector) ExecuteNextIfPresent(processType enums.ProcessType,
 	return []domain.Metadata{}
 }
 
-// IsProcessTypeEqual todo
+// IsProcessTypeEqual checks if enums.ProcessType is equal to handler type
 func (pd *PetriflowDetector) IsProcessTypeEqual(toCheck enums.ProcessType) bool {
 	return enums.Petriflow == toCheck
 }
@@ -86,5 +90,7 @@ func (pd *PetriflowDetector) IsProcessTypeEqual(toCheck enums.ProcessType) bool 
 // handleAction todo
 func (pd *PetriflowDetector) handleAction(wg *sync.WaitGroup, body string, responseChan chan<- domain.Metadata) {
 	defer wg.Done()
+
+	// todo implement detection
 	responseChan <- *domain.NewMetadata()
 }

@@ -8,12 +8,13 @@ import (
 	"pirs.io/process/domain"
 )
 
-// DetectionService todo
+// A DetectionService is a service to handle requests processed by the GRPC server. It contains field detectorChain,
+// which is starting point of chain of responsibility pattern.
 type DetectionService struct {
 	detectorChain models.Detector
 }
 
-// NewDetectionService todo
+// NewDetectionService creates instance of DetectionService with initialized chain.
 func NewDetectionService() *DetectionService {
 	service := DetectionService{}
 	service.detectorChain = buildDetectorChain()
@@ -29,7 +30,8 @@ func buildDetectorChain() models.Detector {
 	return &bd
 }
 
-// Detect todo
+// Detect handles models.DetectRequestData. The request is validated and sent to handlers via chain of responsibility
+// pattern. On success a models.DetectResponseData is returned with codes.OK. Otherwise, an error code is returned.
 func (ds *DetectionService) Detect(request models.DetectRequestData) models.DetectResponseData {
 	// validate bytes
 	if !isValidChecksum(request.ProcessData.Bytes(), request.CheckSum) {
