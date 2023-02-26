@@ -5,9 +5,8 @@ import (
 	"fmt"
 	"golang.org/x/net/context"
 	"pirs.io/commons"
+	"pirs.io/commons/db/mongo"
 	"pirs.io/commons/parsers"
-	"pirs.io/process/db/mongo"
-	metadataMongo "pirs.io/process/metadata/repository/mongo"
 	metadata "pirs.io/process/metadata/service"
 	"pirs.io/process/service"
 	validation "pirs.io/process/validation/service"
@@ -124,7 +123,7 @@ func parseCustomMetadataMappingFromCsv(csvPath string) map[string]string {
 
 func createApplicationContext(conf ProcessAppConfig) (appContext *ApplicationContext, err error) {
 	mongoClient := initMongoDatabase(conf)
-	metadataRepo := metadataMongo.NewMetadataRepository(mongoClient.Database(conf.MongoName, conf.MongoDrop), conf.MetadataCollection)
+	metadataRepo := mongo.NewMetadataRepository(mongoClient.Database(conf.MongoName, conf.MongoDrop), conf.MetadataCollection)
 	validationService := validation.NewValidationService(conf.AllowedFileExtensions, conf.IgnoreWrongExtension)
 	metadataService := metadata.NewMetadataService(
 		*metadataRepo,

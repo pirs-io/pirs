@@ -6,9 +6,9 @@ import (
 	"google.golang.org/grpc/codes"
 	"google.golang.org/grpc/status"
 	"pirs.io/commons"
+	"pirs.io/commons/db/mongo"
 	"pirs.io/process/domain"
 	"pirs.io/process/metadata/extractor"
-	"pirs.io/process/metadata/repository/mongo"
 	"pirs.io/process/service/models"
 	"time"
 )

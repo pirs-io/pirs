@@ -5,19 +5,18 @@ import (
 	"fmt"
 	"go.mongodb.org/mongo-driver/bson"
 	"go.mongodb.org/mongo-driver/mongo/options"
-	"pirs.io/process/db/mongo"
 	"pirs.io/process/domain"
 	"strings"
 )
 
 // A MetadataRepository holds DB and Collection instances. It's initialized in config package.
 type MetadataRepository struct {
-	DB         mongo.Database
-	Collection mongo.Collection
+	DB         Database
+	Collection Collection
 }
 
 // NewMetadataRepository creates instance pointer of MetadataRepository
-func NewMetadataRepository(db mongo.Database, collectionName string) *MetadataRepository {
+func NewMetadataRepository(db Database, collectionName string) *MetadataRepository {
 	return &MetadataRepository{db, db.Collection(collectionName)}
 }
 
