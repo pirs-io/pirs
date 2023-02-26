@@ -6,6 +6,7 @@ import (
 	"google.golang.org/grpc/codes"
 	"google.golang.org/grpc/status"
 	"pirs.io/commons"
+	"pirs.io/commons/db/mongo"
 	"pirs.io/commons/enums"
 	"pirs.io/dependency-management/detection/models"
 	"pirs.io/process/domain"
@@ -21,9 +22,17 @@ var (
 )
 
 // A PetriflowDetector represents structure for dependency detection of process type enums.Petriflow. It contains field next,
-// which is a pointer on the next models.Detector within chain of responsibility pattern.
+// which is a pointer on the next models.Detector within chain of responsibility pattern and repository for metadata.
 type PetriflowDetector struct {
-	next models.Detector
+	repository mongo.MetadataRepository
+	next       models.Detector
+}
+
+// NewPetriflowDetector return pointer of instance of PetriflowDetector. It contains initialized metadata repository.
+func NewPetriflowDetector(repo mongo.MetadataRepository) *PetriflowDetector {
+	return &PetriflowDetector{
+		repository: repo,
+	}
 }
 
 // Detect is a handler for dependency detection out of process data. The input is enums.ProcessType and bytes.Buffer.

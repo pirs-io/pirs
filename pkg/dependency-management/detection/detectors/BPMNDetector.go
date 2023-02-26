@@ -2,6 +2,7 @@ package detectors
 
 import (
 	"bytes"
+	"pirs.io/commons/db/mongo"
 	"pirs.io/commons/enums"
 	"pirs.io/dependency-management/detection/models"
 	"pirs.io/process/domain"
@@ -10,7 +11,15 @@ import (
 // A BPMNDetector represents structure for dependency detection of process type enums.BPMN. It contains field next,
 // which is a pointer on the next models.Detector within chain of responsibility pattern.
 type BPMNDetector struct {
-	next models.Detector
+	repository mongo.MetadataRepository
+	next       models.Detector
+}
+
+// NewBPMNDetector return pointer of instance of BPMNDetector. It contains initialized metadata repository.
+func NewBPMNDetector(repo mongo.MetadataRepository) *BPMNDetector {
+	return &BPMNDetector{
+		repository: repo,
+	}
 }
 
 // Detect todo
