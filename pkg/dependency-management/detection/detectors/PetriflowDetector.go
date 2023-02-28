@@ -5,16 +5,20 @@ import (
 	"github.com/antchfx/xmlquery"
 	"google.golang.org/grpc/codes"
 	"google.golang.org/grpc/status"
+	"index/suffixarray"
 	"pirs.io/commons"
 	"pirs.io/commons/db/mongo"
 	"pirs.io/commons/enums"
 	"pirs.io/dependency-management/detection/models"
 	"pirs.io/process/domain"
+	"strings"
 	"sync"
 )
 
 const (
-	actionXpath = "//action"
+	actionXpath      = "//action"
+	protocolPrefix   = "pirs://"
+	protocolBoundary = "\""
 )
 
 var (
@@ -33,6 +37,13 @@ func NewPetriflowDetector(repo mongo.MetadataRepository) *PetriflowDetector {
 	return &PetriflowDetector{
 		repository: repo,
 	}
+}
+
+// actionContext todo
+type actionContext struct {
+	body        string
+	indexedBody *suffixarray.Index
+	variables   map[string]string
 }
 
 // Detect is a handler for dependency detection out of process data. The input is enums.ProcessType and bytes.Buffer.
@@ -69,8 +80,9 @@ func (pd *PetriflowDetector) Detect(processType enums.ProcessType, data bytes.Bu
 
 	// handle actions
 	for _, actionNode := range nodes {
+		action := actionContext{body: actionNode.InnerText()}
 		wg.Add(1)
-		go pd.handleAction(&wg, actionNode.InnerText(), responseChan)
+		go pd.handleAction(&wg, action, responseChan)
 	}
 	wg.Wait()
 	close(responseChan)
@@ -97,9 +109,49 @@ func (pd *PetriflowDetector) IsProcessTypeEqual(toCheck enums.ProcessType) bool 
 }
 
 // handleAction todo
-func (pd *PetriflowDetector) handleAction(wg *sync.WaitGroup, body string, responseChan chan<- domain.Metadata) {
+func (pd *PetriflowDetector) handleAction(wg *sync.WaitGroup, action actionContext, responseChan chan<- domain.Metadata) {
 	defer wg.Done()
 
-	// todo implement detection
-	responseChan <- *domain.NewMetadata()
+	var wgForSearch sync.WaitGroup
+	responseChanForSearch := make(chan string)
+
+	go func() {
+		for found := range responseChanForSearch {
+			if strings.Contains(found, protocolPrefix) {
+				// todo
+				// search by uri
+				// if found send to responseChan
+				println("found protocol: " + found)
+			} else {
+				// todo
+				// build uri within current project
+				// search by uri
+				// if found send to responseChan
+				println("not found protocol: " + found)
+			}
+		}
+	}()
+
+	action.indexedBody = suffixarray.New([]byte(action.body))
+	wgForSearch.Add(2)
+	go pd.searchForProtocols(&wgForSearch, action, responseChanForSearch)
+	go pd.searchForNonProtocols(&wgForSearch, action, responseChanForSearch)
+	wgForSearch.Wait()
+	close(responseChanForSearch)
+}
+
+func (pd *PetriflowDetector) searchForProtocols(wg *sync.WaitGroup, action actionContext, responseChan chan<- string) {
+	defer wg.Done()
+
+	foundIdxs := action.indexedBody.Lookup([]byte(protocolPrefix), -1)
+	for _, startingIdx := range foundIdxs {
+		endingIdx := strings.Index(action.body[startingIdx:], protocolBoundary)
+		uri := action.body[startingIdx : endingIdx+startingIdx]
+		responseChan <- uri
+	}
+}
+
+func (pd *PetriflowDetector) searchForNonProtocols(wg *sync.WaitGroup, action actionContext, responseChan chan<- string) {
+	defer wg.Done()
+	// todo
 }
