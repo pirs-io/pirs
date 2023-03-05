@@ -72,10 +72,6 @@ func (is *ImportService) ImportProcesses(forRequests <-chan models.ImportRequest
 			return
 		}
 
-		// check version
-		foundVersion := is.MetadataService.FindNewestVersionByURI(req.Ctx, m.URIWithoutVersion)
-		m.UpdateVersion(foundVersion + 1)
-
 		// resolve and save deps
 		resourceChanDS <- models.DetectResourceAdapter{
 			ProcessType: m.ProcessType,
@@ -97,12 +93,15 @@ func (is *ImportService) ImportProcesses(forRequests <-chan models.ImportRequest
 		}
 		m.DependencyData = domain.DependencyMetadata{Dependencies: currentDependencies}
 
+		// check version
+		foundVersion := is.MetadataService.FindNewestVersionByURI(req.Ctx, m.URIWithoutVersion)
+		m.UpdateVersion(foundVersion + 1)
+
 		// save file in process-storage
 		resource := models.ResourceAdapter{
 			Metadata: m,
 			FileData: req.ProcessData.Bytes(),
 		}
-
 		resourceChanSS <- resource
 		if <-responseChanSS != nil {
 			forResponse <- createResponse(codes.Aborted)
