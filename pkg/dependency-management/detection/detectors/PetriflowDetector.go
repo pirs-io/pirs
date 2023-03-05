@@ -125,20 +125,11 @@ func (pd *PetriflowDetector) handleAction(wg *sync.WaitGroup, action actionConte
 
 	go func() {
 		for found := range responseChanForSearch {
-			if strings.Contains(found, protocolPrefix) {
-				trimmed := found[len(protocolPrefix):]
-				dependency, err := pd.repository.FindByURI(context.Background(), trimmed)
-				if err != nil {
-					log.Error().Msgf("an error occurred while searching for %s in repository: %v", trimmed, err)
-				} else if dependency.ID != primitive.NilObjectID {
-					responseChan <- dependency
-				}
-			} else {
-				// todo
-				// build uri within current project
-				// search by uri
-				// if found send to responseChan
-				println("not found protocol: " + found)
+			dependency, err := pd.repository.FindByURI(context.Background(), found)
+			if err != nil {
+				log.Error().Msgf("an error occurred while searching for %s in repository: %v", found, err)
+			} else if dependency.ID != primitive.NilObjectID {
+				responseChan <- dependency
 			}
 		}
 		isDone <- true
@@ -160,8 +151,9 @@ func (pd *PetriflowDetector) searchForProtocols(wg *sync.WaitGroup, action actio
 	foundIdxs := action.indexedBody.Lookup([]byte(protocolPrefix), -1)
 	for _, startingIdx := range foundIdxs {
 		endingIdx := strings.Index(action.body[startingIdx:], protocolBoundary)
-		uri := action.body[startingIdx : endingIdx+startingIdx]
-		responseChan <- uri
+		uriWithPrefix := action.body[startingIdx : endingIdx+startingIdx]
+		trimmed := uriWithPrefix[len(protocolPrefix):]
+		responseChan <- trimmed
 	}
 }
 
