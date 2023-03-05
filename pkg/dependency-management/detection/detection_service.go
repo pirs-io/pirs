@@ -43,15 +43,16 @@ func (ds *DetectionService) Detect(request models.DetectRequestData) models.Dete
 	}
 	// find dependencies
 	dependencies := ds.detectorChain.Detect(request.ProcessType, request.ProcessData)
-	dependencies = append(dependencies, domain.Metadata{})
 
 	// return dependencies
 	if len(dependencies) == 0 {
+		dependencies = append(dependencies, domain.Metadata{})
 		return models.DetectResponseData{
 			Status:   codes.NotFound,
 			Metadata: dependencies,
 		}
 	} else {
+		dependencies = append(dependencies, domain.Metadata{})
 		return models.DetectResponseData{
 			Status:   codes.OK,
 			Metadata: dependencies,

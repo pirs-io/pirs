@@ -29,13 +29,12 @@ type Metadata struct {
 
 // A NestedMetadata represents dependency of Metadata. It contains reduced fields of Metadata for simplicity.
 type NestedMetadata struct {
-	ID          primitive.ObjectID `bson:"_id" json:"id"`
-	URI         string             `bson:"uri" json:"uri"`
-	CreatedAt   time.Time          `bson:"created_at" json:"created_at"`
-	FileName    string             `bson:"file_name" json:"file_name"`
-	FileSize    int                `bson:"file_size" json:"file_size"`
-	Publisher   string             `bson:"publisher" json:"publisher"`
-	ProcessType enums.ProcessType  `bson:"process_type" json:"process_type"`
+	URI         string            `bson:"uri" json:"uri"`
+	CreatedAt   time.Time         `bson:"created_at" json:"created_at"`
+	FileName    string            `bson:"file_name" json:"file_name"`
+	FileSize    int               `bson:"file_size" json:"file_size"`
+	Publisher   string            `bson:"publisher" json:"publisher"`
+	ProcessType enums.ProcessType `bson:"process_type" json:"process_type"`
 }
 
 // A DependencyMetadata is a wrapper for an array of NestedMetadata.
@@ -95,7 +94,6 @@ func (m *Metadata) UpdateProcessIdentifier(newIdentifier string) {
 // TransformToNestedMetadata transforms Metadata to NestedMetadata. Returns pointer to NestedMetadata instance.
 func (m *Metadata) TransformToNestedMetadata() *NestedMetadata {
 	return &NestedMetadata{
-		ID:          m.ID,
 		URI:         m.URI,
 		CreatedAt:   m.CreatedAt,
 		FileName:    m.FileName,

@@ -3,6 +3,8 @@ package detectors
 import (
 	"bytes"
 	"github.com/antchfx/xmlquery"
+	"go.mongodb.org/mongo-driver/bson/primitive"
+	"golang.org/x/net/context"
 	"google.golang.org/grpc/codes"
 	"google.golang.org/grpc/status"
 	"index/suffixarray"
@@ -39,10 +41,12 @@ func NewPetriflowDetector(repo mongo.MetadataRepository) *PetriflowDetector {
 	}
 }
 
-// actionContext todo
+// An actionContext is a wrapper of action inner text. Contains also suffixarray.Index of action body and parentURI of
+// parent metadata, which is going to be handled.
 type actionContext struct {
 	body        string
 	indexedBody *suffixarray.Index
+	parentURI   string
 	variables   map[string]string
 }
 
@@ -70,12 +74,14 @@ func (pd *PetriflowDetector) Detect(processType enums.ProcessType, data bytes.Bu
 	var wg sync.WaitGroup
 	var dependencies []domain.Metadata
 	responseChan := make(chan domain.Metadata)
+	isDone := make(chan bool)
 
 	// receive metadata from actionHandler goroutines
 	go func() {
 		for received := range responseChan {
 			dependencies = append(dependencies, received)
 		}
+		isDone <- true
 	}()
 
 	// handle actions
@@ -86,7 +92,8 @@ func (pd *PetriflowDetector) Detect(processType enums.ProcessType, data bytes.Bu
 	}
 	wg.Wait()
 	close(responseChan)
-
+	// must wait to handle last loop in anonym goroutine
+	<-isDone
 	return dependencies
 }
 
@@ -108,20 +115,24 @@ func (pd *PetriflowDetector) IsProcessTypeEqual(toCheck enums.ProcessType) bool 
 	return enums.Petriflow == toCheck
 }
 
-// handleAction todo
+// handleAction handles action in actionContext. todo
 func (pd *PetriflowDetector) handleAction(wg *sync.WaitGroup, action actionContext, responseChan chan<- domain.Metadata) {
 	defer wg.Done()
 
+	isDone := make(chan bool)
 	var wgForSearch sync.WaitGroup
 	responseChanForSearch := make(chan string)
 
 	go func() {
 		for found := range responseChanForSearch {
 			if strings.Contains(found, protocolPrefix) {
-				// todo
-				// search by uri
-				// if found send to responseChan
-				println("found protocol: " + found)
+				trimmed := found[len(protocolPrefix):]
+				dependency, err := pd.repository.FindByURI(context.Background(), trimmed)
+				if err != nil {
+					log.Error().Msgf("an error occurred while searching for %s in repository: %v", trimmed, err)
+				} else if dependency.ID != primitive.NilObjectID {
+					responseChan <- dependency
+				}
 			} else {
 				// todo
 				// build uri within current project
@@ -130,6 +141,7 @@ func (pd *PetriflowDetector) handleAction(wg *sync.WaitGroup, action actionConte
 				println("not found protocol: " + found)
 			}
 		}
+		isDone <- true
 	}()
 
 	action.indexedBody = suffixarray.New([]byte(action.body))
@@ -138,6 +150,8 @@ func (pd *PetriflowDetector) handleAction(wg *sync.WaitGroup, action actionConte
 	go pd.searchForNonProtocols(&wgForSearch, action, responseChanForSearch)
 	wgForSearch.Wait()
 	close(responseChanForSearch)
+	// must wait to handle last loop in anonym goroutine
+	<-isDone
 }
 
 func (pd *PetriflowDetector) searchForProtocols(wg *sync.WaitGroup, action actionContext, responseChan chan<- string) {

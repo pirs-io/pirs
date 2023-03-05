@@ -105,7 +105,7 @@ func (ds *dependencyServer) Resolve(stream grpcProto.DependencyManagement_Resolv
 }
 
 func streamDetectResponse(response *models.DetectResponseData, stream grpc.ServerStream) error {
-	if response.Status == codes.OK {
+	if response.Status == codes.OK || response.Status == codes.NotFound {
 		err := stream.SendMsg(&grpcProto.DetectResponse{
 			Message: "success: " + response.Status.String(),
 		})
