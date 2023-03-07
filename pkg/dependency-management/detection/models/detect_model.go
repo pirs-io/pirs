@@ -3,8 +3,8 @@ package models
 import (
 	"bytes"
 	"google.golang.org/grpc/codes"
+	"pirs.io/commons/domain"
 	"pirs.io/commons/enums"
-	"pirs.io/process/domain"
 )
 
 // A DetectRequestData represents input inside service.DetectionService. The instance is created in GRPC server. A CheckSum

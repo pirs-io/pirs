@@ -4,9 +4,9 @@ import (
 	"google.golang.org/grpc/codes"
 	"pirs.io/commons"
 	"pirs.io/commons/db/mongo"
+	"pirs.io/commons/domain"
 	"pirs.io/dependency-management/detection/detectors"
 	"pirs.io/dependency-management/detection/models"
-	"pirs.io/process/domain"
 )
 
 // A DetectionService is a service to handle requests processed by the GRPC server. It contains field detectorChain,

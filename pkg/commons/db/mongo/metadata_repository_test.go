@@ -2,7 +2,7 @@ package mongo
 
 import (
 	"github.com/stretchr/testify/assert"
-	"pirs.io/process/domain"
+	"pirs.io/commons/domain"
 	"testing"
 )
 

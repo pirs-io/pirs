@@ -4,8 +4,8 @@ import (
 	"bytes"
 	"golang.org/x/net/context"
 	"google.golang.org/grpc/codes"
+	"pirs.io/commons/domain"
 	"pirs.io/commons/enums"
-	"pirs.io/process/domain"
 )
 
 // ImportRequestData holds parsed values from GRPC stream. It's created in GRPC server.

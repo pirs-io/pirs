@@ -3,7 +3,7 @@ package service
 import (
 	"go.mongodb.org/mongo-driver/bson/primitive"
 	"google.golang.org/grpc/codes"
-	"pirs.io/process/domain"
+	"pirs.io/commons/domain"
 	metadata "pirs.io/process/metadata/service"
 	"pirs.io/process/service/models"
 	valModels "pirs.io/process/validation/models"

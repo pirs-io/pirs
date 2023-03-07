@@ -10,9 +10,9 @@ import (
 	"index/suffixarray"
 	"pirs.io/commons"
 	"pirs.io/commons/db/mongo"
+	"pirs.io/commons/domain"
 	"pirs.io/commons/enums"
 	"pirs.io/dependency-management/detection/models"
-	"pirs.io/process/domain"
 	"strings"
 	"sync"
 )

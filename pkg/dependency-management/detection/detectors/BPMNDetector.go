@@ -3,9 +3,9 @@ package detectors
 import (
 	"bytes"
 	"pirs.io/commons/db/mongo"
+	"pirs.io/commons/domain"
 	"pirs.io/commons/enums"
 	"pirs.io/dependency-management/detection/models"
-	"pirs.io/process/domain"
 )
 
 // A BPMNDetector represents structure for dependency detection of process type enums.BPMN. It contains field next,

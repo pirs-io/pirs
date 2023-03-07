@@ -9,11 +9,13 @@ import (
 	"google.golang.org/grpc/codes"
 	"google.golang.org/grpc/credentials/insecure"
 	"io"
+	"math/rand"
 	"os"
 	"pirs.io/commons"
-	"pirs.io/process/domain"
+	"pirs.io/commons/domain"
 	mygrpc "pirs.io/process/grpc"
 	"strings"
+	"sync"
 	"time"
 )
 
@@ -25,15 +27,24 @@ const (
 	IP               = "localhost"
 	PORT             = "8080"
 	UPLOAD_FILENAME1 = "uvod.pdf"
-	UPLOAD_FILENAME2 = "car.xml"
+	UPLOAD_FILENAME2 = "car-noactions.xml"
 	UPLOAD_FILENAME3 = "service.xml"
 	URI1             = "awd.awd.awd.awd:11"
 	URI2             = ""
 	CHUNK_SIZE       = 1024
 	PARTIAL_URI      = "stu.fei.myproject2"
-	MAX_IMPORT       = 1
+	MAX_IMPORT       = 1000
 	MAX_DOWNLOAD     = 1
+	letterBytes      = "abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ"
 )
+
+func RandStringBytes(n int) string {
+	b := make([]byte, n)
+	for i := range b {
+		b[i] = letterBytes[rand.Intn(len(letterBytes))]
+	}
+	return string(b)
+}
 
 func main() {
 	serverAddress := flag.String("address", IP+":"+PORT, "the server address")
@@ -160,23 +171,28 @@ func downloadPackageData(client mygrpc.ProcessClient, packageUri string) {
 
 func importProcess(client mygrpc.ProcessClient) {
 	start := time.Now()
+	var wg sync.WaitGroup
 	// Call endpoints here
+
 	for i := 0; i < MAX_IMPORT; i++ {
-		uploadFile(client, "./pkg/process/"+UPLOAD_FILENAME2, UPLOAD_FILENAME2)
+		wg.Add(1)
+		go uploadFile(&wg, client, "./pkg/process/"+UPLOAD_FILENAME2, UPLOAD_FILENAME2)
 	}
+	wg.Wait()
 	elapsed := time.Since(start)
 	log2.Info().Msgf("importProcess elapsed time: ", elapsed)
 }
 
-func uploadFile(processClient mygrpc.ProcessClient, processPath string, filename string) {
+func uploadFile(wg *sync.WaitGroup, processClient mygrpc.ProcessClient, processPath string, filename string) {
+	defer wg.Done()
 	file, err := os.Open(processPath)
 	if err != nil {
-		log2.Fatal().Msgf("cannot open file: ", err)
+		log2.Error().Msgf("cannot open file: ", err)
 	}
 	defer func(file *os.File) {
 		err := file.Close()
 		if err != nil {
-			log2.Fatal().Msgf("cannot close file: ", err)
+			log2.Error().Msgf("cannot close file: ", err)
 		}
 	}(file)
 
@@ -185,21 +201,22 @@ func uploadFile(processClient mygrpc.ProcessClient, processPath string, filename
 
 	stream, err := processClient.Import(ctx)
 	if err != nil {
-		log2.Fatal().Msgf("cannot upload file: ", err)
+		log2.Error().Msgf("cannot upload file: ", err)
 	}
 
+	suffix := RandStringBytes(5)
 	req := &mygrpc.ImportRequest{
 		Data: &mygrpc.ImportRequest_FileInfo{
 			FileInfo: &mygrpc.FileInfo{
 				FileName: filename,
 			},
 		},
-		PartialUri: PARTIAL_URI,
+		PartialUri: PARTIAL_URI + suffix,
 	}
 
 	err = stream.Send(req)
 	if err != nil {
-		log2.Fatal().Msgf("cannot send file_info to server: ", err, stream.RecvMsg(nil))
+		log2.Error().Msgf("cannot send file_info to server: ", err, stream.RecvMsg(nil))
 	}
 
 	reader := bufio.NewReader(file)
@@ -211,7 +228,7 @@ func uploadFile(processClient mygrpc.ProcessClient, processPath string, filename
 			break
 		}
 		if err != nil {
-			log2.Fatal().Msgf("cannot read chunk to buffer: ", err)
+			log2.Error().Msgf("cannot read chunk to buffer: ", err)
 		}
 
 		req := &mygrpc.ImportRequest{
@@ -222,12 +239,12 @@ func uploadFile(processClient mygrpc.ProcessClient, processPath string, filename
 
 		err = stream.Send(req)
 		if err != nil {
-			log2.Fatal().Msgf("cannot send chunk to server: ", err, stream.RecvMsg(nil))
+			log2.Error().Msgf("cannot send chunk to server: ", err, stream.RecvMsg(nil))
 		}
 	}
 	res, err := stream.CloseAndRecv()
 	if err != nil {
-		log2.Fatal().Msgf("cannot receive response: ", err)
+		log2.Error().Msgf("cannot receive response: ", err)
 	}
 
 	log2.Debug().Msgf("response with msg: %s, size: %dB", res.GetMessage(), res.GetTotalSize())

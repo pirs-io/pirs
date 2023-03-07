@@ -5,7 +5,7 @@ import (
 	"fmt"
 	"go.mongodb.org/mongo-driver/bson"
 	"go.mongodb.org/mongo-driver/mongo/options"
-	"pirs.io/process/domain"
+	"pirs.io/commons/domain"
 	"strings"
 )
 

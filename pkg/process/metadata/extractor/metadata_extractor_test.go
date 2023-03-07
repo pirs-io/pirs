@@ -9,8 +9,8 @@ import (
 	"io"
 	"os"
 	"pirs.io/commons"
+	"pirs.io/commons/domain"
 	"pirs.io/commons/parsers"
-	"pirs.io/process/domain"
 	"pirs.io/process/service/models"
 	"testing"
 )

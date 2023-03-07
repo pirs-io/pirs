@@ -6,8 +6,8 @@ import (
 	"io"
 	"os"
 	"pirs.io/commons"
+	"pirs.io/commons/domain"
 	"pirs.io/commons/enums"
-	"pirs.io/process/domain"
 	mygrpc "pirs.io/process/grpc"
 	"testing"
 )
