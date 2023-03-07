@@ -20,12 +20,12 @@ var (
 // A MetadataService is responsible for metadata operations. It stores extractor and repository instances.\
 type MetadataService struct {
 	extractor      extractor.MetadataExtractor
-	repository     mongo.MetadataRepository
+	repository     mongo.Repository
 	contextTimeout time.Duration
 }
 
 // NewMetadataService creates instance pointer of MetadataService. At the same time it passes mappings to extractor.
-func NewMetadataService(r mongo.MetadataRepository, t time.Duration, bMapping map[string]string, pfMapping map[string]string, bpmnMapping map[string]string) *MetadataService {
+func NewMetadataService(r mongo.Repository, t time.Duration, bMapping map[string]string, pfMapping map[string]string, bpmnMapping map[string]string) *MetadataService {
 	return &MetadataService{
 		extractor: extractor.MetadataExtractor{
 			BasicDataMapping:           bMapping,

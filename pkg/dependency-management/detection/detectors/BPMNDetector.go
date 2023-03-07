@@ -11,12 +11,12 @@ import (
 // A BPMNDetector represents structure for dependency detection of process type enums.BPMN. It contains field next,
 // which is a pointer on the next models.Detector within chain of responsibility pattern.
 type BPMNDetector struct {
-	repository mongo.MetadataRepository
+	repository mongo.Repository
 	next       models.Detector
 }
 
 // NewBPMNDetector return pointer of instance of BPMNDetector. It contains initialized metadata repository.
-func NewBPMNDetector(repo mongo.MetadataRepository) *BPMNDetector {
+func NewBPMNDetector(repo mongo.Repository) *BPMNDetector {
 	return &BPMNDetector{
 		repository: repo,
 	}

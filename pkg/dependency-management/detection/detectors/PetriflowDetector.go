@@ -30,12 +30,12 @@ var (
 // A PetriflowDetector represents structure for dependency detection of process type enums.Petriflow. It contains field next,
 // which is a pointer on the next models.Detector within chain of responsibility pattern and repository for metadata.
 type PetriflowDetector struct {
-	repository mongo.MetadataRepository
+	repository mongo.Repository
 	next       models.Detector
 }
 
 // NewPetriflowDetector return pointer of instance of PetriflowDetector. It contains initialized metadata repository.
-func NewPetriflowDetector(repo mongo.MetadataRepository) *PetriflowDetector {
+func NewPetriflowDetector(repo mongo.Repository) *PetriflowDetector {
 	return &PetriflowDetector{
 		repository: repo,
 	}

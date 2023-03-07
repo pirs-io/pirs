@@ -12,18 +12,18 @@ import (
 // A DetectionService is a service to handle requests processed by the GRPC server. It contains field detectorChain,
 // which is starting point of chain of responsibility pattern and field repository for metadata.
 type DetectionService struct {
-	repository    mongo.MetadataRepository
+	repository    mongo.Repository
 	detectorChain models.Detector
 }
 
 // NewDetectionService creates instance of DetectionService with initialized chain.
-func NewDetectionService(repo mongo.MetadataRepository) *DetectionService {
+func NewDetectionService(repo mongo.Repository) *DetectionService {
 	service := DetectionService{}
 	service.detectorChain = buildDetectorChain(repo)
 	return &service
 }
 
-func buildDetectorChain(repo mongo.MetadataRepository) models.Detector {
+func buildDetectorChain(repo mongo.Repository) models.Detector {
 	pd := detectors.NewPetriflowDetector(repo)
 	bd := detectors.NewBPMNDetector(repo)
 
