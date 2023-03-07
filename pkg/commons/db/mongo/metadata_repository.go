@@ -9,6 +9,14 @@ import (
 	"strings"
 )
 
+// A Repository is an interface for metadata repository.
+type Repository interface {
+	InsertOne(ctx context.Context, metadata *domain.Metadata) (interface{}, error)
+	FindNewestVersionByURI(ctx context.Context, uri string) (uint32, error)
+	FindByURI(ctx context.Context, uri string) (domain.Metadata, error)
+	FindAllInPackage(ctx context.Context, packageUri string) ([]domain.Metadata, error)
+}
+
 // A MetadataRepository holds DB and Collection instances. It's initialized in config package.
 type MetadataRepository struct {
 	DB         Database
