@@ -17,14 +17,14 @@ type DetectionService struct {
 }
 
 // NewDetectionService creates instance of DetectionService with initialized chain.
-func NewDetectionService(repo mongo.Repository) *DetectionService {
+func NewDetectionService(repo mongo.Repository, petriflowApi map[string][]string) *DetectionService {
 	service := DetectionService{}
-	service.detectorChain = buildDetectorChain(repo)
+	service.detectorChain = buildDetectorChain(repo, petriflowApi)
 	return &service
 }
 
-func buildDetectorChain(repo mongo.Repository) models.Detector {
-	pd := detectors.NewPetriflowDetector(repo)
+func buildDetectorChain(repo mongo.Repository, petriflowApi map[string][]string) models.Detector {
+	pd := detectors.NewPetriflowDetector(repo, petriflowApi)
 	bd := detectors.NewBPMNDetector(repo)
 
 	bd.SetNext(pd)
@@ -42,7 +42,7 @@ func (ds *DetectionService) Detect(request models.DetectRequestData) models.Dete
 		}
 	}
 	// find dependencies
-	dependencies := ds.detectorChain.Detect(request.ProcessType, request.ProcessData)
+	dependencies := ds.detectorChain.Detect(request)
 
 	// return dependencies
 	if len(dependencies) == 0 {

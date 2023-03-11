@@ -1,7 +1,6 @@
 package detectors
 
 import (
-	"bytes"
 	"pirs.io/commons/db/mongo"
 	"pirs.io/commons/domain"
 	"pirs.io/commons/enums"
@@ -23,9 +22,9 @@ func NewBPMNDetector(repo mongo.Repository) *BPMNDetector {
 }
 
 // Detect todo
-func (bd *BPMNDetector) Detect(processType enums.ProcessType, data bytes.Buffer) []domain.Metadata {
-	if !bd.IsProcessTypeEqual(processType) {
-		return bd.ExecuteNextIfPresent(processType, data)
+func (bd *BPMNDetector) Detect(req models.DetectRequestData) []domain.Metadata {
+	if !bd.IsProcessTypeEqual(req.ProcessType) {
+		return bd.ExecuteNextIfPresent(req)
 	}
 
 	return []domain.Metadata{}
@@ -37,9 +36,9 @@ func (bd *BPMNDetector) SetNext(detector models.Detector) {
 }
 
 // ExecuteNextIfPresent executes next models.Detector if exists.
-func (bd *BPMNDetector) ExecuteNextIfPresent(processType enums.ProcessType, data bytes.Buffer) []domain.Metadata {
+func (bd *BPMNDetector) ExecuteNextIfPresent(req models.DetectRequestData) []domain.Metadata {
 	if bd.next != nil {
-		return bd.next.Detect(processType, data)
+		return bd.next.Detect(req)
 	}
 	return []domain.Metadata{}
 }

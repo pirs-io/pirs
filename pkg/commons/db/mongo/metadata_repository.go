@@ -13,6 +13,7 @@ import (
 type Repository interface {
 	InsertOne(ctx context.Context, metadata *domain.Metadata) (interface{}, error)
 	FindNewestVersionByURI(ctx context.Context, uri string) (uint32, error)
+	FindNewestByURI(ctx context.Context, uri string) (domain.Metadata, error)
 	FindByURI(ctx context.Context, uri string) (domain.Metadata, error)
 	FindAllInPackage(ctx context.Context, packageUri string) ([]domain.Metadata, error)
 }
@@ -65,6 +66,35 @@ func (m *MetadataRepository) FindNewestVersionByURI(ctx context.Context, uri str
 		return uint32(0), nil
 	} else {
 		return data[0].Version, nil
+	}
+}
+
+// FindNewestByURI todo
+func (m *MetadataRepository) FindNewestByURI(ctx context.Context, uri string) (domain.Metadata, error) {
+	var data []domain.Metadata
+	opts := options.MergeFindOptions(
+		options.Find().SetLimit(1),
+		options.Find().SetSkip(0),
+		options.Find().SetSort(bson.D{{"created_at", -1}}),
+	)
+
+	cursor, err := m.Collection.Find(ctx, bson.M{"uri_without_version": uri}, opts)
+	if err != nil {
+		return domain.Metadata{}, err
+	}
+	if cursor == nil {
+		return domain.Metadata{}, fmt.Errorf("nil cursor value")
+	}
+
+	err = cursor.All(ctx, &data)
+	if err != nil {
+		return domain.Metadata{}, err
+	}
+
+	if len(data) == 0 {
+		return domain.Metadata{}, nil
+	} else {
+		return data[0], nil
 	}
 }
 

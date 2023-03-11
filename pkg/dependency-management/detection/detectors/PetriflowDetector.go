@@ -13,6 +13,7 @@ import (
 	"pirs.io/commons/domain"
 	"pirs.io/commons/enums"
 	"pirs.io/dependency-management/detection/models"
+	"regexp"
 	"strings"
 	"sync"
 )
@@ -30,37 +31,39 @@ var (
 // A PetriflowDetector represents structure for dependency detection of process type enums.Petriflow. It contains field next,
 // which is a pointer on the next models.Detector within chain of responsibility pattern and repository for metadata.
 type PetriflowDetector struct {
-	repository mongo.Repository
-	next       models.Detector
+	apiToDetect map[string][]string
+	repository  mongo.Repository
+	next        models.Detector
 }
 
 // NewPetriflowDetector return pointer of instance of PetriflowDetector. It contains initialized metadata repository.
-func NewPetriflowDetector(repo mongo.Repository) *PetriflowDetector {
+func NewPetriflowDetector(repo mongo.Repository, api map[string][]string) *PetriflowDetector {
 	return &PetriflowDetector{
-		repository: repo,
+		apiToDetect: api,
+		repository:  repo,
 	}
 }
 
 // An actionContext is a wrapper of action inner text. Contains also suffixarray.Index of action body and parentURI of
 // parent metadata, which is going to be handled.
 type actionContext struct {
-	body        string
-	indexedBody *suffixarray.Index
-	parentURI   string
-	variables   map[string]string
+	body             string
+	indexedBody      *suffixarray.Index
+	parentProjectURI string
+	variables        map[string]string
 }
 
 // Detect is a handler for dependency detection out of process data. The input is enums.ProcessType and bytes.Buffer.
 // If enums.ProcessType is not the type of this handler, function ExecuteNextIfPresent is called. It searches for action
 // tags and sends tags one by one into handleAction goroutine. These goroutines send dependencies one by one. Every
-// dependency is collected and returned in the end.
-func (pd *PetriflowDetector) Detect(processType enums.ProcessType, data bytes.Buffer) []domain.Metadata {
-	if !pd.IsProcessTypeEqual(processType) {
-		return pd.ExecuteNextIfPresent(processType, data)
+// dependency is collected and returned in the end. todo
+func (pd *PetriflowDetector) Detect(req models.DetectRequestData) []domain.Metadata {
+	if !pd.IsProcessTypeEqual(req.ProcessType) {
+		return pd.ExecuteNextIfPresent(req)
 	}
 
 	// find action nodes by xpath
-	doc, err := xmlquery.Parse(bytes.NewReader(data.Bytes()))
+	doc, err := xmlquery.Parse(bytes.NewReader(req.ProcessData.Bytes()))
 	if err != nil {
 		log.Error().Msg(status.Errorf(codes.Internal, "could not prepare xml data to parse: %v", err).Error())
 		return []domain.Metadata{}
@@ -75,11 +78,15 @@ func (pd *PetriflowDetector) Detect(processType enums.ProcessType, data bytes.Bu
 	var dependencies []domain.Metadata
 	responseChan := make(chan domain.Metadata)
 	isDone := make(chan bool)
+	receivedURIs := map[string]struct{}{}
 
 	// receive metadata from actionHandler goroutines
 	go func() {
 		for received := range responseChan {
-			dependencies = append(dependencies, received)
+			if _, ok := receivedURIs[received.URI]; !ok {
+				receivedURIs[received.URI] = struct{}{}
+				dependencies = append(dependencies, received)
+			}
 		}
 		isDone <- true
 	}()
@@ -87,6 +94,7 @@ func (pd *PetriflowDetector) Detect(processType enums.ProcessType, data bytes.Bu
 	// handle actions
 	for _, actionNode := range nodes {
 		action := actionContext{body: actionNode.InnerText()}
+		action.parentProjectURI = req.ProjectUri
 		wg.Add(1)
 		go pd.handleAction(&wg, action, responseChan)
 	}
@@ -103,9 +111,9 @@ func (pd *PetriflowDetector) SetNext(detector models.Detector) {
 }
 
 // ExecuteNextIfPresent executes next models.Detector if exists.
-func (pd *PetriflowDetector) ExecuteNextIfPresent(processType enums.ProcessType, data bytes.Buffer) []domain.Metadata {
+func (pd *PetriflowDetector) ExecuteNextIfPresent(req models.DetectRequestData) []domain.Metadata {
 	if pd.next != nil {
-		return pd.next.Detect(processType, data)
+		return pd.next.Detect(req)
 	}
 	return []domain.Metadata{}
 }
@@ -125,20 +133,28 @@ func (pd *PetriflowDetector) handleAction(wg *sync.WaitGroup, action actionConte
 
 	go func() {
 		for found := range responseChanForSearch {
-			dependency, err := pd.repository.FindByURI(context.Background(), found)
-			if err != nil {
-				log.Error().Msgf("an error occurred while searching for %s in repository: %v", found, err)
-			} else if dependency.ID != primitive.NilObjectID {
-				responseChan <- dependency
+			if !strings.Contains(found, ":") {
+				latestM, err := pd.repository.FindNewestByURI(context.Background(), found)
+				if err == nil && latestM.ID != primitive.NilObjectID {
+					responseChan <- latestM
+				}
+			} else {
+				dependency, err := pd.repository.FindByURI(context.Background(), found)
+				if err != nil {
+					log.Error().Msgf("an error occurred while searching for %s in repository: %v", found, err)
+				} else if dependency.ID != primitive.NilObjectID {
+					responseChan <- dependency
+				}
 			}
 		}
 		isDone <- true
 	}()
 
 	action.indexedBody = suffixarray.New([]byte(action.body))
+	// if 1 searching goroutine is added, delta for wgForSearch must be incremented by 1
 	wgForSearch.Add(2)
 	go pd.searchForProtocols(&wgForSearch, action, responseChanForSearch)
-	go pd.searchForNonProtocols(&wgForSearch, action, responseChanForSearch)
+	go pd.searchForApiFunctions(&wgForSearch, action, responseChanForSearch)
 	wgForSearch.Wait()
 	close(responseChanForSearch)
 	// must wait to handle last loop in anonym goroutine
@@ -157,7 +173,50 @@ func (pd *PetriflowDetector) searchForProtocols(wg *sync.WaitGroup, action actio
 	}
 }
 
-func (pd *PetriflowDetector) searchForNonProtocols(wg *sync.WaitGroup, action actionContext, responseChan chan<- string) {
+// searchForApiFunctions todo
+func (pd *PetriflowDetector) searchForApiFunctions(wg *sync.WaitGroup, action actionContext, responseChan chan<- string) {
 	defer wg.Done()
-	// todo
+
+	keys := collectMapKeys(pd.apiToDetect)
+	r := regexp.MustCompile(strings.Join(keys, "|"))
+	// find any matching api by defined input from CSV
+	res := action.indexedBody.FindAllIndex(r, -1)
+	sentURIs := map[string]struct{}{}
+	for _, pairIdx := range res {
+		// determine what is found
+		apiFunc := action.body[pairIdx[0]:pairIdx[1]]
+		fromDelimiter := pd.apiToDetect[apiFunc][0]
+		untilDelimiter := pd.apiToDetect[apiFunc][1]
+
+		// use from and until to remove unnecessary substrings
+		fromIdx := strings.Index(action.body[pairIdx[1]:], fromDelimiter)
+		if fromIdx == -1 {
+			continue
+		}
+		halfTrimmed := action.body[pairIdx[1]+fromIdx+len(fromDelimiter):]
+		untilIdx := strings.Index(halfTrimmed, untilDelimiter)
+		if untilIdx == -1 {
+			continue
+		}
+
+		// use found indexes to resolve identifier
+		identifier := strings.TrimSpace(halfTrimmed[:untilIdx])
+		uriToSend := action.parentProjectURI + "." + identifier
+
+		// send built uri
+		if _, ok := sentURIs[uriToSend]; !ok {
+			sentURIs[uriToSend] = struct{}{}
+			responseChan <- uriToSend
+		}
+	}
+}
+
+func collectMapKeys(aMap map[string][]string) []string {
+	keys := make([]string, len(aMap))
+	i := 0
+	for k := range aMap {
+		keys[i] = k
+		i++
+	}
+	return keys
 }

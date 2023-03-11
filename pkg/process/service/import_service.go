@@ -73,9 +73,11 @@ func (is *ImportService) ImportProcesses(forRequests <-chan models.ImportRequest
 		}
 
 		// resolve and save deps
+		projectUri := m.GetProjectURI()
 		resourceChanDS <- models.DetectResourceAdapter{
 			ProcessType: m.ProcessType,
 			FileData:    req.ProcessData.Bytes(),
+			ProjectUri:  projectUri,
 		}
 		var currentDependencies []domain.NestedMetadata
 		for {

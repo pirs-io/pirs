@@ -15,3 +15,6 @@ MONGO_DROP=true
 
 # metadata
 METADATA_COLLECTION="metadata"
+
+# detection
+PETRIFLOW_API_CSV="path to csv"

@@ -78,6 +78,11 @@ func (m *Metadata) BuildURI() {
 	m.URIWithoutVersion = uriWithoutVersion
 }
 
+// GetProjectURI todo
+func (m *Metadata) GetProjectURI() string {
+	return strings.Join(m.SplitURI[:3], ".")
+}
+
 // UpdateVersion updates field Version and SplitURI. Then calls BuildURI.
 func (m *Metadata) UpdateVersion(newVersion uint32) {
 	m.Version = newVersion

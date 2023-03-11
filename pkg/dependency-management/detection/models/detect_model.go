@@ -11,6 +11,7 @@ import (
 // is checksum of ProcessData.
 type DetectRequestData struct {
 	CheckSum    string
+	ProjectUri  string
 	ProcessType enums.ProcessType
 	ProcessData bytes.Buffer
 }
@@ -24,8 +25,8 @@ type DetectResponseData struct {
 
 // A Detector is an interface for dependency detector.
 type Detector interface {
-	Detect(enums.ProcessType, bytes.Buffer) []domain.Metadata
+	Detect(DetectRequestData) []domain.Metadata
 	SetNext(Detector)
-	ExecuteNextIfPresent(enums.ProcessType, bytes.Buffer) []domain.Metadata
+	ExecuteNextIfPresent(DetectRequestData) []domain.Metadata
 	IsProcessTypeEqual(enums.ProcessType) bool
 }

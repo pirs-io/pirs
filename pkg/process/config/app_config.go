@@ -113,7 +113,7 @@ func initMongoDatabase(conf ProcessAppConfig) mongo.Client {
 }
 
 func parseCustomMetadataMappingFromCsv(csvPath string) map[string]string {
-	csv := parsers.ReadCsvFile(csvPath)
+	csv := parsers.ReadCsvFile(csvPath, false)
 	mapping := map[string]string{}
 	for _, row := range csv {
 		mapping[row[0]] = row[1]
@@ -126,7 +126,7 @@ func createApplicationContext(conf ProcessAppConfig) (appContext *ApplicationCon
 	metadataRepo := mongo.NewMetadataRepository(mongoClient.Database(conf.MongoName, conf.MongoDrop), conf.MetadataCollection)
 	validationService := validation.NewValidationService(conf.AllowedFileExtensions, conf.IgnoreWrongExtension)
 	metadataService := metadata.NewMetadataService(
-		*metadataRepo,
+		metadataRepo,
 		time.Duration(conf.ContextTimeout)*time.Second,
 		parseCustomMetadataMappingFromCsv(conf.BasicMetadataCsv),
 		parseCustomMetadataMappingFromCsv(conf.PetriflowMetadataCsv),

@@ -57,7 +57,7 @@ func (ms *MetadataService) InsertOne(c context.Context, m *domain.Metadata) prim
 func (ms *MetadataService) FindNewestVersionByURI(ctx context.Context, uri string) uint32 {
 	ver, err := ms.repository.FindNewestVersionByURI(ctx, uri)
 	if err != nil {
-		log.Error().Msg(status.Errorf(codes.Internal, "could not find the newest version in database: %v", err).Error())
+		log.Error().Msg(status.Errorf(codes.Internal, "could not find the latest version in database: %v", err).Error())
 		return 0
 	}
 	return ver

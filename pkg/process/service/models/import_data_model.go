@@ -33,6 +33,7 @@ type ResourceAdapter struct {
 // A DetectResourceAdapter todo
 type DetectResourceAdapter struct {
 	ProcessType enums.ProcessType
+	ProjectUri  string
 	FileData    []byte
 }
 

@@ -42,6 +42,7 @@ func (ds *dependencyServer) Detect(stream grpcProto.DependencyManagement_DetectS
 
 	var currentCheckSum string
 	var currentProcessType enums.ProcessType
+	var currentProjectUri string
 	var currentChunks []byte
 	var currentTotalChunks int
 	var chunkCounter int
@@ -70,6 +71,7 @@ func (ds *dependencyServer) Detect(stream grpcProto.DependencyManagement_DetectS
 			}
 			currentCheckSum = splitInput[1]
 			currentProcessType = enums.ProcessType(req.GetProcessType())
+			currentProjectUri = req.GetProjectUri()
 		} else {
 			chunkCounter += 1
 			if chunkCounter <= currentTotalChunks {
@@ -80,6 +82,7 @@ func (ds *dependencyServer) Detect(stream grpcProto.DependencyManagement_DetectS
 						CheckSum:    currentCheckSum,
 						ProcessType: currentProcessType,
 						ProcessData: *bytes.NewBuffer(currentChunks),
+						ProjectUri:  currentProjectUri,
 					}
 					response := ds.appContext.DetectionService.Detect(data)
 					err = streamDetectResponse(&response, stream)

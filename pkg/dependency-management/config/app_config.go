@@ -5,7 +5,9 @@ import (
 	"golang.org/x/net/context"
 	"pirs.io/commons"
 	"pirs.io/commons/db/mongo"
+	"pirs.io/commons/parsers"
 	"pirs.io/dependency-management/detection"
+	"strings"
 	"time"
 )
 
@@ -27,6 +29,7 @@ type DependencyAppConfig struct {
 	MongoName          string `mapstructure:"MONGO_NAME"`
 	MongoDrop          bool   `mapstructure:"MONGO_DROP"`
 	MetadataCollection string `mapstructure:"METADATA_COLLECTION"`
+	PetriflowApi       string `mapstructure:"PETRIFLOW_API_CSV"`
 }
 
 func (p DependencyAppConfig) IsConfig() {}
@@ -95,10 +98,29 @@ func initMongoDatabase(conf DependencyAppConfig) mongo.Client {
 	return client
 }
 
+func parseApiForDetectionFromCsv(csvPath string) map[string][]string {
+	csv := parsers.ReadCsvFile(csvPath, true)
+	if csv == nil {
+		log.Warn().Msg("CSV " + csvPath + " was not found.")
+	}
+	result := map[string][]string{}
+	for idx, row := range csv {
+		// skip header
+		if idx == 0 {
+			continue
+		}
+		fromDelim := strings.Replace(row[1], "\\", "", 1)
+		untilDelim := strings.Replace(row[2], "\\", "", 1)
+		result[row[0]] = []string{fromDelim, untilDelim}
+	}
+	return result
+}
+
 func createApplicationContext(conf DependencyAppConfig) (appContext *ApplicationContext, err error) {
 	mongoClient := initMongoDatabase(conf)
 	metadataRepo := mongo.NewMetadataRepository(mongoClient.Database(conf.MongoName, conf.MongoDrop), conf.MetadataCollection)
+	petriflowApi := parseApiForDetectionFromCsv(conf.PetriflowApi)
 	return &ApplicationContext{
-		DetectionService: detection.NewDetectionService(*metadataRepo),
+		DetectionService: detection.NewDetectionService(metadataRepo, petriflowApi),
 	}, nil
 }

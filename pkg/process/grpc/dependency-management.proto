@@ -13,9 +13,10 @@ service DependencyManagement {
 
 message DetectRequest {
   int32 process_type = 1;
+  string project_uri = 2;
   oneof data {
-    string countAndChecksum = 2;
-    bytes chunk_data = 3;
+    string countAndChecksum = 3;
+    bytes chunk_data = 4;
   };
 }
 

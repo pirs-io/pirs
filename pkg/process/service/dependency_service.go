@@ -90,6 +90,7 @@ func (ds *DependencyService) Detect(reqCtx context.Context, forResource <-chan m
 			strconv.FormatUint(totalChunks, 10)+ds.Separator+checksum,
 			resource.ProcessType,
 			nil,
+			resource.ProjectUri,
 		)
 		if err != nil {
 			forResponse <- models.ResponseAdapter{Err: err}
@@ -110,7 +111,7 @@ func (ds *DependencyService) Detect(reqCtx context.Context, forResource <-chan m
 				return
 			}
 
-			err = ds.sendDetectRequest(stream, "", -1, buffer[:n])
+			err = ds.sendDetectRequest(stream, "", -1, buffer[:n], "")
 			if err != nil {
 				forResponse <- models.ResponseAdapter{Err: err}
 				return
@@ -172,7 +173,7 @@ func (ds *DependencyService) establishDetectConnection(ctx context.Context) (myg
 	return stream, nil
 }
 
-func (ds *DependencyService) sendDetectRequest(stream mygrpc.DependencyManagement_DetectClient, countAndChecksum string, processType enums.ProcessType, chunk []byte) error {
+func (ds *DependencyService) sendDetectRequest(stream mygrpc.DependencyManagement_DetectClient, countAndChecksum string, processType enums.ProcessType, chunk []byte, projectUri string) error {
 	var err error
 	if countAndChecksum != "" {
 		err = stream.Send(&mygrpc.DetectRequest{
@@ -180,6 +181,7 @@ func (ds *DependencyService) sendDetectRequest(stream mygrpc.DependencyManagemen
 			Data: &mygrpc.DetectRequest_CountAndChecksum{
 				CountAndChecksum: countAndChecksum,
 			},
+			ProjectUri: projectUri,
 		})
 	} else {
 		err = stream.Send(&mygrpc.DetectRequest{
