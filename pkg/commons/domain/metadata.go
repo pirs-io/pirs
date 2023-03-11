@@ -78,7 +78,7 @@ func (m *Metadata) BuildURI() {
 	m.URIWithoutVersion = uriWithoutVersion
 }
 
-// GetProjectURI todo
+// GetProjectURI returns project URI. For example "myorg.mytenant.myproject".
 func (m *Metadata) GetProjectURI() string {
 	return strings.Join(m.SplitURI[:3], ".")
 }

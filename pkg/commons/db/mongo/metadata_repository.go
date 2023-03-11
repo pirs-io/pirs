@@ -69,7 +69,9 @@ func (m *MetadataRepository) FindNewestVersionByURI(ctx context.Context, uri str
 	}
 }
 
-// FindNewestByURI todo
+// FindNewestByURI finds the latest document of process based on given URI. Parameter uri corresponds
+// to uri_without_version in database. If success, the document from database is returned. Otherwise, empty document along
+// with error is returned.
 func (m *MetadataRepository) FindNewestByURI(ctx context.Context, uri string) (domain.Metadata, error) {
 	var data []domain.Metadata
 	opts := options.MergeFindOptions(

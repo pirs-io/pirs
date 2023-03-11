@@ -105,7 +105,7 @@ func (ss *StorageService) destroyConnection(stream mygrpc.Storage_UploadProcessC
 	return ss.checkResponse(stream)
 }
 
-// sendMetadataRequest takes stream and metadata. This data get wrapped and sent through the stream. todo
+// sendMetadataRequest takes stream and metadata. This data get wrapped and sent through the stream.
 func (ss *StorageService) sendMetadataRequest(stream mygrpc.Storage_UploadProcessClient, metadata *mygrpc.ProcessFileData_Metadata) error {
 	if err := stream.Send(&mygrpc.ProcessUploadRequest{
 		Data: &mygrpc.ProcessFileData{

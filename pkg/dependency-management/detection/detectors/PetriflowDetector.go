@@ -53,10 +53,10 @@ type actionContext struct {
 	variables        map[string]string
 }
 
-// Detect is a handler for dependency detection out of process data. The input is enums.ProcessType and bytes.Buffer.
+// Detect is a handler for dependency detection out of process data. The input is wrapper models.DetectRequestData.
 // If enums.ProcessType is not the type of this handler, function ExecuteNextIfPresent is called. It searches for action
 // tags and sends tags one by one into handleAction goroutine. These goroutines send dependencies one by one. Every
-// dependency is collected and returned in the end. todo
+// dependency is collected as slice containing unique elements and returned in the end.
 func (pd *PetriflowDetector) Detect(req models.DetectRequestData) []domain.Metadata {
 	if !pd.IsProcessTypeEqual(req.ProcessType) {
 		return pd.ExecuteNextIfPresent(req)
@@ -161,6 +161,7 @@ func (pd *PetriflowDetector) handleAction(wg *sync.WaitGroup, action actionConte
 	<-isDone
 }
 
+// searchForProtocols todo
 func (pd *PetriflowDetector) searchForProtocols(wg *sync.WaitGroup, action actionContext, responseChan chan<- string) {
 	defer wg.Done()
 

@@ -30,7 +30,7 @@ type ResourceAdapter struct {
 	FileData []byte
 }
 
-// A DetectResourceAdapter todo
+// A DetectResourceAdapter is a wrapper for FileData along with some additional info.
 type DetectResourceAdapter struct {
 	ProcessType enums.ProcessType
 	ProjectUri  string
