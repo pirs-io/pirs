@@ -153,6 +153,7 @@ func createApplicationContext(conf ProcessAppConfig) (appContext *ApplicationCon
 			ValidationService:    validationService,
 			MetadataService:      metadataService,
 			DependencyService:    dependencyService,
+			MongoClient:          mongoClient,
 		},
 		DownloadService: &service.DownloadService{
 			ValidationService: validationService,

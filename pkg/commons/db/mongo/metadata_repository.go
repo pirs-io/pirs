@@ -5,6 +5,8 @@ import (
 	"fmt"
 	"go.mongodb.org/mongo-driver/bson"
 	"go.mongodb.org/mongo-driver/mongo/options"
+	"go.mongodb.org/mongo-driver/mongo/readconcern"
+	"go.mongodb.org/mongo-driver/mongo/writeconcern"
 	"pirs.io/commons/domain"
 	"strings"
 )
@@ -26,7 +28,10 @@ type MetadataRepository struct {
 
 // NewMetadataRepository creates instance pointer of MetadataRepository
 func NewMetadataRepository(db Database, collectionName string) *MetadataRepository {
-	return &MetadataRepository{db, db.Collection(collectionName)}
+	wc := writeconcern.New(writeconcern.WMajority())
+	rc := readconcern.Majority()
+	collectionOpts := options.Collection().SetWriteConcern(wc).SetReadConcern(rc)
+	return &MetadataRepository{db, db.Collection(collectionName, collectionOpts)}
 }
 
 // InsertOne inserts given domain.Metadata into database. It returns ID if success. Otherwise, an error is returned.
