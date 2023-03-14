@@ -7,6 +7,7 @@ import (
 	"pirs.io/commons/db/mongo"
 	"pirs.io/commons/parsers"
 	"pirs.io/dependency-management/detection"
+	"pirs.io/dependency-management/resolution"
 	"strings"
 	"time"
 )
@@ -36,8 +37,9 @@ func (p DependencyAppConfig) IsConfig() {}
 
 // An ApplicationContext contains initialized config struct and all the main services
 type ApplicationContext struct {
-	AppConfig        *DependencyAppConfig
-	DetectionService *detection.DetectionService
+	AppConfig         *DependencyAppConfig
+	DetectionService  *detection.DetectionService
+	ResolutionService *resolution.ResolutionService
 }
 
 // GetContext returns ApplicationContext instance, that is stored in a variable depAppCtx
@@ -121,6 +123,7 @@ func createApplicationContext(conf DependencyAppConfig) (appContext *Application
 	metadataRepo := mongo.NewMetadataRepository(mongoClient.Database(conf.MongoName, conf.MongoDrop), conf.MetadataCollection)
 	petriflowApi := parseApiForDetectionFromCsv(conf.PetriflowApi)
 	return &ApplicationContext{
-		DetectionService: detection.NewDetectionService(metadataRepo, petriflowApi),
+		DetectionService:  detection.NewDetectionService(metadataRepo, petriflowApi),
+		ResolutionService: resolution.NewResolutionService(metadataRepo),
 	}, nil
 }

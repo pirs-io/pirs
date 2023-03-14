@@ -103,8 +103,34 @@ func (ds *dependencyServer) Detect(stream grpcProto.DependencyManagement_DetectS
 	return nil
 }
 
+// Resolve todo
 func (ds *dependencyServer) Resolve(stream grpcProto.DependencyManagement_ResolveServer) error {
-	panic("not implemented")
+	ctx := stream.Context()
+	if ctx == nil {
+		ctx = context.Background()
+	}
+
+	var currentURItoResolve string
+	for {
+		req, err := stream.Recv()
+		if err == io.EOF {
+			break
+		} else if err != nil {
+			log.Error().Msgf("cannot receive from the stream: %v", err)
+			return err
+		}
+
+		// todo authorization (just once I think)
+
+		currentURItoResolve = req.GetResolveUri()
+		response := ds.appContext.ResolutionService.Resolve(currentURItoResolve)
+
+		err = streamResolveResponse(&response, stream)
+		if err != nil {
+			return err
+		}
+	}
+	return nil
 }
 
 func streamDetectResponse(response *models.DetectResponseData, stream grpc.ServerStream) error {
@@ -132,6 +158,42 @@ func streamDetectResponse(response *models.DetectResponseData, stream grpc.Serve
 		}
 	} else {
 		err := stream.SendMsg(&grpcProto.DetectResponse{
+			Message: "fail: " + response.Status.String(),
+		})
+		if err != nil {
+			log.Error().Msgf("cannot send message: %v", err)
+			return err
+		}
+	}
+
+	return nil
+}
+
+func streamResolveResponse(response *models.ResolveResponseData, stream grpc.ServerStream) error {
+	if response.Status == codes.OK || response.Status == codes.NotFound {
+		err := stream.SendMsg(&grpcProto.ResolveResponse{
+			Message: "success: " + response.Status.String(),
+		})
+		if err != nil {
+			log.Error().Msgf("cannot send message: %v", err)
+			return err
+		}
+
+		for _, m := range response.Metadata {
+			grpcM, err := structpb.NewStruct(structs.ToMap(m))
+			if err != nil {
+				return err
+			}
+
+			err = stream.SendMsg(&grpcProto.ResolveResponse{
+				Metadata: grpcM,
+			})
+			if err != nil {
+				return err
+			}
+		}
+	} else {
+		err := stream.SendMsg(&grpcProto.ResolveResponse{
 			Message: "fail: " + response.Status.String(),
 		})
 		if err != nil {
