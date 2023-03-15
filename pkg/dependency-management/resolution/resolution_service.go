@@ -20,10 +20,10 @@ func NewResolutionService(repo mongo.Repository) *ResolutionService {
 	return &service
 }
 
-// Resolve todo
+// Resolve todo last must be with nil ID
 func (rs *ResolutionService) Resolve(resolveURI string) models.ResolveResponseData {
 	return models.ResolveResponseData{
 		Status:   codes.OK,
-		Metadata: []domain.Metadata{*domain.NewMetadata(), *domain.NewMetadata()},
+		Metadata: []domain.Metadata{*domain.NewMetadata(), *domain.NewMetadata(), domain.Metadata{}},
 	}
 }

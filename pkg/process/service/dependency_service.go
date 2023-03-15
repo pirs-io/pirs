@@ -156,6 +156,65 @@ func (ds *DependencyService) Detect(reqCtx context.Context, forResource <-chan m
 	_ = ds.destroyConnection(stream)
 }
 
+// Resolve todo
+func (ds *DependencyService) Resolve(reqCtx context.Context, forResource <-chan string, forResponse chan<- models.ResponseAdapter) {
+	defer close(forResponse)
+	// open stream
+	stream, err := ds.establishResolveConnection(reqCtx)
+	if err != nil {
+		forResponse <- models.ResponseAdapter{Err: err}
+		return
+	} else {
+		forResponse <- models.ResponseAdapter{}
+	}
+
+	for resource := range forResource {
+		// send uri
+		err = stream.Send(&mygrpc.ResolveRequest{
+			ResolveUri: resource,
+		})
+		if err != nil {
+			forResponse <- models.ResponseAdapter{Err: err}
+			return
+		}
+		// receive metadata
+		response, err := stream.Recv()
+		if err != nil {
+			logDs.Error().Msgf("cannot receive from the stream: ", err, stream.RecvMsg(nil))
+			forResponse <- models.ResponseAdapter{Err: err}
+			return
+		}
+		if strings.Contains(response.Message, "fail") {
+			logDs.Error().Msgf("dependencies failed to resolve: ", err, stream.RecvMsg(nil))
+			forResponse <- models.ResponseAdapter{Err: errors.New(response.Message)}
+			continue
+		}
+		for {
+			response, err = stream.Recv()
+			if err != nil {
+				logDs.Error().Msgf("cannot receive from the stream: ", err, stream.RecvMsg(nil))
+				forResponse <- models.ResponseAdapter{Err: err}
+				return
+			}
+
+			metadataFromResponse := domain.Metadata{}
+			jsonString, _ := json.Marshal(response.Metadata)
+			err = json.Unmarshal(jsonString, &metadataFromResponse)
+			if err != nil {
+				logDs.Error().Msgf("cannot handle received metadata: %v", err)
+				forResponse <- models.ResponseAdapter{Err: err}
+				return
+			}
+			forResponse <- models.ResponseAdapter{Metadata: metadataFromResponse}
+			if metadataFromResponse.ID == primitive.NilObjectID {
+				break
+			}
+		}
+	}
+	// shutdown
+	_ = ds.destroyConnection(stream)
+}
+
 func (ds *DependencyService) establishDetectConnection(ctx context.Context) (mygrpc.DependencyManagement_DetectClient, error) {
 	var err error
 
@@ -166,6 +225,23 @@ func (ds *DependencyService) establishDetectConnection(ctx context.Context) (myg
 	}
 
 	stream, err := ds.client.Detect(ctx)
+	if err != nil {
+		logDs.Error().Msgf("could not establish stream connection: %v", err)
+		return nil, err
+	}
+	return stream, nil
+}
+
+func (ds *DependencyService) establishResolveConnection(ctx context.Context) (mygrpc.DependencyManagement_ResolveClient, error) {
+	var err error
+
+	if ds.client == nil {
+		err = errors.New("Dependency-Management client is not initialized")
+		logDs.Error().Msg(err.Error())
+		return nil, err
+	}
+
+	stream, err := ds.client.Resolve(ctx)
 	if err != nil {
 		logDs.Error().Msgf("could not establish stream connection: %v", err)
 		return nil, err
@@ -197,7 +273,7 @@ func (ds *DependencyService) sendDetectRequest(stream mygrpc.DependencyManagemen
 	return nil
 }
 
-func (ds *DependencyService) destroyConnection(stream mygrpc.DependencyManagement_DetectClient) error {
+func (ds *DependencyService) destroyConnection(stream grpc.ClientStream) error {
 	err := stream.CloseSend()
 	if err != nil {
 		log.Error().Msgf("cannot close stream connection: %v", err)

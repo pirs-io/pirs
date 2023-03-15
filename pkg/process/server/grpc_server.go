@@ -163,20 +163,43 @@ func (ps *processServer) Import(stream grpcProto.Process_ImportServer) error {
 }
 
 // Download handles request to download process or package metadata. It streams the response. First it sends success or fail
-// message and then metadata one by one.
-func (ps *processServer) Download(req *grpcProto.DownloadRequest, stream grpcProto.Process_DownloadServer) error {
+// message and then metadata one by one. todo
+func (ps *processServer) Download(stream grpcProto.Process_DownloadServer) error {
 	// authorization
 	// todo
 
-	// main logic
 	ctx := stream.Context()
 	if ctx == nil {
 		ctx = context.Background()
 	}
-	reqData := extractDownloadRequest(req, ctx)
-	response := ps.appContext.DownloadService.DownloadProcesses(reqData)
 
-	return streamDownloadResponse(response, stream)
+	requestChan := make(chan models.DownloadRequestData)
+	responseChan := make(chan models.DownloadResponseData)
+	defer func() {
+		close(requestChan)
+		<-responseChan
+	}()
+	go ps.appContext.DownloadService.DownloadProcesses(requestChan, responseChan)
+
+	for {
+		req, err := stream.Recv()
+		if err == io.EOF {
+			break
+		} else if err != nil {
+			log.Error().Msgf("cannot receive from the stream: %v", err)
+			return err
+		}
+
+		reqData := extractDownloadRequest(req, ctx)
+		requestChan <- *reqData
+		response := <-responseChan
+
+		err = streamDownloadResponse(&response, stream)
+		if err != nil {
+			return err
+		}
+	}
+	return nil
 }
 
 func extractDownloadRequest(req *grpcProto.DownloadRequest, ctx context.Context) *models.DownloadRequestData {

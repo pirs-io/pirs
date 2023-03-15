@@ -8,7 +8,7 @@ import "google/protobuf/struct.proto";
 
 service Process {
   rpc Import(stream ImportRequest) returns (ImportResponse) {}
-  rpc Download(DownloadRequest) returns (stream DownloadResponse) {}
+  rpc Download(stream DownloadRequest) returns (stream DownloadResponse) {}
 }
 
 message ImportRequest {

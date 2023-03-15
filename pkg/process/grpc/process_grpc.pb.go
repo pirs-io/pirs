@@ -23,7 +23,7 @@ const _ = grpc.SupportPackageIsVersion7
 // For semantics around ctx use and closing/ending streaming RPCs, please refer to https://pkg.go.dev/google.golang.org/grpc/?tab=doc#ClientConn.NewStream.
 type ProcessClient interface {
 	Import(ctx context.Context, opts ...grpc.CallOption) (Process_ImportClient, error)
-	Download(ctx context.Context, in *DownloadRequest, opts ...grpc.CallOption) (Process_DownloadClient, error)
+	Download(ctx context.Context, opts ...grpc.CallOption) (Process_DownloadClient, error)
 }
 
 type processClient struct {
@@ -68,28 +68,27 @@ func (x *processImportClient) CloseAndRecv() (*ImportResponse, error) {
 	return m, nil
 }
 
-func (c *processClient) Download(ctx context.Context, in *DownloadRequest, opts ...grpc.CallOption) (Process_DownloadClient, error) {
+func (c *processClient) Download(ctx context.Context, opts ...grpc.CallOption) (Process_DownloadClient, error) {
 	stream, err := c.cc.NewStream(ctx, &Process_ServiceDesc.Streams[1], "/grpc.Process/Download", opts...)
 	if err != nil {
 		return nil, err
 	}
 	x := &processDownloadClient{stream}
-	if err := x.ClientStream.SendMsg(in); err != nil {
-		return nil, err
-	}
-	if err := x.ClientStream.CloseSend(); err != nil {
-		return nil, err
-	}
 	return x, nil
 }
 
 type Process_DownloadClient interface {
+	Send(*DownloadRequest) error
 	Recv() (*DownloadResponse, error)
 	grpc.ClientStream
 }
 
 type processDownloadClient struct {
 	grpc.ClientStream
+}
+
+func (x *processDownloadClient) Send(m *DownloadRequest) error {
+	return x.ClientStream.SendMsg(m)
 }
 
 func (x *processDownloadClient) Recv() (*DownloadResponse, error) {
@@ -105,7 +104,7 @@ func (x *processDownloadClient) Recv() (*DownloadResponse, error) {
 // for forward compatibility
 type ProcessServer interface {
 	Import(Process_ImportServer) error
-	Download(*DownloadRequest, Process_DownloadServer) error
+	Download(Process_DownloadServer) error
 	mustEmbedUnimplementedProcessServer()
 }
 
@@ -116,7 +115,7 @@ type UnimplementedProcessServer struct {
 func (UnimplementedProcessServer) Import(Process_ImportServer) error {
 	return status.Errorf(codes.Unimplemented, "method Import not implemented")
 }
-func (UnimplementedProcessServer) Download(*DownloadRequest, Process_DownloadServer) error {
+func (UnimplementedProcessServer) Download(Process_DownloadServer) error {
 	return status.Errorf(codes.Unimplemented, "method Download not implemented")
 }
 func (UnimplementedProcessServer) mustEmbedUnimplementedProcessServer() {}
@@ -159,15 +158,12 @@ func (x *processImportServer) Recv() (*ImportRequest, error) {
 }
 
 func _Process_Download_Handler(srv interface{}, stream grpc.ServerStream) error {
-	m := new(DownloadRequest)
-	if err := stream.RecvMsg(m); err != nil {
-		return err
-	}
-	return srv.(ProcessServer).Download(m, &processDownloadServer{stream})
+	return srv.(ProcessServer).Download(&processDownloadServer{stream})
 }
 
 type Process_DownloadServer interface {
 	Send(*DownloadResponse) error
+	Recv() (*DownloadRequest, error)
 	grpc.ServerStream
 }
 
@@ -177,6 +173,14 @@ type processDownloadServer struct {
 
 func (x *processDownloadServer) Send(m *DownloadResponse) error {
 	return x.ServerStream.SendMsg(m)
+}
+
+func (x *processDownloadServer) Recv() (*DownloadRequest, error) {
+	m := new(DownloadRequest)
+	if err := x.ServerStream.RecvMsg(m); err != nil {
+		return nil, err
+	}
+	return m, nil
 }
 
 // Process_ServiceDesc is the grpc.ServiceDesc for Process service.
@@ -196,6 +200,7 @@ var Process_ServiceDesc = grpc.ServiceDesc{
 			StreamName:    "Download",
 			Handler:       _Process_Download_Handler,
 			ServerStreams: true,
+			ClientStreams: true,
 		},
 	},
 	Metadata: "process.proto",
