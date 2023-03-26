@@ -1,0 +1,29 @@
+{
+  "openapi": "3.0.2",
+  "info": {
+    "title": "PIRS public REST API",
+    "description": "This API provides all required functionality to operate PIRS backend within organization and to enable inter-organization communication",
+    "termsOfService": "http://pirs.io/terms/",
+    "contact": {
+      "email": "help@pirs.io"
+    },
+    "license": {
+      "name": "GPL",
+      "url": "https://www.gnu.org/licenses/gpl-3.0.html"
+    },
+    "version": "3.0"
+  },
+  "servers": [
+    {
+      "url": "/api/v1"
+    }
+  ],
+  "tags": [
+    {
+      "name": "user",
+      "description": "Operations about user"
+    }
+  ],
+  "paths": {
+  }
+}
