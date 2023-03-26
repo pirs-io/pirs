@@ -2,7 +2,7 @@ apiVersion: apps/v1
 kind: StatefulSet
 metadata:
   name: process-storage
-  namespace: pirs-app
+  namespace: pirs
   labels:
     app: process-storage
 spec:
@@ -79,7 +79,7 @@ metadata:
   name: process
   labels:
     app: process
-  namespace: pirs-app
+  namespace: pirs
 spec:
   replicas: 2
   template:

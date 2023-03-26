@@ -3,7 +3,7 @@ apiVersion: v1
 kind: PersistentVolumeClaim
 metadata:
   name: mongodb-pvc
-  namespace: pirs-ss
+  namespace: pirs
   labels:
     app: mongo-db
 spec:
@@ -18,7 +18,7 @@ apiVersion: v1
 kind: PersistentVolumeClaim
 metadata:
   name: git-storage-pvc
-  namespace: pirs-app
+  namespace: pirs
   labels:
     app: git-storage
 spec:
