@@ -9,13 +9,13 @@ import (
 	"google.golang.org/grpc/status"
 	"google.golang.org/protobuf/types/known/emptypb"
 	"net"
-	"pirs.io/common"
+	"pirs.io/commons"
 	"pirs.io/tracker/config"
 	pb "pirs.io/tracker/grpc"
 )
 
 var (
-	grpcLog = common.GetLoggerFor("trackerGrpc")
+	grpcLog = commons.GetLoggerFor("trackerGrpc")
 )
 
 type trackerServer struct {
