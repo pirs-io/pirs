@@ -137,6 +137,11 @@ func (pd *PetriflowDetector) handleAction(wg *sync.WaitGroup, action actionConte
 				latestM, err := pd.repository.FindNewestByURI(context.Background(), found)
 				if err == nil && latestM.ID != primitive.NilObjectID {
 					responseChan <- latestM
+				} else if err == nil && latestM.ID == primitive.NilObjectID {
+					responseChan <- domain.Metadata{
+						ID:  primitive.NewObjectID(),
+						URI: found + ":1",
+					}
 				}
 			} else {
 				dependency, err := pd.repository.FindByURI(context.Background(), found)
@@ -144,6 +149,11 @@ func (pd *PetriflowDetector) handleAction(wg *sync.WaitGroup, action actionConte
 					log.Error().Msgf("an error occurred while searching for %s in repository: %v", found, err)
 				} else if dependency.ID != primitive.NilObjectID {
 					responseChan <- dependency
+				} else {
+					responseChan <- domain.Metadata{
+						ID:  primitive.NewObjectID(),
+						URI: found,
+					}
 				}
 			}
 		}
