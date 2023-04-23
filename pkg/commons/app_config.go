@@ -4,6 +4,8 @@ import (
 	"fmt"
 	"github.com/rs/zerolog/log"
 	"github.com/spf13/viper"
+	"go.opentelemetry.io/contrib/instrumentation/google.golang.org/grpc/otelgrpc"
+	"google.golang.org/grpc"
 )
 
 type BaseConfig interface {
@@ -18,7 +20,7 @@ func GetAppConfig[T BaseConfig](configFilePath string, c *T) (res *T, err error)
 
 	err = viper.ReadInConfig()
 	if err != nil {
-		log.Warn().Msg("No .env file found! Environment variables will be used")
+		log.Warn().Msgf("No .env file on path %s found! Environment variables will be used", configFilePath)
 	}
 
 	err = viper.Unmarshal(c)
@@ -27,4 +29,9 @@ func GetAppConfig[T BaseConfig](configFilePath string, c *T) (res *T, err error)
 		return nil, err
 	}
 	return c, nil
+}
+
+func CreateGrpcOTELInterceptors() (grpc.ServerOption, grpc.ServerOption) {
+	return grpc.ChainUnaryInterceptor(otelgrpc.UnaryServerInterceptor()),
+		grpc.ChainStreamInterceptor(otelgrpc.StreamServerInterceptor())
 }

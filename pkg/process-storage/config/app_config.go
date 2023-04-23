@@ -1,6 +1,11 @@
 package config
 
 import (
+	"fmt"
+	"github.com/prometheus/client_golang/prometheus"
+	"github.com/prometheus/client_golang/prometheus/collectors"
+	"github.com/prometheus/client_golang/prometheus/promhttp"
+	"net/http"
 	"pirs.io/commons"
 	"pirs.io/process-storage/storage"
 )
@@ -11,14 +16,14 @@ var (
 )
 
 type ProcessStorageAppConfig struct {
+	commons.BaseConfig
 	GrpcPort        int              `mapstructure:"GRPC_PORT"`
 	StorageProvider storage.Provider `mapstructure:"STORAGE_PROVIDER"`
 	RepoRootPath    string           `mapstructure:"GIT_ROOT"`
 	Tenant          string           `mapstructure:"TENANT"`
 	ChunkSize       int64            `mapstructure:"CHUNK_SIZE_BYTES"`
+	PrometheusPort  int              `mapstructure:"PROMETHEUS_PORT"`
 }
-
-func (t ProcessStorageAppConfig) IsConfig() {}
 
 type ApplicationContext struct {
 	AppConfig ProcessStorageAppConfig
@@ -39,9 +44,41 @@ func InitApp(configFilePath string) (conf *ProcessStorageAppConfig) {
 	}
 	trackerApplicationContext = appCtx
 
+	err := initMetrics(conf.PrometheusPort)
+	if err != nil {
+		log.Warn().Msgf("Failed to initialize metric config! %s", err.Error())
+	} else {
+		log.Info().Msgf(fmt.Sprintf("Prometheus endpoint available at: %d/metrics", conf.PrometheusPort))
+	}
+
 	log.Info().Msg("Application started!")
 	trackerApplicationContext.AppConfig = *conf
 	return conf
+}
+
+func initMetrics(prometheusPort int) error {
+	log.Info().Msg("Initializing metric instrumentation")
+	reg := prometheus.NewRegistry()
+	reg.MustRegister(
+		collectors.NewGoCollector(),
+		collectors.NewBuildInfoCollector(),
+	)
+
+	server := &http.Server{Addr: fmt.Sprintf(":%d", prometheusPort)}
+	serveMux := http.NewServeMux()
+	promhttp.Handler()
+	serveMux.Handle("/metrics", promhttp.HandlerFor(
+		reg,
+		promhttp.HandlerOpts{EnableOpenMetrics: true},
+	))
+	server.Handler = serveMux
+	go func() {
+		err := server.ListenAndServe()
+		if err != nil {
+			log.Err(err)
+		}
+	}()
+	return nil
 }
 
 func GetContext() *ApplicationContext {

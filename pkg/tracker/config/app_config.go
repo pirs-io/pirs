@@ -21,7 +21,7 @@ type TrackerAppConfig struct {
 	Instance0Url string `mapstructure:"INSTANCE0_URL"`
 }
 
-func (t TrackerAppConfig) IsConfig() {}
+func (t TrackerAppConfig) IsConfig() { return }
 
 type ApplicationContext struct {
 	AppConfig                   *TrackerAppConfig

@@ -43,7 +43,7 @@ type ProcessAppConfig struct {
 	ProcessStorageHost    string `mapstructure:"PROCESS_STORAGE_HOST"`
 }
 
-func (p ProcessAppConfig) IsConfig() {}
+func (p ProcessAppConfig) IsConfig() { return }
 
 // An ApplicationContext contains initialized config struct and all the main services
 type ApplicationContext struct {
@@ -80,6 +80,8 @@ func InitApp(configFilePath string) (conf *ProcessAppConfig) {
 func initMongoDatabase(conf ProcessAppConfig) mongo.Client {
 	ctx, cancel := context.WithTimeout(context.Background(), 10*time.Second)
 	defer cancel()
+
+	// skladanie URL spravit poriadne
 
 	dbHost := conf.MongoHost
 	dbPort := conf.MongoPort
