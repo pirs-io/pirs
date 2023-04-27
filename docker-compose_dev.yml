@@ -1,0 +1,47 @@
+version: "3.3"
+
+services:
+  # microservices
+  process:
+    image: pirs/process:latest
+    build:
+      context: ./pkg
+      dockerfile: process/Dockerfile
+    env_file:
+      - ./pkg/process/example.env
+    ports:
+      - "8081:8081"
+
+  process-storage:
+    image: pirs/process-storage:latest
+    build:
+      context: ./pkg
+      dockerfile: process-storage/Dockerfile
+    environment:
+      - "GRPC_PORT=50051"
+      - "STORAGE_PROVIDER=1"
+      - "GIT_ROOT=/data/pirs/git"
+      - "TENANT=dudak"
+      - "CHUNK_SIZE=1024"
+    ports:
+      - "50051:50051"
+    volumes:
+      - c:\Users\pavol\pirs\git:/data/pirs/git
+
+## support services
+#  redis:
+#    image: redislabs/redismod:latest
+#    restart: always
+#    container_name: redis-pirs
+#    command: redis-server --save 20 1 --loglevel warning --requirepass pirs.123 --loadmodule /usr/lib/redis/modules/rejson.so
+#    ports:
+#      - "6379:6379"
+#    volumes:
+#      - ./docker/redis/data:/data
+#      - ./docker/redis/conf:/data/redis-server
+#  mongo:
+#    container_name: pirs-mongo
+#    image: mongo:latest
+#    restart: always
+#    ports:
+#      - "27017:27017"

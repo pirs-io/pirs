@@ -1,0 +1,33 @@
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: pirs-cfg
+  namespace: pirs
+data:
+  #  process-storage
+  ps_grpcPort: "50051"
+  ps_storageProvider: "1"
+  ps_repoRootPath: "/data/pirs"
+  ps_tenant: "pirsT"
+  ps_chunkSizeBytes: "2024"
+  # process
+  pr_grpcPort: "50051"
+  pr_grpcId: "0.0.0.0"
+  pr_userGrpcReflection: "false"
+  pr_uploadFileMaxSize: "1024"
+  pr_chunkSize: "1024"
+  pr_allowedFileExtensions: "pf,bpmn,xml"
+  pr_mongoHost: "mongo-db"
+  pr_mongoPort: "27015"
+  pr_mongoName: "name"
+  pr_mongoUser: "xxxx"
+  pr_mongoPass: "xxxx"
+  pr_contextTimeout: 2"
+  pr_mongoDrop: "false"
+  pr_metadataCollection: "metadata"
+  pr_basicMetadataCsv: ""
+  pr_pertriflowMetadataCsv: ""
+  pr_bpmnMetadataCdv: ""
+  pr_ignoreWrongExtension: "false"
+  pr_processStoragePort: "50051"
+  pr_processStorageHost: "process-storage-service"

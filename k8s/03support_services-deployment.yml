@@ -1,0 +1,52 @@
+apiVersion: apps/v1
+kind: StatefulSet
+metadata:
+  name: mongo-db
+  namespace: pirs
+spec:
+  serviceName: mongo-db
+  replicas: 1
+  selector:
+    matchLabels:
+      app: mongo-db
+  template:
+    metadata:
+      labels:
+        app: mongo-db
+    spec:
+      containers:
+        - name: mongo-db
+          image: mongo
+          imagePullPolicy: Always
+          # TODO: saving sensitive data in secrets
+          env:
+            - name: MONGO_INITDB_ROOT_USERNAME
+              value: xxxx
+            - name: MONGO_INITDB_ROOT_PASSWORD
+              value: xxxx
+          ports:
+            - containerPort: 27017
+              name: mongodb
+          volumeMounts:
+            - name: mongodb-persistent-storage
+              mountPath: /data/db
+      volumes:
+        - name: mongodb-persistent-storage
+          persistentVolumeClaim:
+            claimName: mongodb-pvc
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: mongo-db
+  namespace: pirs
+  labels:
+    app: mongo-db
+spec:
+  ports:
+    - name: mongodb
+      port: 27017
+      targetPort: 27017
+  clusterIP: None
+  selector:
+    app: mongo-db
