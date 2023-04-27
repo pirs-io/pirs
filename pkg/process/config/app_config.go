@@ -2,7 +2,6 @@
 package config
 
 import (
-	"fmt"
 	"golang.org/x/net/context"
 	"pirs.io/commons"
 	"pirs.io/commons/parsers"
@@ -27,10 +26,7 @@ type ProcessAppConfig struct {
 	UploadFileMaxSize     int    `mapstructure:"UPLOAD_FILE_MAX_SIZE"`
 	ChunkSize             int    `mapstructure:"CHUNK_SIZE"`
 	AllowedFileExtensions string `mapstructure:"ALLOWED_FILE_EXTENSIONS"`
-	MongoHost             string `mapstructure:"MONGO_HOST"`
-	MongoPort             string `mapstructure:"MONGO_PORT"`
-	MongoUser             string `mapstructure:"MONGO_USER"`
-	MongoPass             string `mapstructure:"MONGO_PASS"`
+	MongoUri              string `mapstructure:"MONGO_URI"`
 	MongoName             string `mapstructure:"MONGO_NAME"`
 	MongoDrop             bool   `mapstructure:"MONGO_DROP"`
 	ContextTimeout        int    `mapstructure:"CONTEXT_TIMEOUT"`
@@ -81,18 +77,9 @@ func initMongoDatabase(conf ProcessAppConfig) mongo.Client {
 	ctx, cancel := context.WithTimeout(context.Background(), 10*time.Second)
 	defer cancel()
 
-	dbHost := conf.MongoHost
-	dbPort := conf.MongoPort
-	dbUser := conf.MongoUser
-	dbPass := conf.MongoPass
-	dbName := conf.MongoName
-	mongodbURI := fmt.Sprintf("mongodb://%s:%s@%s:%s/%s", dbUser, dbPass, dbHost, dbPort, dbName)
-	if dbUser == "" || dbPass == "" {
-		mongodbURI = fmt.Sprintf("mongodb://%s:%s/%s", dbHost, dbPort, dbName)
-	}
-	log.Info().Msgf("connecting to %s", mongodbURI)
+	log.Info().Msgf("connecting to %s", conf.MongoUri)
 
-	client, err := mongo.NewClient(mongodbURI)
+	client, err := mongo.NewClient(conf.MongoUri)
 	if err != nil {
 		log.Fatal().Msg(err.Error())
 	}
@@ -106,7 +93,7 @@ func initMongoDatabase(conf ProcessAppConfig) mongo.Client {
 	if err != nil {
 		log.Fatal().Msg(err.Error())
 	}
-	log.Info().Msgf("successfully connected to %s", mongodbURI)
+	log.Info().Msgf("successfully connected to %s", conf.MongoUri)
 	return client
 }
 
