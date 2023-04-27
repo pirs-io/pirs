@@ -18,17 +18,17 @@ spec:
         - name: mongo-db
           image: mongo:4.4
           imagePullPolicy: Always
-          env:
-            - name: MONGO_INITDB_ROOT_USERNAME
-              valueFrom:
-                configMapKeyRef:
-                  key: pr_mongoName
-                  name: pirs-cfg
-            - name: MONGO_INITDB_ROOT_PASSWORD
-              valueFrom:
-                configMapKeyRef:
-                  key: pr_mongoPass
-                  name: pirs-cfg
+#          env:
+#            - name: MONGO_INITDB_ROOT_USERNAME
+#              valueFrom:
+#                configMapKeyRef:
+#                  key: pr_mongoName
+#                  name: pirs-cfg
+#            - name: MONGO_INITDB_ROOT_PASSWORD
+#              valueFrom:
+#                configMapKeyRef:
+#                  key: pr_mongoPass
+#                  name: pirs-cfg
           ports:
             - containerPort: 27017
               protocol: TCP
