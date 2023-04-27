@@ -3,12 +3,12 @@ version: "3.3"
 services:
 #  current versions
   process:
-    image: pirs/process:0.2.1
+    image: dudakp07/process:0.2.2
     build:
       context: ./pkg
       dockerfile: process/Dockerfile
   process-storage:
-    image: pirs/process-storage:0.2.1
+    image: dudakp07/process-storage:0.2.2
     build:
       context: ./pkg
       dockerfile: process-storage/Dockerfile
@@ -17,14 +17,14 @@ services:
   process-storage_latest:
     depends_on:
       - process-storage
-    image: pirs/process-storage:latest
+    image: dudakp07/process-storage:latest
     build:
       context: ./pkg
       dockerfile: process-storage/Dockerfile
   process_latest:
     depends_on:
       - process
-    image: pirs/process:latest
+    image: dudakp07/process:latest
     build:
       context: ./pkg
       dockerfile: process/Dockerfile
