@@ -59,7 +59,7 @@ func GetContext() *ApplicationContext {
 
 // InitApp initializes ProcessAppConfig from given configFilePath and initializes services by createApplicationContext().
 // If success, ProcessAppConfig instance is returned, otherwise, it panics.
-func InitApp(configFilePath string) (conf *ProcessAppConfig) {
+func InitApp(configFilePath string) *ProcessAppConfig {
 	log.Info().Msg("Initializing Process service...")
 	conf, confErr := commons.GetAppConfig(configFilePath, &ProcessAppConfig{})
 	if confErr != nil {

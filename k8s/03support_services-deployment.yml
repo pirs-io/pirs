@@ -1,3 +1,4 @@
+---
 apiVersion: apps/v1
 kind: StatefulSet
 metadata:
@@ -18,17 +19,8 @@ spec:
         - name: mongo-db
           image: mongo:4.4
           imagePullPolicy: Always
-#          env:
-#            - name: MONGO_INITDB_ROOT_USERNAME
-#              valueFrom:
-#                configMapKeyRef:
-#                  key: pr_mongoName
-#                  name: pirs-cfg
-#            - name: MONGO_INITDB_ROOT_PASSWORD
-#              valueFrom:
-#                configMapKeyRef:
-#                  key: pr_mongoPass
-#                  name: pirs-cfg
+          command: [ "/bin/sh" ]
+          args: [ "-c", "mongod --replSet=rs0 --bind_ip_all" ]
           ports:
             - containerPort: 27017
               protocol: TCP

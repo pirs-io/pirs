@@ -1,0 +1,29 @@
+---
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: elastic-sync
+  namespace: pirs
+  labels:
+    app: elastic-sync
+spec:
+  replicas: 1
+  template:
+    metadata:
+      name: elastic-sync
+      labels:
+        app: elastic-sync
+    spec:
+      containers:
+        - name: elastic-sync
+          image: rwynn/monstache
+          imagePullPolicy: Always
+          env:
+            - name: MONSTACHE_MONGO_URL
+              value: "mongodb://mongo-db:27017"
+            - name: MONSTACHE_ES_URLS
+              value: "http://elasticsearch-1682448825.elastic:9200"
+      restartPolicy: Always
+  selector:
+    matchLabels:
+      app: elastic-sync
