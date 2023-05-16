@@ -8,6 +8,12 @@ together to make large network of accessible business processes.
 
 ---
 
+## requiments
+
+* go 1.20
+* docker (optional)
+* docker-compose (optional)
+
 ## code organization
 
 ### docs
