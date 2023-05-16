@@ -9,13 +9,11 @@ import (
 	"google.golang.org/grpc/codes"
 	"google.golang.org/grpc/credentials/insecure"
 	"io"
-	"math/rand"
 	"os"
 	"pirs.io/commons"
 	"pirs.io/commons/domain"
 	mygrpc "pirs.io/process/grpc"
 	"strings"
-	"sync"
 	"time"
 )
 
@@ -26,25 +24,12 @@ var (
 const (
 	IP               = "localhost"
 	PORT             = "8080"
-	UPLOAD_FILENAME1 = "uvod.pdf"
-	UPLOAD_FILENAME2 = "car.xml"
 	UPLOAD_FILENAME3 = "service.xml"
-	URI1             = "awd.awd.awd.awd:11"
-	URI2             = ""
 	CHUNK_SIZE       = 1024
 	PARTIAL_URI      = "stu.fei.myproject"
 	MAX_IMPORT       = 1
 	MAX_DOWNLOAD     = 1
-	letterBytes      = "abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ"
 )
-
-func RandStringBytes(n int) string {
-	b := make([]byte, n)
-	for i := range b {
-		b[i] = letterBytes[rand.Intn(len(letterBytes))]
-	}
-	return string(b)
-}
 
 func main() {
 	serverAddress := flag.String("address", IP+":"+PORT, "the server address")
@@ -56,6 +41,7 @@ func main() {
 	}
 	processClient := mygrpc.NewProcessClient(conn)
 
+	// todo implement user inputs (what service and what processes)
 	importProcess(processClient)
 	//downloadProcess(processClient)
 	//downloadPackage(processClient)
@@ -63,7 +49,7 @@ func main() {
 
 func downloadProcess(client mygrpc.ProcessClient) {
 	start := time.Now()
-	// Call endpoints here
+
 	for i := 0; i < MAX_DOWNLOAD; i++ {
 		downloadProcessData(client, PARTIAL_URI+".car:1")
 	}
@@ -117,7 +103,7 @@ func downloadProcessData(client mygrpc.ProcessClient, uri string) {
 
 func downloadPackage(client mygrpc.ProcessClient) {
 	start := time.Now()
-	// Call endpoints here
+
 	for i := 0; i < MAX_DOWNLOAD; i++ {
 		downloadPackageData(client, PARTIAL_URI)
 	}
@@ -171,20 +157,15 @@ func downloadPackageData(client mygrpc.ProcessClient, packageUri string) {
 
 func importProcess(client mygrpc.ProcessClient) {
 	start := time.Now()
-	var wg sync.WaitGroup
-	// Call endpoints here
 
 	for i := 0; i < MAX_IMPORT; i++ {
-		wg.Add(1)
-		go uploadFile(&wg, client, "./pkg/process/"+UPLOAD_FILENAME2, UPLOAD_FILENAME2)
+		uploadFile(client, "./pkg/process/"+UPLOAD_FILENAME3, UPLOAD_FILENAME3)
 	}
-	wg.Wait()
 	elapsed := time.Since(start)
 	log2.Info().Msgf("importProcess elapsed time: %s", elapsed)
 }
 
-func uploadFile(wg *sync.WaitGroup, processClient mygrpc.ProcessClient, processPath string, filename string) {
-	defer wg.Done()
+func uploadFile(processClient mygrpc.ProcessClient, processPath string, filename string) {
 	file, err := os.Open(processPath)
 	if err != nil {
 		log2.Error().Msgf("cannot open file: %v", err)
@@ -204,14 +185,13 @@ func uploadFile(wg *sync.WaitGroup, processClient mygrpc.ProcessClient, processP
 		log2.Error().Msgf("cannot upload file: %v", err)
 	}
 
-	suffix := RandStringBytes(5)
 	req := &mygrpc.ImportRequest{
 		Data: &mygrpc.ImportRequest_FileInfo{
 			FileInfo: &mygrpc.FileInfo{
 				FileName: filename,
 			},
 		},
-		PartialUri: PARTIAL_URI + suffix,
+		PartialUri: PARTIAL_URI,
 	}
 
 	err = stream.Send(req)
