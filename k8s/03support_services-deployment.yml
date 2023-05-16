@@ -21,9 +21,14 @@ spec:
           imagePullPolicy: Always
           command: [ "/bin/sh" ]
           args: [ "-c", "mongod --replSet=rs0 --bind_ip_all" ]
+          # TODO: saving sensitive data in secrets
+          env:
+            - name: MONGO_INITDB_ROOT_USERNAME
+              value: xxxx
+            - name: MONGO_INITDB_ROOT_PASSWORD
+              value: xxxx
           ports:
             - containerPort: 27017
-              protocol: TCP
               name: mongodb
           volumeMounts:
             - name: mongodb-persistent-storage

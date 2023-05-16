@@ -3,7 +3,7 @@ version: "3.3"
 services:
   # microservices
   process:
-    image: pirs.process:latest
+    image: pirs/process:latest
     build:
       context: ./pkg
       dockerfile: process/Dockerfile
@@ -13,7 +13,7 @@ services:
       - "8081:8081"
 
   process-storage:
-    image: pirs.process-storage:latest
+    image: pirs/process-storage:latest
     build:
       context: ./pkg
       dockerfile: process-storage/Dockerfile

@@ -19,7 +19,7 @@ spec:
       containers:
         - name: process-storage
           image: dudakp07/process-storage
-          imagePullPolicy: IfNotPresent
+          imagePullPolicy: Always
           env:
             - name: GPRC_PORT
               valueFrom:
@@ -126,26 +126,11 @@ spec:
                 configMapKeyRef:
                   name: pirs-cfg
                   key: pr_allowedFileExtensions
-            - name: MONGO_HOST
+            - name: MONGO_URI
               valueFrom:
                 configMapKeyRef:
                   name: pirs-cfg
-                  key: pr_mongoHost
-            - name: MONGO_PORT
-              valueFrom:
-                configMapKeyRef:
-                  name: pirs-cfg
-                  key: pr_mongoPort
-            - name: MONGO_USER
-              valueFrom:
-                configMapKeyRef:
-                  name: pirs-cfg
-                  key: pr_mongoUser
-            - name: MONGO_PASS
-              valueFrom:
-                configMapKeyRef:
-                  name: pirs-cfg
-                  key: pr_mongoPass
+                  key: pr_mongoUri
             - name: MONGO_NAME
               valueFrom:
                 configMapKeyRef:

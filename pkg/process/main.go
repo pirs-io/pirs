@@ -7,7 +7,7 @@ import (
 )
 
 var log = commons.GetLoggerFor("main")
-var configFilePath = "example.env"
+var configFilePath = "./pkg/process/.env"
 
 func main() {
 	appConfig := config.InitApp(configFilePath)

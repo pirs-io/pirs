@@ -11,8 +11,7 @@ spec:
   resources:
     requests:
       storage: 1Gi
-  storageClassName: local-path
-  volumeMode: Filesystem
+  storageClassName: standard
 ---
 apiVersion: v1
 kind: PersistentVolumeClaim
@@ -23,9 +22,8 @@ metadata:
     app: git-storage
 spec:
   accessModes:
-    - ReadWriteOnce
+    - ReadWriteMany
   resources:
     requests:
       storage: 1Gi
-  storageClassName: local-path
-  volumeMode: Filesystem
+  storageClassName: standard
