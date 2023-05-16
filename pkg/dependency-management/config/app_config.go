@@ -1,7 +1,6 @@
 package config
 
 import (
-	"fmt"
 	"golang.org/x/net/context"
 	"pirs.io/commons"
 	"pirs.io/commons/db/mongo"
@@ -22,10 +21,7 @@ type DependencyAppConfig struct {
 	GrpcPort           int    `mapstructure:"GRPC_PORT"`
 	UseGrpcReflection  bool   `mapstructure:"USE_GRPC_REFLECTION"`
 	StreamSeparator    string `mapstructure:"STREAM_SEPARATOR"`
-	MongoHost          string `mapstructure:"MONGO_HOST"`
-	MongoPort          string `mapstructure:"MONGO_PORT"`
-	MongoUser          string `mapstructure:"MONGO_USER"`
-	MongoPass          string `mapstructure:"MONGO_PASS"`
+	MongoUri           string `mapstructure:"MONGO_URI"`
 	MongoName          string `mapstructure:"MONGO_NAME"`
 	MongoDrop          bool   `mapstructure:"MONGO_DROP"`
 	MetadataCollection string `mapstructure:"METADATA_COLLECTION"`
@@ -69,18 +65,9 @@ func initMongoDatabase(conf DependencyAppConfig) mongo.Client {
 	ctx, cancel := context.WithTimeout(context.Background(), 10*time.Second)
 	defer cancel()
 
-	dbHost := conf.MongoHost
-	dbPort := conf.MongoPort
-	dbUser := conf.MongoUser
-	dbPass := conf.MongoPass
-	dbName := conf.MongoName
-	mongodbURI := fmt.Sprintf("mongodb://%s:%s@%s:%s/%s", dbUser, dbPass, dbHost, dbPort, dbName)
-	if dbUser == "" || dbPass == "" {
-		mongodbURI = fmt.Sprintf("mongodb://%s:%s/%s", dbHost, dbPort, dbName)
-	}
-	log.Info().Msgf("connecting to %s", mongodbURI)
+	log.Info().Msgf("connecting to %s", conf.MongoUri)
 
-	client, err := mongo.NewClient(mongodbURI)
+	client, err := mongo.NewClient(conf.MongoUri)
 	if err != nil {
 		log.Fatal().Msg(err.Error())
 	}
@@ -94,7 +81,7 @@ func initMongoDatabase(conf DependencyAppConfig) mongo.Client {
 	if err != nil {
 		log.Fatal().Msg(err.Error())
 	}
-	log.Info().Msgf("successfully connected to %s", mongodbURI)
+	log.Info().Msgf("successfully connected to %s", conf.MongoUri)
 	return client
 }
 
