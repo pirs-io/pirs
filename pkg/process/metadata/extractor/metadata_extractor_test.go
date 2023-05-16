@@ -96,7 +96,7 @@ func testBpmn(t *testing.T, filename string, mapping map[string]string) {
 }
 
 func parseMetadataMappingFromCsv(csvPath string) map[string]string {
-	csv := parsers.ReadCsvFile(csvPath)
+	csv := parsers.ReadCsvFile(csvPath, false)
 	mapping := map[string]string{}
 	for _, row := range csv {
 		mapping[row[0]] = row[1]

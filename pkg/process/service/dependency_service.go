@@ -106,7 +106,7 @@ func (ds *DependencyService) Detect(reqCtx context.Context, forResource <-chan m
 				break
 			}
 			if err != nil {
-				logDs.Error().Msgf("cannot read chunk to buffer: ", err)
+				logDs.Error().Msgf("cannot read chunk to buffer: %v", err)
 				forResponse <- models.ResponseAdapter{Err: err}
 				return
 			}
@@ -120,12 +120,12 @@ func (ds *DependencyService) Detect(reqCtx context.Context, forResource <-chan m
 		// receive status response
 		response, err := stream.Recv()
 		if err != nil {
-			logDs.Error().Msgf("cannot receive from the stream: ", err, stream.RecvMsg(nil))
+			logDs.Error().Msgf("cannot receive from the stream: %v %v", err, stream.RecvMsg(nil))
 			forResponse <- models.ResponseAdapter{Err: err}
 			return
 		}
 		if strings.Contains(response.Message, "fail") {
-			logDs.Error().Msgf("dependencies failed to detect: ", err, stream.RecvMsg(nil))
+			logDs.Error().Msgf("dependencies failed to detect: %v %v", err, stream.RecvMsg(nil))
 			forResponse <- models.ResponseAdapter{Err: errors.New(response.Message)}
 			continue
 		}
@@ -133,7 +133,7 @@ func (ds *DependencyService) Detect(reqCtx context.Context, forResource <-chan m
 		for {
 			response, err = stream.Recv()
 			if err != nil {
-				logDs.Error().Msgf("cannot receive from the stream: ", err, stream.RecvMsg(nil))
+				logDs.Error().Msgf("cannot receive from the stream: %v %v", err, stream.RecvMsg(nil))
 				forResponse <- models.ResponseAdapter{Err: err}
 				return
 			}

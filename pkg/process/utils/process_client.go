@@ -27,13 +27,13 @@ const (
 	IP               = "localhost"
 	PORT             = "8080"
 	UPLOAD_FILENAME1 = "uvod.pdf"
-	UPLOAD_FILENAME2 = "car-noactions.xml"
+	UPLOAD_FILENAME2 = "car.xml"
 	UPLOAD_FILENAME3 = "service.xml"
 	URI1             = "awd.awd.awd.awd:11"
 	URI2             = ""
 	CHUNK_SIZE       = 1024
-	PARTIAL_URI      = "stu.fei.myproject2"
-	MAX_IMPORT       = 1000
+	PARTIAL_URI      = "stu.fei.myproject"
+	MAX_IMPORT       = 1
 	MAX_DOWNLOAD     = 1
 	letterBytes      = "abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ"
 )
@@ -51,7 +51,7 @@ func main() {
 	flag.Parse()
 	conn, err := grpc.Dial(*serverAddress, grpc.WithTransportCredentials(insecure.NewCredentials()))
 	if err != nil {
-		log2.Fatal().Msgf("cannot dial process server: ", err)
+		log2.Fatal().Msgf("cannot dial process server: %v", err)
 		return
 	}
 	processClient := mygrpc.NewProcessClient(conn)
@@ -68,7 +68,7 @@ func downloadProcess(client mygrpc.ProcessClient) {
 		downloadProcessData(client, PARTIAL_URI+".car:1")
 	}
 	elapsed := time.Since(start)
-	log2.Info().Msgf("downloadProcess elapsed time: ", elapsed)
+	log2.Info().Msgf("downloadProcess elapsed time: %s", elapsed)
 }
 
 func downloadProcessData(client mygrpc.ProcessClient, uri string) {
@@ -122,7 +122,7 @@ func downloadPackage(client mygrpc.ProcessClient) {
 		downloadPackageData(client, PARTIAL_URI)
 	}
 	elapsed := time.Since(start)
-	log2.Info().Msgf("downloadPackage elapsed time: ", elapsed)
+	log2.Info().Msgf("downloadPackage elapsed time: %s", elapsed)
 }
 
 func downloadPackageData(client mygrpc.ProcessClient, packageUri string) {
@@ -180,19 +180,19 @@ func importProcess(client mygrpc.ProcessClient) {
 	}
 	wg.Wait()
 	elapsed := time.Since(start)
-	log2.Info().Msgf("importProcess elapsed time: ", elapsed)
+	log2.Info().Msgf("importProcess elapsed time: %s", elapsed)
 }
 
 func uploadFile(wg *sync.WaitGroup, processClient mygrpc.ProcessClient, processPath string, filename string) {
 	defer wg.Done()
 	file, err := os.Open(processPath)
 	if err != nil {
-		log2.Error().Msgf("cannot open file: ", err)
+		log2.Error().Msgf("cannot open file: %v", err)
 	}
 	defer func(file *os.File) {
 		err := file.Close()
 		if err != nil {
-			log2.Error().Msgf("cannot close file: ", err)
+			log2.Error().Msgf("cannot close file: %v", err)
 		}
 	}(file)
 
@@ -201,7 +201,7 @@ func uploadFile(wg *sync.WaitGroup, processClient mygrpc.ProcessClient, processP
 
 	stream, err := processClient.Import(ctx)
 	if err != nil {
-		log2.Error().Msgf("cannot upload file: ", err)
+		log2.Error().Msgf("cannot upload file: %v", err)
 	}
 
 	suffix := RandStringBytes(5)
@@ -216,7 +216,7 @@ func uploadFile(wg *sync.WaitGroup, processClient mygrpc.ProcessClient, processP
 
 	err = stream.Send(req)
 	if err != nil {
-		log2.Error().Msgf("cannot send file_info to server: ", err, stream.RecvMsg(nil))
+		log2.Error().Msgf("cannot send file_info to server: %v %v", err, stream.RecvMsg(nil))
 	}
 
 	reader := bufio.NewReader(file)
@@ -228,7 +228,7 @@ func uploadFile(wg *sync.WaitGroup, processClient mygrpc.ProcessClient, processP
 			break
 		}
 		if err != nil {
-			log2.Error().Msgf("cannot read chunk to buffer: ", err)
+			log2.Error().Msgf("cannot read chunk to buffer: %v", err)
 		}
 
 		req := &mygrpc.ImportRequest{
@@ -239,12 +239,12 @@ func uploadFile(wg *sync.WaitGroup, processClient mygrpc.ProcessClient, processP
 
 		err = stream.Send(req)
 		if err != nil {
-			log2.Error().Msgf("cannot send chunk to server: ", err, stream.RecvMsg(nil))
+			log2.Error().Msgf("cannot send chunk to server: %v %v", err, stream.RecvMsg(nil))
 		}
 	}
 	res, err := stream.CloseAndRecv()
 	if err != nil {
-		log2.Error().Msgf("cannot receive response: ", err)
+		log2.Error().Msgf("cannot receive response: %v", err)
 	}
 
 	log2.Debug().Msgf("response with msg: %s, size: %dB", res.GetMessage(), res.GetTotalSize())
