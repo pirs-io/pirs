@@ -1,0 +1,201 @@
+apiVersion: apps/v1
+kind: StatefulSet
+metadata:
+  name: process-storage
+  namespace: pirs
+  labels:
+    app: process-storage
+spec:
+  serviceName: process-storage-service
+  replicas: 1
+  selector:
+    matchLabels:
+      app: process-storage
+  template:
+    metadata:
+      labels:
+        app: process-storage
+    spec:
+      containers:
+        - name: process-storage
+          image: dudakp07/process-storage
+          imagePullPolicy: Always
+          env:
+            - name: GPRC_PORT
+              valueFrom:
+                configMapKeyRef:
+                  name: pirs-cfg
+                  key: ps_grpcPort
+            - name: STORAGE_PROVIDER
+              valueFrom:
+                configMapKeyRef:
+                  name: pirs-cfg
+                  key: ps_storageProvider
+            - name: GIT_ROOT
+              valueFrom:
+                configMapKeyRef:
+                  name: pirs-cfg
+                  key: ps_repoRootPath
+            - name: TENANT
+              valueFrom:
+                configMapKeyRef:
+                  name: pirs-cfg
+                  key: ps_tenant
+            - name: CHUNK_SIZE
+              valueFrom:
+                configMapKeyRef:
+                  name: pirs-cfg
+                  key: ps_chunkSizeBytes
+          ports:
+            - containerPort: 50051
+              name: ps-port
+          volumeMounts:
+            - name: git-persistent-storage
+              mountPath: /data/pirs
+      # https://akomljen.com/kubernetes-persistent-volumes-with-deployment-and-statefulset/
+      volumes:
+        - name: git-persistent-storage
+          persistentVolumeClaim:
+            claimName: git-storage-pvc
+      restartPolicy: Always
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: process-storage-service
+spec:
+  selector:
+    app: process-storage-service
+  ports:
+    - name: process-storage-service-port
+      protocol: TCP
+      port: 50051
+      targetPort: ps-port
+  type: NodePort
+---
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: process
+  labels:
+    app: process
+  namespace: pirs
+spec:
+  replicas: 1
+  template:
+    metadata:
+      name: process
+      labels:
+        app: process
+    spec:
+      containers:
+        - name: process
+          image: dudakp07/process:latest
+          imagePullPolicy: Always
+          ports:
+            - containerPort: 50051
+              name: process-port
+          env:
+            - name: GRPC_PORT
+              valueFrom:
+                configMapKeyRef:
+                  name: pirs-cfg
+                  key: pr_grpcPort
+            - name: GRPC_IP
+              valueFrom:
+                configMapKeyRef:
+                  name: pirs-cfg
+                  key: pr_grpcId
+            - name: USE_GRPC_REFLECTION
+              valueFrom:
+                configMapKeyRef:
+                  name: pirs-cfg
+                  key: pr_userGrpcReflection
+            - name: UPLOAD_FILE_MAX_SIZE
+              valueFrom:
+                configMapKeyRef:
+                  name: pirs-cfg
+                  key: pr_uploadFileMaxSize
+            - name: CHUNK_SIZE
+              valueFrom:
+                configMapKeyRef:
+                  name: pirs-cfg
+                  key: pr_chunkSize
+            - name: ALLOWED_FILE_EXTENSIONS
+              valueFrom:
+                configMapKeyRef:
+                  name: pirs-cfg
+                  key: pr_allowedFileExtensions
+            - name: MONGO_URI
+              valueFrom:
+                configMapKeyRef:
+                  name: pirs-cfg
+                  key: pr_mongoUri
+            - name: MONGO_NAME
+              valueFrom:
+                configMapKeyRef:
+                  name: pirs-cfg
+                  key: pr_mongoName
+            - name: CONTEXT_TIMEOUT
+              valueFrom:
+                configMapKeyRef:
+                  name: pirs-cfg
+                  key: pr_contextTimeout
+            - name: MONGO_DROP
+              valueFrom:
+                configMapKeyRef:
+                  name: pirs-cfg
+                  key: pr_mongoDrop
+            - name: METADATA_COLLECTION
+              valueFrom:
+                configMapKeyRef:
+                  name: pirs-cfg
+                  key: pr_metadataCollection
+            - name: BASIC_METADATA_CSV
+              valueFrom:
+                configMapKeyRef:
+                  name: pirs-cfg
+                  key: pr_basicMetadataCsv
+            - name: PETRIFLOW_METADATA_CSV
+              valueFrom:
+                configMapKeyRef:
+                  name: pirs-cfg
+                  key: pr_pertriflowMetadataCsv
+            - name: BPMN_METADATA_CVS
+              valueFrom:
+                configMapKeyRef:
+                  name: pirs-cfg
+                  key: pr_bpmnMetadataCdv
+            - name: IGNORE_WRONG_EXTENSION
+              valueFrom:
+                configMapKeyRef:
+                  name: pirs-cfg
+                  key: pr_ignoreWrongExtension
+            - name: PROCESS_STORAGE_PORT
+              valueFrom:
+                configMapKeyRef:
+                  name: pirs-cfg
+                  key: pr_processStoragePort
+            - name: PROCESS_STORAGE_HOST
+              valueFrom:
+                configMapKeyRef:
+                  name: pirs-cfg
+                  key: pr_processStorageHost
+      restartPolicy: Always
+  selector:
+    matchLabels:
+      app: process
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: process-service
+spec:
+  selector:
+    app: process-service
+  ports:
+    - name: process-port
+      protocol: TCP
+      port: 50051
+      targetPort: process-port
+  type: NodePort

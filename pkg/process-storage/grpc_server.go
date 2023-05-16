@@ -100,7 +100,7 @@ func StartGrpc(grpcPort int) error {
 	if networkErr != nil {
 		return networkErr
 	}
-	grpcServer := grpc.NewServer()
+	grpcServer := grpc.NewServer(commons.CreateGrpcOTELInterceptors())
 
 	pb.RegisterStorageServer(grpcServer, &processStorage{})
 

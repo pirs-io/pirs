@@ -12,10 +12,10 @@ type GitAdapter struct {
 	GitClient storage.GitClient
 }
 
-func (a *GitAdapter) SaveProcess(processMetadata *pb.ProcessMetadata, file []byte) error {
-	return a.GitClient.SaveFile(processMetadata, file)
+func (r *GitAdapter) SaveProcess(processMetadata *pb.ProcessMetadata, file []byte) error {
+	return r.GitClient.SaveFile(processMetadata, file)
 }
 
-func (a *GitAdapter) DownloadProcess(downloadRequest *pb.ProcessDownloadRequest, w *io.PipeWriter) (*pb.ProcessMetadata, error) {
-	return a.GitClient.DownloadProcess(downloadRequest, w)
+func (r *GitAdapter) DownloadProcess(downloadRequest *pb.ProcessDownloadRequest, w *io.PipeWriter) (*pb.ProcessMetadata, error) {
+	return r.GitClient.DownloadProcess(downloadRequest, w)
 }
