@@ -1,34 +1,18 @@
 # Dependency-management-service
+A microservice for process dependency management.
 
-Foobar is a Python library for dealing with word pluralization.
+## How to run
 
-## Installation
+### Requirements
+In order to fully run this microservice, you have to have running instance of *MongoDB* database.
 
-Use the package manager [pip](https://pip.pypa.io/en/stable/) to install foobar.
+### Configuration
+When you have the requirements fulfilled, you have to set up the configuration for this microservice. Application
+expects *'.env'* file on root folder. The other option for configuration is to set up environment variables. They have
+precedence over *'.env'* file. An example config file can be found [here](example.env).
 
-```bash
-pip install foobar
-```
+### Startup
+You can run the microservice by running `main.go` file.
 
-## Requirements
-
-todo co vsetko treba mat spustene
-
-## Usage
-
-```python
-import foobar
-
-# returns 'words'
-foobar.pluralize('word')
-
-# returns 'geese'
-foobar.pluralize('goose')
-
-# returns 'phenomenon'
-foobar.singularize('phenomena')
-```
-
-## License
-
-[MIT](https://choosealicense.com/licenses/mit/)
+## How to use
+This microservice is used by *Process-service* microservice automatically.

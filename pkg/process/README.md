@@ -1,30 +1,26 @@
 # Process
+A microservice for process file management.
 
-Foobar is a Python library for dealing with word pluralization.
+## How to run
 
-## Installation
+### Requirements
+In order to fully run this microservice, you have to fulfill some **requirements**:
+1. Running instance of *MongoDB* database
+2. Running instance of *Dependency-management* microservice. See [README](../dependency-management/README.md).
+3. Running instance of *Process-storage* microservice. See [README](../process-storage/README.md).
 
-Use the package manager [pip](https://pip.pypa.io/en/stable/) to install foobar.
+### Configuration
+When you have the requirements fulfilled, you have to set up the configuration for this microservice. Application
+expects *'.env'* file on root folder. The other option for configuration is to set up environment variables. They have
+precedence over *'.env'* file. An example config file can be found [here](example.env).
 
-```bash
-pip install foobar
-```
+### Startup
+You can run the microservice by running `main.go` file or you can use the [Dockerfile](Dockerfile) to create container and 
+run it without any args.
 
-## Usage
+## How to use
+This microservice publishes API. To use this API we have created temporary client tool for development use. It can be
+found [here](utils/process_client.go).
 
-```python
-import foobar
-
-# returns 'words'
-foobar.pluralize('word')
-
-# returns 'geese'
-foobar.pluralize('goose')
-
-# returns 'phenomenon'
-foobar.singularize('phenomena')
-```
-
-## License
-
-[MIT](https://choosealicense.com/licenses/mit/)
+You must specify the `host` and `port` of `Process-service` in constants. Then you can run the file and use command-line
+menu to navigate.
