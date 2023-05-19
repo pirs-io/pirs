@@ -1399,7 +1399,6 @@
 					"pirs://myorg.mytenant.myproject.myid:1"
 					
 					if(deleteAll.value){							
-						def cases = findCases( {it.processIdentifier.eq("awdawdawd").and(it.dataSet.get("parent_id").value.eq(useCase.stringId))} )
 						def i = 0
 						cases.size().times {
 							def toRemoveService = cases.get(i++)
