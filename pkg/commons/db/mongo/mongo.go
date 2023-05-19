@@ -14,7 +14,7 @@ import (
 )
 
 type Database interface {
-	Collection(string) Collection
+	Collection(string, ...*options.CollectionOptions) Collection
 	Client() Client
 }
 
@@ -134,8 +134,8 @@ func (mc *mongoClient) Disconnect(ctx context.Context) error {
 	return mc.cl.Disconnect(ctx)
 }
 
-func (md *mongoDatabase) Collection(colName string) Collection {
-	collection := md.db.Collection(colName)
+func (md *mongoDatabase) Collection(colName string, opts ...*options.CollectionOptions) Collection {
+	collection := md.db.Collection(colName, opts...)
 	return &mongoCollection{coll: collection}
 }
 

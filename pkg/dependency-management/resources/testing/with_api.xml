@@ -1,0 +1,1711 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<document xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xsi:noNamespaceSchemaLocation="https://modeler.netgrif.com/petriflow_schema.xsd">
+	<id>car</id>
+	<initials>auto</initials>
+	<title>Auto</title>
+	<defaultRole>true</defaultRole>
+	<transitionRole>false</transitionRole>
+	<!-- TRANSACTIONS -->
+	<!-- ROLES -->
+	<role>
+		<id>system</id>
+		<title>System</title>
+	</role>
+	<role>
+		<id>director</id>
+		<title>Riaditeľ</title>
+	</role>
+	<role>
+		<id>dispatcher</id>
+		<title>Dispečer</title>
+	</role>
+	<role>
+		<id>mechanic</id>
+		<title>Mechanik</title>
+	</role>
+	<role>
+		<id>driver</id>
+		<title>Vodič</title>
+	</role>	
+	<roleRef>
+        <id>system</id>
+        <caseLogic>
+			<create>true</create>
+            <delete>true</delete>
+        </caseLogic>
+    </roleRef>
+	<roleRef>
+        <id>director</id>
+        <caseLogic>
+            <delete>true</delete>
+        </caseLogic>
+    </roleRef>
+	<roleRef>
+        <id>dispatcher</id>
+        <caseLogic>
+            <delete>true</delete>
+        </caseLogic>
+    </roleRef>
+	<roleRef>
+        <id>mechanic</id>
+        <caseLogic>
+            <delete>true</delete>
+        </caseLogic>
+    </roleRef>
+	<!-- DATA -->
+	<data type="text">
+		<id>brand</id>
+		<title>Značka</title>
+		<action trigger="set">
+			plateNumber: f.plate_number,
+			name: f.car_name,
+			brand: f.brand,
+			model: f.model;	
+			
+			//assignTask("update_case_title")
+			//finishTask("update_case_title")
+
+			def cases = findCases( {it.processIdentifier.eq("myid").and(it.dataSet.get("parent_id").value.eq(useCase.stringId))} )
+
+			def resultStr
+			
+			if(name.value == null || name.value.isEmpty()){
+				resultStr = plateNumber.value + " - " + brand.value + " " + model.value
+			}
+			else{
+				resultStr = plateNumber.value + " - " + name.value + " - " + brand.value + " " + model.value
+			}
+			
+			//changeCaseProperty "title" about {
+			//	resultStr
+			//}		
+		</action>
+	</data>
+	<data type="text">
+		<id>model</id>
+		<title>Model</title>
+	</data>
+	<data type="text">
+		<id>vin</id>
+		<title>VIN</title>
+		<valid>regex([0-9a-zA-Z]{17})</valid>
+	</data>
+	<data type="text">
+		<id>engine</id>
+		<title>Motor</title>
+	</data>
+	<data type="text">
+		<id>plate_number</id>
+		<title>EČV</title>
+	</data>
+	<data type="text">
+		<id>car_owner</id>
+		<title>Majiteľ</title>
+	</data>
+	<data type="number">
+		<id>year_of_production</id>
+		<title>Rok výroby</title>
+	</data>
+	<data type="text">
+		<id>car_name</id>
+		<title>Názov auta</title>
+	</data>
+	<data type="number">
+		<id>mileage</id>
+		<title>Počet kilometrov</title>
+		<action trigger="set">
+			mileageDateChange: f.mileage_date_change;
+			
+			change mileageDateChange value{ java.time.LocalDate.now() }			
+		</action>
+		<init>0</init>
+	</data>
+	<data type="date">
+		<id>creation_date</id>
+		<title>Dátum vytvorenia auta</title>
+	</data>
+	<data type="date">
+		<id>mileage_date_change</id>
+		<title>Dátum zmeny počtu kilometrov</title>
+	</data>
+	<data type="date">
+		<id>carinfo_date_change</id>
+		<title>Dátum zmeny informácií</title>
+	</data>
+	<data type="date">
+		<id>stk_expiration_date</id>
+		<title>Dátum platnosti STK do</title>
+	</data>
+	<data type="date">
+		<id>last_oil_change_date</id>
+		<title>Dátum poslednej výmeny oleja</title>
+	</data>
+	<data type="number">
+		<id>last_oil_change_mileage</id>
+		<title>Poslednej výmena oleja pri km</title>
+	</data>
+	<data type="enumeration">
+		<id>owner_category</id>
+		<title>Typ majiteľa</title>
+		<values>Firemné</values>
+		<values>Cudzie</values>
+	</data>
+	<data type="fileList">
+		<id>car_photo</id>
+		<title>Foto auta</title>
+	</data>
+	<data type="taskRef">
+		<id>servis_creation</id>
+		<title>Vytvorenie servisného záznamu</title>
+	</data>
+	<data type="text">
+		<id>status</id>
+		<title>Stav</title>
+	</data>
+	<data type="text">
+		<id>accept_removal</id>
+		<title>Potvrdenie vymazania</title>
+		<init>Potvrď vymazanie</init>
+	</data>
+	<data type="number">
+		<id>count_services</id>
+		<title>Počítadlo servisných záznamov</title>
+		<init>0</init>
+	</data>
+	<data type="boolean">
+		<id>delete_all_services</id>
+		<title>Vymazať aj všetky servisné záznamy?</title>
+	</data>
+	<data type="enumeration">
+		<id>history_plate_number</id>
+		<title>História EČV</title>
+	</data>
+	<data type="enumeration">
+		<id>status_history</id>
+		<title>História stavov</title>
+	</data>
+	<data type="boolean">
+		<id>event_from_outside</id>
+		<title>Had the event happened outside? </title>
+		<init>false</init>
+	</data>
+	<data type="boolean">
+		<id>oil_notification</id>
+		<title>Notifikovať výmenu oleja?</title>
+		<init>true</init>
+	</data>
+	<data type="boolean">
+		<id>stk_notification</id>
+		<title>Notifikovať STK?</title>
+		<init>true</init>
+	</data>	
+	<data type="number">
+		<id>oil_change_interval_km</id>
+		<title>Interval výmeny oleja v kilometroch [km]</title>
+		<init>15000</init>
+	</data>
+	<data type="number">
+		<id>oil_notify_in_km</id>
+		<title>Notifikovať x km pred intervalom výmeny oleja</title>
+		<init>1000</init>
+	</data>
+	<data type="number">
+		<id>oil_change_interval_months</id>
+		<title>Interval výmeny oleja v mesiacoch</title>
+		<init>12</init>
+	</data>
+	<data type="boolean">
+		<id>show_more_info</id>
+		<title>Rozšírené</title>
+		<init>false</init>
+	</data>
+	<data type="text">
+		<id>visual_id</id>
+		<title>ID</title>
+	</data>
+	<!-- I18NS -->
+	<!-- TRANSITIONS -->
+	<transition>
+		<id>7</id>
+		<x>580</x>
+		<y>540</y>
+		<layout>
+			<cols>4</cols>
+			<offset>0</offset>
+		</layout>
+		<label>Vytvorenie záznamu</label>
+		<roleRef>
+			<id>system</id>
+			<logic>
+				<perform>true</perform>
+				<delegate>true</delegate>
+				<view>true</view>
+			</logic>
+		</roleRef>
+		<dataGroup>
+			<layout>grid</layout>
+			<id>DataGroup_0</id>
+			<dataRef>
+				<id>car_photo</id>
+				<logic>
+					<behavior>editable</behavior>
+				</logic>
+				<layout>
+					<x>0</x>
+					<y>0</y>
+					<rows>1</rows>
+					<cols>1</cols>
+					<offset>0</offset>
+					<template>material</template>
+					<appearance></appearance>
+				</layout>
+			</dataRef>
+			<dataRef>
+				<id>brand</id>
+				<logic>
+					<behavior>editable</behavior>
+					<behavior>required</behavior>
+				</logic>
+				<layout>
+					<x>1</x>
+					<y>0</y>
+					<rows>1</rows>
+					<cols>1</cols>
+					<offset>0</offset>
+					<template>material</template>
+					<appearance>outline</appearance>
+				</layout>
+			</dataRef>
+			<dataRef>
+				<id>model</id>
+				<logic>
+					<behavior>editable</behavior>
+					<behavior>required</behavior>
+				</logic>
+				<layout>
+					<x>2</x>
+					<y>0</y>
+					<rows>1</rows>
+					<cols>1</cols>
+					<offset>0</offset>
+					<template>material</template>
+					<appearance>outline</appearance>
+				</layout>
+			</dataRef>
+			<dataRef>
+				<id>year_of_production</id>
+				<logic>
+					<behavior>editable</behavior>
+				</logic>
+				<layout>
+					<x>3</x>
+					<y>0</y>
+					<rows>1</rows>
+					<cols>1</cols>
+					<offset>0</offset>
+					<template>material</template>
+					<appearance>outline</appearance>
+				</layout>
+			</dataRef>
+			<dataRef>
+				<id>car_name</id>
+				<logic>
+					<behavior>editable</behavior>
+				</logic>
+				<layout>
+					<x>0</x>
+					<y>1</y>
+					<rows>1</rows>
+					<cols>1</cols>
+					<offset>0</offset>
+					<template>material</template>
+					<appearance>outline</appearance>
+				</layout>
+			</dataRef>
+			<dataRef>
+				<id>plate_number</id>
+				<logic>
+					<behavior>editable</behavior>
+					<behavior>required</behavior>
+				</logic>
+				<layout>
+					<x>1</x>
+					<y>1</y>
+					<rows>1</rows>
+					<cols>1</cols>
+					<offset>0</offset>
+					<template>material</template>
+					<appearance>outline</appearance>
+				</layout>
+			</dataRef>
+			<dataRef>
+				<id>engine</id>
+				<logic>
+					<behavior>editable</behavior>
+				</logic>
+				<layout>
+					<x>2</x>
+					<y>1</y>
+					<rows>1</rows>
+					<cols>1</cols>
+					<offset>0</offset>
+					<template>material</template>
+					<appearance>outline</appearance>
+				</layout>
+			</dataRef>
+			<dataRef>
+				<id>mileage</id>
+				<logic>
+					<behavior>editable</behavior>
+					<behavior>required</behavior>
+				</logic>
+				<layout>
+					<x>3</x>
+					<y>1</y>
+					<rows>1</rows>
+					<cols>1</cols>
+					<offset>0</offset>
+					<template>material</template>
+					<appearance>outline</appearance>
+				</layout>
+			</dataRef>
+			<dataRef>
+				<id>vin</id>
+				<logic>
+					<behavior>editable</behavior>
+				</logic>
+				<layout>
+					<x>0</x>
+					<y>2</y>
+					<rows>1</rows>
+					<cols>1</cols>
+					<offset>0</offset>
+					<template>material</template>
+					<appearance>outline</appearance>
+				</layout>
+			</dataRef>
+			<dataRef>
+				<id>car_owner</id>
+				<logic>
+					<behavior>editable</behavior>
+				</logic>
+				<layout>
+					<x>1</x>
+					<y>2</y>
+					<rows>1</rows>
+					<cols>1</cols>
+					<offset>0</offset>
+					<template>material</template>
+					<appearance>outline</appearance>
+				</layout>
+			</dataRef>
+			<dataRef>
+				<id>owner_category</id>
+				<logic>
+					<behavior>editable</behavior>
+					<behavior>required</behavior>
+				</logic>
+				<layout>
+					<x>2</x>
+					<y>2</y>
+					<rows>1</rows>
+					<cols>1</cols>
+					<offset>0</offset>
+					<template>material</template>
+					<appearance>outline</appearance>
+				</layout>
+			</dataRef>
+			<dataRef>
+				<id>stk_expiration_date</id>
+				<logic>
+					<behavior>editable</behavior>
+				</logic>
+				<layout>
+					<x>3</x>
+					<y>2</y>
+					<rows>1</rows>
+					<cols>1</cols>
+					<offset>0</offset>
+					<template>material</template>
+					<appearance>outline</appearance>
+				</layout>
+			</dataRef>
+		</dataGroup>
+	</transition>
+	<transition>
+		<id>show</id>
+		<x>433</x>
+		<y>421</y>
+		<layout>
+			<offset>0</offset>
+		</layout>
+		<label>Zobrazenie informácií</label>
+		<assignPolicy>auto</assignPolicy>
+		<roleRef>
+			<id>system</id>
+			<logic>
+				<perform>true</perform>
+				<delegate>true</delegate>
+				<view>true</view>
+			</logic>
+		</roleRef>
+		<roleRef>
+			<id>director</id>
+			<logic>
+				<perform>true</perform>
+				<view>true</view>
+			</logic>
+		</roleRef>
+		<roleRef>
+			<id>dispatcher</id>
+			<logic>
+				<perform>true</perform>
+				<view>true</view>
+			</logic>
+		</roleRef>
+		<roleRef>
+			<id>mechanic</id>
+			<logic>
+				<perform>true</perform>
+				<view>true</view>
+			</logic>
+		</roleRef>
+		<roleRef>
+			<id>driver</id>
+			<logic>
+				<perform>true</perform>
+				<view>true</view>
+			</logic>
+		</roleRef>
+		<dataGroup>
+			<layout>grid</layout>
+			<id>DataGroup_1</id>
+			<dataRef>
+				<id>car_photo</id>
+				<logic>
+					<behavior>visible</behavior>
+				</logic>
+				<layout>
+					<x>0</x>
+					<y>0</y>
+					<rows>1</rows>
+					<cols>1</cols>
+					<offset>0</offset>
+					<template>material</template>
+					<appearance></appearance>
+				</layout>
+			</dataRef>
+			<dataRef>
+				<id>brand</id>
+				<logic>
+					<behavior>visible</behavior>
+				</logic>
+				<layout>
+					<x>1</x>
+					<y>0</y>
+					<rows>1</rows>
+					<cols>1</cols>
+					<offset>0</offset>
+					<template>material</template>
+					<appearance>outline</appearance>
+				</layout>
+			</dataRef>
+			<dataRef>
+				<id>model</id>
+				<logic>
+					<behavior>visible</behavior>
+				</logic>
+				<layout>
+					<x>2</x>
+					<y>0</y>
+					<rows>1</rows>
+					<cols>1</cols>
+					<offset>0</offset>
+					<template>material</template>
+					<appearance>outline</appearance>
+				</layout>
+			</dataRef>
+			<dataRef>
+				<id>year_of_production</id>
+				<logic>
+					<behavior>visible</behavior>
+				</logic>
+				<layout>
+					<x>3</x>
+					<y>0</y>
+					<rows>1</rows>
+					<cols>1</cols>
+					<offset>0</offset>
+					<template>material</template>
+					<appearance>outline</appearance>
+				</layout>
+			</dataRef>
+			<dataRef>
+				<id>car_name</id>
+				<logic>
+					<behavior>visible</behavior>
+				</logic>
+				<layout>
+					<x>0</x>
+					<y>1</y>
+					<rows>1</rows>
+					<cols>1</cols>
+					<offset>0</offset>
+					<template>material</template>
+					<appearance>outline</appearance>
+				</layout>
+			</dataRef>
+			<dataRef>
+				<id>plate_number</id>
+				<logic>
+					<behavior>visible</behavior>
+				</logic>
+				<layout>
+					<x>1</x>
+					<y>1</y>
+					<rows>1</rows>
+					<cols>1</cols>
+					<offset>0</offset>
+					<template>material</template>
+					<appearance>outline</appearance>
+				</layout>
+			</dataRef>			
+			<dataRef>
+				<id>engine</id>
+				<logic>
+					<behavior>visible</behavior>
+				</logic>
+				<layout>
+					<x>2</x>
+					<y>1</y>
+					<rows>1</rows>
+					<cols>1</cols>
+					<offset>0</offset>
+					<template>material</template>
+					<appearance>outline</appearance>
+				</layout>
+			</dataRef>
+			<dataRef>
+				<id>mileage</id>
+				<logic>
+					<behavior>visible</behavior>
+				</logic>
+				<layout>
+					<x>3</x>
+					<y>1</y>
+					<rows>1</rows>
+					<cols>1</cols>
+					<offset>0</offset>
+					<template>material</template>
+					<appearance>outline</appearance>
+				</layout>
+			</dataRef>
+			<dataRef>
+				<id>vin</id>
+				<logic>
+					<behavior>visible</behavior>
+				</logic>
+				<layout>
+					<x>0</x>
+					<y>2</y>
+					<rows>1</rows>
+					<cols>1</cols>
+					<offset>0</offset>
+					<template>material</template>
+					<appearance>outline</appearance>
+				</layout>
+			</dataRef>			
+			<dataRef>
+				<id>owner_category</id>
+				<logic>
+					<behavior>visible</behavior>
+				</logic>
+				<layout>
+					<x>1</x>
+					<y>2</y>
+					<rows>1</rows>
+					<cols>1</cols>
+					<offset>0</offset>
+					<template>material</template>
+					<appearance>outline</appearance>
+				</layout>
+			</dataRef>
+			<dataRef>
+				<id>show_more_info</id>
+				<logic>
+					<behavior>editable</behavior>
+					<action trigger="set">
+						thisTask: t.show,
+						btn: f.this,
+						id: f.visual_id,
+						creationDate: f.creation_date,
+						carInfoChangeDate: f.carinfo_date_change,
+						mileageChangeDate: f.mileage_date_change,
+						stkExpirationDate: f.stk_expiration_date,
+						lastOilChangeDate: f.last_oil_change_date,
+						lastOilChangeMileage: f.last_oil_change_mileage,
+						status: f.status,
+						statusHistory: f.status_history,
+						plateNumberHistory: f.history_plate_number,
+						carOwner: f.car_owner,
+						countServices: f.count_services;
+
+
+						make id, visible on thisTask when { btn.value }
+						make id, hidden on thisTask when { !btn.value }	
+						
+						make creationDate, visible on thisTask when { btn.value }
+						make creationDate, hidden on thisTask when { !btn.value }	
+
+						make carInfoChangeDate, visible on thisTask when { btn.value }
+						make carInfoChangeDate, hidden on thisTask when { !btn.value }
+						
+						make mileageChangeDate, visible on thisTask when { btn.value }
+						make mileageChangeDate, hidden on thisTask when { !btn.value }
+						
+						make stkExpirationDate, visible on thisTask when { btn.value }
+						make stkExpirationDate, hidden on thisTask when { !btn.value }
+						
+						make lastOilChangeDate, visible on thisTask when { btn.value }
+						make lastOilChangeDate, hidden on thisTask when { !btn.value }
+						
+						make lastOilChangeMileage, visible on thisTask when { btn.value }
+						make lastOilChangeMileage, hidden on thisTask when { !btn.value }
+						
+						make status, visible on thisTask when { btn.value }
+						make status, hidden on thisTask when { !btn.value }
+
+
+						make statusHistory, editable on thisTask when { btn.value }
+						make statusHistory, hidden on thisTask when { !btn.value }
+						
+						make plateNumberHistory, editable on thisTask when { btn.value }
+						make plateNumberHistory, hidden on thisTask when { !btn.value }
+						
+						make carOwner, visible on thisTask when { btn.value }
+						make carOwner, hidden on thisTask when { !btn.value }
+						
+						make countServices, visible on thisTask when { btn.value }
+						make countServices, hidden on thisTask when { !btn.value }
+					</action>
+				</logic>
+				<layout>
+					<x>2</x>
+					<y>2</y>
+					<rows>1</rows>
+					<cols>1</cols>
+					<offset>0</offset>
+					<template>material</template>
+					<appearance>outline</appearance>
+				</layout>
+			</dataRef>
+		</dataGroup>
+		<dataGroup>
+			<id>DataGroup_0</id>
+			<layout>grid</layout>
+			<dataRef>
+				<id>visual_id</id>
+				<logic>
+					<behavior>hidden</behavior>
+				</logic>
+				<layout>
+					<x>0</x>
+					<y>0</y>
+					<rows>1</rows>
+					<cols>1</cols>
+					<offset>0</offset>
+					<template>material</template>
+					<appearance>outline</appearance>
+				</layout>
+			</dataRef>
+			<dataRef>
+				<id>status</id>
+				<logic>
+					<behavior>hidden</behavior>
+				</logic>
+				<layout>
+					<x>1</x>
+					<y>0</y>
+					<rows>1</rows>
+					<cols>1</cols>
+					<offset>0</offset>
+					<template>material</template>
+					<appearance>outline</appearance>
+				</layout>
+			</dataRef>
+			<dataRef>
+				<id>car_owner</id>
+				<logic>
+					<behavior>hidden</behavior>
+				</logic>
+				<layout>
+					<x>2</x>
+					<y>0</y>
+					<rows>1</rows>
+					<cols>1</cols>
+					<offset>0</offset>
+					<template>material</template>
+					<appearance>outline</appearance>
+				</layout>
+			</dataRef>
+			<dataRef>
+				<id>count_services</id>
+				<logic>
+					<behavior>hidden</behavior>
+				</logic>
+				<layout>
+					<x>3</x>
+					<y>0</y>
+					<rows>1</rows>
+					<cols>1</cols>
+					<offset>0</offset>
+					<template>material</template>
+					<appearance>outline</appearance>
+				</layout>
+			</dataRef>
+			<dataRef>
+				<id>status_history</id>
+				<logic>
+					<behavior>hidden</behavior>
+				</logic>
+				<layout>
+					<x>0</x>
+					<y>1</y>
+					<rows>1</rows>
+					<cols>2</cols>
+					<offset>0</offset>
+					<template>material</template>
+					<appearance>outline</appearance>
+				</layout>
+			</dataRef>
+			<dataRef>
+				<id>history_plate_number</id>
+				<logic>
+					<behavior>hidden</behavior>
+				</logic>
+				<layout>
+					<x>2</x>
+					<y>1</y>
+					<rows>1</rows>
+					<cols>2</cols>
+					<offset>0</offset>
+					<template>material</template>
+					<appearance>outline</appearance>
+				</layout>
+			</dataRef>
+			<dataRef>
+				<id>creation_date</id>
+				<logic>
+					<behavior>hidden</behavior>
+				</logic>
+				<layout>
+					<x>0</x>
+					<y>2</y>
+					<rows>1</rows>
+					<cols>1</cols>
+					<offset>0</offset>
+					<template>material</template>
+					<appearance>outline</appearance>
+				</layout>
+			</dataRef>
+			<dataRef>
+				<id>carinfo_date_change</id>
+				<logic>
+					<behavior>hidden</behavior>
+				</logic>
+				<layout>
+					<x>1</x>
+					<y>2</y>
+					<rows>1</rows>
+					<cols>1</cols>
+					<offset>0</offset>
+					<template>material</template>
+					<appearance>outline</appearance>
+				</layout>
+			</dataRef>
+			<dataRef>
+				<id>mileage_date_change</id>
+				<logic>
+					<behavior>hidden</behavior>
+				</logic>
+				<layout>
+					<x>2</x>
+					<y>2</y>
+					<rows>1</rows>
+					<cols>1</cols>
+					<offset>0</offset>
+					<template>material</template>
+					<appearance>outline</appearance>
+				</layout>
+			</dataRef>
+			<dataRef>
+				<id>stk_expiration_date</id>
+				<logic>
+					<behavior>hidden</behavior>
+				</logic>
+				<layout>
+					<x>0</x>
+					<y>3</y>
+					<rows>1</rows>
+					<cols>1</cols>
+					<offset>0</offset>
+					<template>material</template>
+					<appearance>outline</appearance>
+				</layout>
+			</dataRef>
+			<dataRef>
+				<id>last_oil_change_date</id>
+				<logic>
+					<behavior>hidden</behavior>
+				</logic>
+				<layout>
+					<x>1</x>
+					<y>3</y>
+					<rows>1</rows>
+					<cols>1</cols>
+					<offset>0</offset>
+					<template>material</template>
+					<appearance>outline</appearance>
+				</layout>
+			</dataRef>
+			<dataRef>
+				<id>last_oil_change_mileage</id>
+				<logic>
+					<behavior>hidden</behavior>
+				</logic>
+				<layout>
+					<x>2</x>
+					<y>3</y>
+					<rows>1</rows>
+					<cols>1</cols>
+					<offset>0</offset>
+					<template>material</template>
+					<appearance>outline</appearance>
+				</layout>
+			</dataRef>
+		</dataGroup>
+	</transition>
+	<transition>
+		<id>18</id>
+		<x>789</x>
+		<y>400</y>
+		<layout>
+			<offset>0</offset>
+		</layout>
+		<label>Upravenie informácií</label>
+		<roleRef>
+			<id>system</id>
+			<logic>
+				<perform>true</perform>
+				<delegate>true</delegate>
+				<view>true</view>
+			</logic>
+		</roleRef>
+		<roleRef>
+			<id>director</id>
+			<logic>
+				<perform>true</perform>
+				<view>true</view>
+			</logic>
+		</roleRef>
+		<roleRef>
+			<id>dispatcher</id>
+			<logic>
+				<perform>true</perform>
+				<view>true</view>
+			</logic>
+		</roleRef>
+		<roleRef>
+			<id>mechanic</id>
+			<logic>
+				<perform>true</perform>
+				<view>true</view>
+			</logic>
+		</roleRef>
+		<dataGroup>
+			<layout>grid</layout>
+			<id>DataGroup_1</id>
+			<dataRef>
+				<id>car_photo</id>
+				<logic>
+					<behavior>editable</behavior>
+				</logic>
+				<layout>
+					<x>0</x>
+					<y>0</y>
+					<rows>1</rows>
+					<cols>1</cols>
+					<offset>0</offset>
+					<template>material</template>
+					<appearance>outline</appearance>
+				</layout>
+			</dataRef>
+			<dataRef>
+				<id>brand</id>
+				<logic>
+					<behavior>editable</behavior>
+					<behavior>required</behavior>
+				</logic>
+				<layout>
+					<x>1</x>
+					<y>0</y>
+					<rows>1</rows>
+					<cols>1</cols>
+					<offset>0</offset>
+					<template>material</template>
+					<appearance>outline</appearance>
+				</layout>
+			</dataRef>
+			<dataRef>
+				<id>model</id>
+				<logic>
+					<behavior>editable</behavior>
+					<behavior>required</behavior>
+				</logic>
+				<layout>
+					<x>2</x>
+					<y>0</y>
+					<rows>1</rows>
+					<cols>1</cols>
+					<offset>0</offset>
+					<template>material</template>
+					<appearance>outline</appearance>
+				</layout>
+			</dataRef>
+			<dataRef>
+				<id>year_of_production</id>
+				<logic>
+					<behavior>editable</behavior>
+				</logic>
+				<layout>
+					<x>3</x>
+					<y>0</y>
+					<rows>1</rows>
+					<cols>1</cols>
+					<offset>0</offset>
+					<template>material</template>
+					<appearance>outline</appearance>
+				</layout>
+			</dataRef>
+			<dataRef>
+				<id>car_name</id>
+				<logic>
+					<behavior>editable</behavior>
+				</logic>
+				<layout>
+					<x>0</x>
+					<y>1</y>
+					<rows>1</rows>
+					<cols>1</cols>
+					<offset>0</offset>
+					<template>material</template>
+					<appearance>outline</appearance>
+				</layout>
+			</dataRef>
+			<dataRef>
+				<id>plate_number</id>
+				<logic>
+					<behavior>editable</behavior>
+					<behavior>required</behavior>
+				</logic>
+				<layout>
+					<x>1</x>
+					<y>1</y>
+					<rows>1</rows>
+					<cols>1</cols>
+					<offset>0</offset>
+					<template>material</template>
+					<appearance>outline</appearance>
+				</layout>
+			</dataRef>
+			<dataRef>
+				<id>engine</id>
+				<logic>
+					<behavior>editable</behavior>
+				</logic>
+				<layout>
+					<x>2</x>
+					<y>1</y>
+					<rows>1</rows>
+					<cols>1</cols>
+					<offset>0</offset>
+					<template>material</template>
+					<appearance>outline</appearance>
+				</layout>
+			</dataRef>
+			<dataRef>
+				<id>mileage</id>
+				<logic>
+					<behavior>editable</behavior>
+					<behavior>required</behavior>
+				</logic>
+				<layout>
+					<x>3</x>
+					<y>1</y>
+					<rows>1</rows>
+					<cols>1</cols>
+					<offset>0</offset>
+					<template>material</template>
+					<appearance>outline</appearance>
+				</layout>
+			</dataRef>
+			<dataRef>
+				<id>vin</id>
+				<logic>
+					<behavior>editable</behavior>
+				</logic>
+				<layout>
+					<x>0</x>
+					<y>2</y>
+					<rows>1</rows>
+					<cols>1</cols>
+					<offset>0</offset>
+					<template>material</template>
+					<appearance>outline</appearance>
+				</layout>
+			</dataRef>
+			<dataRef>
+				<id>owner_category</id>
+				<logic>
+					<behavior>editable</behavior>
+					<behavior>required</behavior>
+				</logic>
+				<layout>
+					<x>1</x>
+					<y>2</y>
+					<rows>1</rows>
+					<cols>1</cols>
+					<offset>0</offset>
+					<template>material</template>
+					<appearance>outline</appearance>
+				</layout>
+			</dataRef>
+			<dataRef>
+				<id>car_owner</id>
+				<logic>
+					<behavior>editable</behavior>
+				</logic>
+				<layout>
+					<x>2</x>
+					<y>2</y>
+					<rows>1</rows>
+					<cols>1</cols>
+					<offset>0</offset>
+					<template>material</template>
+					<appearance>outline</appearance>
+				</layout>
+			</dataRef>
+			<dataRef>
+				<id>stk_expiration_date</id>
+				<logic>
+					<behavior>editable</behavior>
+				</logic>
+				<layout>
+					<x>3</x>
+					<y>2</y>
+					<rows>1</rows>
+					<cols>1</cols>
+					<offset>0</offset>
+					<template>material</template>
+					<appearance>outline</appearance>
+				</layout>
+			</dataRef>
+			<dataRef>
+				<id>last_oil_change_date</id>
+				<logic>
+					<behavior>editable</behavior>
+				</logic>
+				<layout>
+					<x>0</x>
+					<y>3</y>
+					<rows>1</rows>
+					<cols>1</cols>
+					<offset>0</offset>
+					<template>material</template>
+					<appearance>outline</appearance>
+				</layout>
+			</dataRef>
+			<dataRef>
+				<id>last_oil_change_mileage</id>
+				<logic>
+					<behavior>editable</behavior>
+				</logic>
+				<layout>
+					<x>1</x>
+					<y>3</y>
+					<rows>1</rows>
+					<cols>1</cols>
+					<offset>0</offset>
+					<template>material</template>
+					<appearance>outline</appearance>
+				</layout>
+			</dataRef>
+		</dataGroup>
+	</transition>
+	<transition>
+		<id>20</id>
+		<x>1051</x>
+		<y>534</y>
+		<layout>
+			<offset>0</offset>
+		</layout>
+		<label>Vytvorenie servisného záznamu</label>
+		<assignPolicy>auto</assignPolicy>
+		<roleRef>
+			<id>system</id>
+			<logic>
+				<perform>true</perform>
+				<delegate>true</delegate>
+				<view>true</view>
+			</logic>
+		</roleRef>
+		<roleRef>
+			<id>director</id>
+			<logic>
+				<perform>true</perform>
+				<view>true</view>
+			</logic>
+		</roleRef>
+		<roleRef>
+			<id>mechanic</id>
+			<logic>
+				<perform>true</perform>
+				<view>true</view>
+			</logic>
+		</roleRef>
+		<dataGroup>
+			<id>DataGroup_0</id>
+			<dataRef>
+				<id>count_services</id>
+				<logic>
+					<behavior>hidden</behavior>
+				</logic>
+				<layout>
+					<x>0</x>
+					<y>0</y>
+					<rows>10</rows>
+					<cols>4</cols>
+					<offset>0</offset>
+					<template>material</template>
+					<appearance>outline</appearance>
+				</layout>
+			</dataRef>
+			<dataRef>
+				<id>servis_creation</id>
+				<logic>
+					<behavior>editable</behavior>
+				</logic>
+				<layout>
+					<x>0</x>
+					<y>0</y>
+					<rows>10</rows>
+					<cols>4</cols>
+					<offset>0</offset>
+					<template>material</template>
+					<appearance>outline</appearance>
+				</layout>
+			</dataRef>
+			<dataRef>
+				<id>event_from_outside</id>
+				<logic>
+					<behavior>hidden</behavior>
+				</logic>
+				<layout>
+					<x>0</x>
+					<y>0</y>
+					<rows>10</rows>
+					<cols>4</cols>
+					<offset>0</offset>
+					<template>material</template>
+					<appearance>outline</appearance>
+				</layout>
+			</dataRef>
+		</dataGroup>
+	</transition>
+	<transition>
+		<id>33</id>
+		<x>953</x>
+		<y>783</y>
+		<layout>
+			<offset>0</offset>
+		</layout>
+		<label>Deaktivovanie záznamu</label>
+		<assignPolicy>auto</assignPolicy>
+		<roleRef>
+			<id>system</id>
+			<logic>
+				<perform>true</perform>
+				<delegate>true</delegate>
+				<view>true</view>
+			</logic>
+		</roleRef>
+		<roleRef>
+			<id>director</id>
+			<logic>
+				<perform>true</perform>
+				<view>true</view>
+			</logic>
+		</roleRef>
+		<roleRef>
+			<id>dispatcher</id>
+			<logic>
+				<perform>true</perform>
+				<view>true</view>
+			</logic>
+		</roleRef>
+		<roleRef>
+			<id>mechanic</id>
+			<logic>
+				<perform>true</perform>
+				<view>true</view>
+			</logic>
+		</roleRef>
+	</transition>
+	<transition>
+		<id>35</id>
+		<x>769</x>
+		<y>691</y>
+		<layout>
+			<offset>0</offset>
+		</layout>
+		<label>Aktivovanie záznamu</label>
+		<assignPolicy>auto</assignPolicy>
+		<roleRef>
+			<id>system</id>
+			<logic>
+				<perform>true</perform>
+				<delegate>true</delegate>
+				<view>true</view>
+			</logic>
+		</roleRef>
+		<roleRef>
+			<id>director</id>
+			<logic>
+				<perform>true</perform>
+				<view>true</view>
+			</logic>
+		</roleRef>
+		<roleRef>
+			<id>dispatcher</id>
+			<logic>
+				<perform>true</perform>
+				<view>true</view>
+			</logic>
+		</roleRef>
+		<roleRef>
+			<id>mechanic</id>
+			<logic>
+				<perform>true</perform>
+				<view>true</view>
+			</logic>
+		</roleRef>
+	</transition>
+	<transition>
+		<id>46</id>
+		<x>579</x>
+		<y>307</y>
+		<layout>
+			<offset>0</offset>
+		</layout>
+		<label>Vymazanie záznamu</label>
+		<assignPolicy>auto</assignPolicy>
+		<roleRef>
+			<id>system</id>
+			<logic>
+				<perform>true</perform>
+				<delegate>true</delegate>
+				<view>true</view>
+			</logic>
+		</roleRef>
+		<roleRef>
+			<id>director</id>
+			<logic>
+				<perform>true</perform>
+				<view>true</view>
+			</logic>
+		</roleRef>
+		<roleRef>
+			<id>dispatcher</id>
+			<logic>
+				<perform>true</perform>
+				<view>true</view>
+			</logic>
+		</roleRef>
+		<roleRef>
+			<id>mechanic</id>
+			<logic>
+				<perform>true</perform>
+				<view>true</view>
+			</logic>
+		</roleRef>
+		<dataGroup>
+			<layout>grid</layout>
+			<id>DataGroup_0</id>
+			<dataRef>
+				<id>accept_removal</id>
+				<logic>
+					<behavior>visible</behavior>
+				</logic>
+				<layout>
+					<x>0</x>
+					<y>0</y>
+					<rows>1</rows>
+					<cols>1</cols>
+					<offset>0</offset>
+					<template>material</template>
+					<appearance>fill</appearance>
+				</layout>
+			</dataRef>
+			<dataRef>
+				<id>delete_all_services</id>
+				<logic>
+					<behavior>visible</behavior>
+				</logic>
+				<layout>
+					<x>1</x>
+					<y>0</y>
+					<rows>1</rows>
+					<cols>1</cols>
+					<offset>0</offset>
+					<template>material</template>
+					<appearance></appearance>
+				</layout>
+			</dataRef>
+		</dataGroup>
+		<event type="finish">
+			<id>46_finish</id>
+			<title>Potvrdiť vymazanie</title>
+			<actions phase="post">
+				<action>
+					taskref: f.servis_creation,
+					deleteAll: f.delete_all_services;
+					
+					if(taskref.value != null){ //mb this if is redundant
+						if(taskref.value != []){
+							def tmpTask = findTask({it._id.eq(new org.bson.types.ObjectId(taskref.value[0] as String))});
+							if(tmpTask != null){
+								def toRemoveService = findCase( { it._id.eq(tmpTask.caseId) } );
+								if(toRemoveService != null){
+									async.run{
+										workflowService.deleteCase(toRemoveService._id.toString());
+									}
+								}							
+							}
+						}												
+					}
+					
+					if(deleteAll.value){							
+						def cases = findCases( {it.processIdentifier.eq("myid").and(it.dataSet.get("parent_id").value.eq(useCase.stringId))} )
+						def cases = findCases( {it.processIdentifier.eq("myid").and(it.dataSet.get("parent_id").value.eq(useCase.stringId))} )
+						def i = 0
+						cases.size().times {
+							def toRemoveService = cases.get(i++)
+							
+							if(toRemoveService != null || toRemoveService.stringId != null){
+								async.run{
+									workflowService.deleteCase(toRemoveService._id.toString());
+								}
+							}					
+						}						
+					}
+					
+					def toRemoveCar = findCase( { it._id.eq(useCase._id) } );	
+					if(toRemoveCar != null){
+						async.run{
+							workflowService.deleteCase(toRemoveCar._id.toString());
+						}
+					}									
+				</action>
+			</actions>
+		</event>
+	</transition>
+	<transition>
+		<id>63</id>
+		<x>957</x>
+		<y>409</y>
+		<layout>
+			<offset>0</offset>
+		</layout>
+		<label>Nastavenie notifikácií</label>
+		<roleRef>
+			<id>system</id>
+			<logic>
+				<perform>true</perform>
+				<delegate>true</delegate>
+				<view>true</view>
+			</logic>
+		</roleRef>
+		<roleRef>
+			<id>director</id>
+			<logic>
+				<perform>true</perform>
+				<view>true</view>
+			</logic>
+		</roleRef>
+		<roleRef>
+			<id>dispatcher</id>
+			<logic>
+				<perform>true</perform>
+				<view>true</view>
+			</logic>
+		</roleRef>
+		<roleRef>
+			<id>mechanic</id>
+			<logic>
+				<perform>true</perform>
+				<view>true</view>
+			</logic>
+		</roleRef>
+		<dataGroup>
+			<layout>grid</layout>
+			<id>DataGroup_0</id>
+			<dataRef>
+				<id>oil_change_interval_km</id>
+				<logic>
+					<behavior>editable</behavior>
+				</logic>
+				<layout>
+					<x>0</x>
+					<y>0</y>
+					<rows>1</rows>
+					<cols>1</cols>
+					<offset>0</offset>
+					<template>material</template>
+					<appearance>outline</appearance>
+				</layout>
+			</dataRef>
+			<dataRef>
+				<id>oil_notify_in_km</id>
+				<logic>
+					<behavior>editable</behavior>
+				</logic>
+				<layout>
+					<x>1</x>
+					<y>0</y>
+					<rows>1</rows>
+					<cols>1</cols>
+					<offset>0</offset>
+					<template>material</template>
+					<appearance>outline</appearance>
+				</layout>
+			</dataRef>
+			<dataRef>
+				<id>oil_change_interval_months</id>
+				<logic>
+					<behavior>editable</behavior>
+				</logic>
+				<layout>
+					<x>2</x>
+					<y>0</y>
+					<rows>1</rows>
+					<cols>1</cols>
+					<offset>0</offset>
+					<template>material</template>
+					<appearance>outline</appearance>
+				</layout>
+			</dataRef>
+			<dataRef>
+				<id>stk_notification</id>
+				<logic>
+					<behavior>editable</behavior>
+				</logic>
+				<layout>
+					<x>0</x>
+					<y>1</y>
+					<rows>1</rows>
+					<cols>1</cols>
+					<offset>0</offset>
+					<template>material</template>
+					<appearance>fill</appearance>
+				</layout>
+			</dataRef>
+			<dataRef>
+				<id>oil_notification</id>
+				<logic>
+					<behavior>editable</behavior>
+				</logic>
+				<layout>
+					<x>1</x>
+					<y>1</y>
+					<rows>1</rows>
+					<cols>1</cols>
+					<offset>0</offset>
+					<template>material</template>
+					<appearance></appearance>
+				</layout>
+			</dataRef>
+		</dataGroup>
+	</transition>
+	<transition>
+		<id>update_case_title</id>
+		<x>0</x>
+		<y>0</y>
+		<layout>
+			<offset>0</offset>
+		</layout>
+		<label>update_case_title</label>
+		<roleRef>
+			<id>system</id>
+			<logic>
+				<perform>true</perform>
+				<delegate>true</delegate>
+				<view>true</view>
+			</logic>
+		</roleRef>
+	</transition>
+	<!-- PLACES -->
+	<place>
+		<id>3</id>
+		<x>348</x>
+		<y>543</y>
+		<label>uninitialized</label>
+		<tokens>1</tokens>
+		<static>false</static>
+	</place>
+	<place>
+		<id>22</id>
+		<x>780</x>
+		<y>540</y>
+		<label>Záznam je aktívny</label>
+		<tokens>0</tokens>
+		<static>false</static>
+	</place>
+	<place>
+		<id>27</id>
+		<x>1291</x>
+		<y>626</y>
+		<label>Servisné záznamy</label>
+		<tokens>0</tokens>
+		<static>false</static>
+	</place>
+	<place>
+		<id>34</id>
+		<x>746</x>
+		<y>825</y>
+		<label>Záznam je neaktívny</label>
+		<tokens>0</tokens>
+		<static>false</static>
+	</place>
+	<place>
+		<id>44</id>
+		<x>583</x>
+		<y>416</y>
+		<label>Záznam existuje</label>
+		<tokens>0</tokens>
+		<static>false</static>
+	</place>
+	<place>
+		<id>60</id>
+		<x>580</x>
+		<y>188</y>
+		<label>Vymazané</label>
+		<tokens>0</tokens>
+		<static>false</static>
+	</place>
+	<!-- ARCS -->
+	<arc>
+		<id>10</id>
+		<type>regular</type>
+		<sourceId>3</sourceId>
+		<destinationId>7</destinationId>
+		<multiplicity>1</multiplicity>
+	</arc>
+	<arc>
+		<id>25</id>
+		<type>regular</type>
+		<sourceId>7</sourceId>
+		<destinationId>22</destinationId>
+		<multiplicity>1</multiplicity>
+	</arc>
+	<arc>
+		<id>26</id>
+		<type>read</type>
+		<sourceId>22</sourceId>
+		<destinationId>20</destinationId>
+		<multiplicity>1</multiplicity>
+	</arc>
+	<arc>
+		<id>28</id>
+		<type>regular</type>
+		<sourceId>20</sourceId>
+		<destinationId>27</destinationId>
+		<multiplicity>1</multiplicity>
+	</arc>
+	<arc>
+		<id>36</id>
+		<type>regular</type>
+		<sourceId>22</sourceId>
+		<destinationId>33</destinationId>
+		<multiplicity>1</multiplicity>
+	</arc>
+	<arc>
+		<id>37</id>
+		<type>regular</type>
+		<sourceId>33</sourceId>
+		<destinationId>34</destinationId>
+		<multiplicity>1</multiplicity>
+	</arc>
+	<arc>
+		<id>38</id>
+		<type>regular</type>
+		<sourceId>34</sourceId>
+		<destinationId>35</destinationId>
+		<multiplicity>1</multiplicity>
+	</arc>
+	<arc>
+		<id>39</id>
+		<type>regular</type>
+		<sourceId>35</sourceId>
+		<destinationId>22</destinationId>
+		<multiplicity>1</multiplicity>
+	</arc>
+	<arc>
+		<id>45</id>
+		<type>regular</type>
+		<sourceId>7</sourceId>
+		<destinationId>44</destinationId>
+		<multiplicity>1</multiplicity>
+	</arc>
+	<arc>
+		<id>47</id>
+		<type>regular</type>
+		<sourceId>44</sourceId>
+		<destinationId>46</destinationId>
+		<multiplicity>1</multiplicity>
+	</arc>
+	<arc>
+		<id>61</id>
+		<type>regular</type>
+		<sourceId>46</sourceId>
+		<destinationId>60</destinationId>
+		<multiplicity>1</multiplicity>
+	</arc>
+	<arc>
+		<id>62</id>
+		<type>read</type>
+		<sourceId>44</sourceId>
+		<destinationId>show</destinationId>
+		<multiplicity>1</multiplicity>
+	</arc>
+	<arc>
+		<id>64</id>
+		<type>read</type>
+		<sourceId>22</sourceId>
+		<destinationId>63</destinationId>
+		<multiplicity>1</multiplicity>
+	</arc>
+	<arc>
+		<id>65</id>
+		<type>regular</type>
+		<sourceId>22</sourceId>
+		<destinationId>18</destinationId>
+		<multiplicity>1</multiplicity>
+	</arc>
+	<arc>
+		<id>66</id>
+		<type>regular</type>
+		<sourceId>18</sourceId>
+		<destinationId>22</destinationId>
+		<multiplicity>1</multiplicity>
+	</arc>
+</document>

@@ -5,7 +5,7 @@ import (
 	"github.com/antchfx/xmlquery"
 	"github.com/gabriel-vasile/mimetype"
 	"pirs.io/commons"
-	"pirs.io/process/enums"
+	"pirs.io/commons/enums"
 	"pirs.io/process/metadata/determiner"
 	"pirs.io/process/validation/models"
 	"strings"

@@ -4,9 +4,8 @@ package config
 import (
 	"golang.org/x/net/context"
 	"pirs.io/commons"
+	"pirs.io/commons/db/mongo"
 	"pirs.io/commons/parsers"
-	"pirs.io/process/db/mongo"
-	metadataMongo "pirs.io/process/metadata/repository/mongo"
 	metadata "pirs.io/process/metadata/service"
 	"pirs.io/process/service"
 	validation "pirs.io/process/validation/service"
@@ -20,23 +19,26 @@ var (
 
 // A ProcessAppConfig contains loaded data from ENV config file
 type ProcessAppConfig struct {
-	GrpcIp                string `mapstructure:"GRPC_IP"`
-	GrpcPort              int    `mapstructure:"GRPC_PORT"`
-	UseGrpcReflection     bool   `mapstructure:"USE_GRPC_REFLECTION"`
-	UploadFileMaxSize     int    `mapstructure:"UPLOAD_FILE_MAX_SIZE"`
-	ChunkSize             int    `mapstructure:"CHUNK_SIZE"`
-	AllowedFileExtensions string `mapstructure:"ALLOWED_FILE_EXTENSIONS"`
-	MongoUri              string `mapstructure:"MONGO_URI"`
-	MongoName             string `mapstructure:"MONGO_NAME"`
-	MongoDrop             bool   `mapstructure:"MONGO_DROP"`
-	ContextTimeout        int    `mapstructure:"CONTEXT_TIMEOUT"`
-	MetadataCollection    string `mapstructure:"METADATA_COLLECTION"`
-	BasicMetadataCsv      string `mapstructure:"BASIC_METADATA_CSV"`
-	PetriflowMetadataCsv  string `mapstructure:"PETRIFLOW_METADATA_CSV"`
-	BPMNMetadataCsv       string `mapstructure:"BPMN_METADATA_CSV"`
-	IgnoreWrongExtension  bool   `mapstructure:"IGNORE_WRONG_EXTENSION"`
-	ProcessStoragePort    string `mapstructure:"PROCESS_STORAGE_PORT"`
-	ProcessStorageHost    string `mapstructure:"PROCESS_STORAGE_HOST"`
+	GrpcIp                   string `mapstructure:"GRPC_IP"`
+	GrpcPort                 int    `mapstructure:"GRPC_PORT"`
+	UseGrpcReflection        bool   `mapstructure:"USE_GRPC_REFLECTION"`
+	UploadFileMaxSize        int    `mapstructure:"UPLOAD_FILE_MAX_SIZE"`
+	ChunkSize                int    `mapstructure:"CHUNK_SIZE"`
+	StreamSeparator          string `mapstructure:"STREAM_SEPARATOR"`
+	AllowedFileExtensions    string `mapstructure:"ALLOWED_FILE_EXTENSIONS"`
+	MongoUri                 string `mapstructure:"MONGO_URI"`
+	MongoName                string `mapstructure:"MONGO_NAME"`
+	MongoDrop                bool   `mapstructure:"MONGO_DROP"`
+	ContextTimeout           int    `mapstructure:"CONTEXT_TIMEOUT"`
+	MetadataCollection       string `mapstructure:"METADATA_COLLECTION"`
+	BasicMetadataCsv         string `mapstructure:"BASIC_METADATA_CSV"`
+	PetriflowMetadataCsv     string `mapstructure:"PETRIFLOW_METADATA_CSV"`
+	BPMNMetadataCsv          string `mapstructure:"BPMN_METADATA_CSV"`
+	IgnoreWrongExtension     bool   `mapstructure:"IGNORE_WRONG_EXTENSION"`
+	ProcessStoragePort       string `mapstructure:"PROCESS_STORAGE_PORT"`
+	ProcessStorageHost       string `mapstructure:"PROCESS_STORAGE_HOST"`
+	DependencyManagementPort string `mapstructure:"DEPENDENCY_MANAGEMENT_PORT"`
+	DependencyManagementHost string `mapstructure:"DEPENDENCY_MANAGEMENT_HOST"`
 }
 
 func (p ProcessAppConfig) IsConfig() {}
@@ -98,7 +100,7 @@ func initMongoDatabase(conf ProcessAppConfig) mongo.Client {
 }
 
 func parseCustomMetadataMappingFromCsv(csvPath string) map[string]string {
-	csv := parsers.ReadCsvFile(csvPath)
+	csv := parsers.ReadCsvFile(csvPath, false)
 	mapping := map[string]string{}
 	for _, row := range csv {
 		mapping[row[0]] = row[1]
@@ -108,10 +110,10 @@ func parseCustomMetadataMappingFromCsv(csvPath string) map[string]string {
 
 func createApplicationContext(conf ProcessAppConfig) (appContext *ApplicationContext, err error) {
 	mongoClient := initMongoDatabase(conf)
-	metadataRepo := metadataMongo.NewMetadataRepository(mongoClient.Database(conf.MongoName, conf.MongoDrop), conf.MetadataCollection)
+	metadataRepo := mongo.NewMetadataRepository(mongoClient.Database(conf.MongoName, conf.MongoDrop), conf.MetadataCollection)
 	validationService := validation.NewValidationService(conf.AllowedFileExtensions, conf.IgnoreWrongExtension)
 	metadataService := metadata.NewMetadataService(
-		*metadataRepo,
+		metadataRepo,
 		time.Duration(conf.ContextTimeout)*time.Second,
 		parseCustomMetadataMappingFromCsv(conf.BasicMetadataCsv),
 		parseCustomMetadataMappingFromCsv(conf.PetriflowMetadataCsv),
@@ -122,15 +124,28 @@ func createApplicationContext(conf ProcessAppConfig) (appContext *ApplicationCon
 		log.Error().Msgf("Process-Storage service was not correctly initialized: %v", err)
 	}
 
+	dependencyService, err := service.NewDependencyService(
+		conf.DependencyManagementHost,
+		conf.DependencyManagementPort,
+		conf.StreamSeparator,
+		conf.ChunkSize,
+	)
+	if err != nil {
+		log.Error().Msgf("Dependency service was not correctly initialized: %v", err)
+	}
+
 	return &ApplicationContext{
 		ImportService: &service.ImportService{
 			ProcessStorageClient: storageService,
 			ValidationService:    validationService,
 			MetadataService:      metadataService,
+			DependencyService:    dependencyService,
+			MongoClient:          mongoClient,
 		},
 		DownloadService: &service.DownloadService{
 			ValidationService: validationService,
 			MetadataService:   metadataService,
+			DependencyService: dependencyService,
 		},
 	}, nil
 }

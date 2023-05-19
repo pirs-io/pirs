@@ -5,7 +5,7 @@ import (
 	"os"
 )
 
-func ReadCsvFile(filePath string) [][]string {
+func ReadCsvFile(filePath string, lazyQuotes bool) [][]string {
 	f, err := os.Open(filePath)
 	if err != nil {
 		// todo log
@@ -13,6 +13,7 @@ func ReadCsvFile(filePath string) [][]string {
 	defer f.Close()
 	csvReader := csv.NewReader(f)
 	csvReader.FieldsPerRecord = -1
+	csvReader.LazyQuotes = lazyQuotes
 	records, err := csvReader.ReadAll()
 	if err != nil {
 		// todo log

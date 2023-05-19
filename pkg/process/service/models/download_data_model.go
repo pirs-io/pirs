@@ -3,7 +3,7 @@ package models
 import (
 	"golang.org/x/net/context"
 	"google.golang.org/grpc/codes"
-	"pirs.io/process/domain"
+	"pirs.io/commons/domain"
 )
 
 // A DownloadRequestData holds parsed URI from GRPC request. It's created in GRPC server. To download process metadata,

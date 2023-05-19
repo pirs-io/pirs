@@ -5,20 +5,33 @@ import (
 	"fmt"
 	"go.mongodb.org/mongo-driver/bson"
 	"go.mongodb.org/mongo-driver/mongo/options"
-	"pirs.io/process/db/mongo"
-	"pirs.io/process/domain"
+	"go.mongodb.org/mongo-driver/mongo/readconcern"
+	"go.mongodb.org/mongo-driver/mongo/writeconcern"
+	"pirs.io/commons/domain"
 	"strings"
 )
 
+// A Repository is an interface for metadata repository.
+type Repository interface {
+	InsertOne(ctx context.Context, metadata *domain.Metadata) (interface{}, error)
+	FindNewestVersionByURI(ctx context.Context, uri string) (uint32, error)
+	FindNewestByURI(ctx context.Context, uri string) (domain.Metadata, error)
+	FindByURI(ctx context.Context, uri string) (domain.Metadata, error)
+	FindAllInPackage(ctx context.Context, packageUri string) ([]domain.Metadata, error)
+}
+
 // A MetadataRepository holds DB and Collection instances. It's initialized in config package.
 type MetadataRepository struct {
-	DB         mongo.Database
-	Collection mongo.Collection
+	DB         Database
+	Collection Collection
 }
 
 // NewMetadataRepository creates instance pointer of MetadataRepository
-func NewMetadataRepository(db mongo.Database, collectionName string) *MetadataRepository {
-	return &MetadataRepository{db, db.Collection(collectionName)}
+func NewMetadataRepository(db Database, collectionName string) *MetadataRepository {
+	wc := writeconcern.New(writeconcern.WMajority())
+	rc := readconcern.Majority()
+	collectionOpts := options.Collection().SetWriteConcern(wc).SetReadConcern(rc)
+	return &MetadataRepository{db, db.Collection(collectionName, collectionOpts)}
 }
 
 // InsertOne inserts given domain.Metadata into database. It returns ID if success. Otherwise, an error is returned.
@@ -58,6 +71,37 @@ func (m *MetadataRepository) FindNewestVersionByURI(ctx context.Context, uri str
 		return uint32(0), nil
 	} else {
 		return data[0].Version, nil
+	}
+}
+
+// FindNewestByURI finds the latest document of process based on given URI. Parameter uri corresponds
+// to uri_without_version in database. If success, the document from database is returned. Otherwise, empty document along
+// with error is returned.
+func (m *MetadataRepository) FindNewestByURI(ctx context.Context, uri string) (domain.Metadata, error) {
+	var data []domain.Metadata
+	opts := options.MergeFindOptions(
+		options.Find().SetLimit(1),
+		options.Find().SetSkip(0),
+		options.Find().SetSort(bson.D{{"created_at", -1}}),
+	)
+
+	cursor, err := m.Collection.Find(ctx, bson.M{"uri_without_version": uri}, opts)
+	if err != nil {
+		return domain.Metadata{}, err
+	}
+	if cursor == nil {
+		return domain.Metadata{}, fmt.Errorf("nil cursor value")
+	}
+
+	err = cursor.All(ctx, &data)
+	if err != nil {
+		return domain.Metadata{}, err
+	}
+
+	if len(data) == 0 {
+		return domain.Metadata{}, nil
+	} else {
+		return data[0], nil
 	}
 }
 

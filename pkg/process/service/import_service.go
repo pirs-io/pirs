@@ -1,8 +1,12 @@
 package service
 
 import (
+	"errors"
 	"go.mongodb.org/mongo-driver/bson/primitive"
+	"go.mongodb.org/mongo-driver/mongo"
 	"google.golang.org/grpc/codes"
+	mongoCommons "pirs.io/commons/db/mongo"
+	"pirs.io/commons/domain"
 	metadata "pirs.io/process/metadata/service"
 	"pirs.io/process/service/models"
 	valModels "pirs.io/process/validation/models"
@@ -14,6 +18,8 @@ type ImportService struct {
 	ProcessStorageClient *StorageService
 	ValidationService    *validation.ValidationService
 	MetadataService      *metadata.MetadataService
+	DependencyService    *DependencyService
+	MongoClient          mongoCommons.Client
 }
 
 // ImportProcesses runs in a separate goroutine. It's created from GRPC server endpoint method. It waits for requests
@@ -26,21 +32,31 @@ func (is *ImportService) ImportProcesses(forRequests <-chan models.ImportRequest
 		}
 	}
 
-	resourceChan := make(chan ResourceAdapter)
-	responseChan := make(chan error)
+	resourceChanSS := make(chan models.ResourceAdapter)
+	responseChanSS := make(chan error)
+	resourceChanDS := make(chan models.DetectResourceAdapter)
+	responseChanDS := make(chan models.ResponseAdapter)
 	isGoroutineRunning := false
 	defer func() {
-		close(resourceChan)
-		<-responseChan
+		close(resourceChanDS)
+		<-responseChanDS
+		close(resourceChanSS)
+		<-responseChanSS
 		close(forResponse)
 	}()
 
 	for req := range forRequests {
 		// must be inside loop because of context instance
 		if !isGoroutineRunning {
-			go is.ProcessStorageClient.SaveFiles(req.Ctx, resourceChan, responseChan)
+			go is.ProcessStorageClient.SaveFiles(req.Ctx, resourceChanSS, responseChanSS)
+			go is.DependencyService.Detect(req.Ctx, resourceChanDS, responseChanDS)
 			isGoroutineRunning = true
-			if <-responseChan != nil {
+
+			if (<-responseChanDS).Err != nil {
+				forResponse <- createResponse(codes.Unavailable)
+				return
+			}
+			if <-responseChanSS != nil {
 				forResponse <- createResponse(codes.Unavailable)
 				return
 			}
@@ -60,32 +76,70 @@ func (is *ImportService) ImportProcesses(forRequests <-chan models.ImportRequest
 			return
 		}
 
-		// check version
-		foundVersion := is.MetadataService.FindNewestVersionByURI(req.Ctx, m.URIWithoutVersion)
-		m.UpdateVersion(foundVersion + 1)
-
 		// resolve and save deps
-		// todo
-
-		// save file in process-storage
-		resource := ResourceAdapter{
-			Metadata: m,
-			FileData: req.ProcessData.Bytes(),
+		projectUri := m.GetProjectURI()
+		resourceChanDS <- models.DetectResourceAdapter{
+			ProcessType: m.ProcessType,
+			FileData:    req.ProcessData.Bytes(),
+			ProjectUri:  projectUri,
 		}
-		resourceChan <- resource
-		if <-responseChan != nil {
-			forResponse <- createResponse(codes.Aborted)
+		var currentDependencies []domain.NestedMetadata
+		for {
+			respDs := <-responseChanDS
+			if respDs.Err != nil {
+				forResponse <- createResponse(codes.Aborted)
+				return
+			}
+			if respDs.Metadata.ID == primitive.NilObjectID {
+				break
+			} else {
+				nested := respDs.Metadata.TransformToNestedMetadata()
+				currentDependencies = append(currentDependencies, *nested)
+			}
+		}
+		m.DependencyData = domain.DependencyMetadata{Dependencies: currentDependencies}
+
+		// transaction
+		callback := func(sessCtx mongo.SessionContext) (interface{}, error) {
+			// check version
+			foundVersion := is.MetadataService.FindNewestVersionByURI(req.Ctx, m.URIWithoutVersion)
+			m.UpdateVersion(foundVersion + 1)
+
+			// save file in process-storage
+			resource := models.ResourceAdapter{
+				Metadata: m,
+				FileData: req.ProcessData.Bytes(),
+			}
+			resourceChanSS <- resource
+			err := <-responseChanSS
+			if err != nil {
+				return nil, err
+			}
+
+			// save metadata
+			insertedID := is.MetadataService.InsertOne(req.Ctx, &m)
+			if insertedID == primitive.NilObjectID {
+				return nil, errors.New("could not insert document with URI: " + m.URI)
+			} else {
+				return nil, nil
+			}
+		}
+		sess, err := is.MongoClient.StartSession()
+		if err != nil {
+			forResponse <- createResponse(codes.Internal)
+			sess.EndSession(req.Ctx)
 			return
 		}
 
-		// save metadata
-		insertedID := is.MetadataService.InsertOne(req.Ctx, &m)
-		if insertedID == primitive.NilObjectID {
+		_, err = sess.WithTransaction(req.Ctx, callback)
+		if err != nil {
 			forResponse <- createResponse(codes.Internal)
+			sess.EndSession(req.Ctx)
 			return
 		} else {
 			forResponse <- createResponse(codes.OK)
 		}
+		sess.EndSession(req.Ctx)
 	}
 }
 

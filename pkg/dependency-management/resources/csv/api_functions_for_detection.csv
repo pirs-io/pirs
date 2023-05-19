@@ -1,0 +1,5 @@
+function,from,until
+createCase,(\",\"
+findCase,processIdentifier.eq(\",\"
+petriNetService.getNewestVersionByIdentifier,(\",\"
+workflowService.findOne,(\",\"

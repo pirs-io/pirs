@@ -9,9 +9,10 @@ import (
 	"google.golang.org/grpc/credentials/insecure"
 	"io"
 	"pirs.io/commons"
-	"pirs.io/process/domain"
-	"pirs.io/process/enums"
+	"pirs.io/commons/domain"
+	"pirs.io/commons/enums"
 	mygrpc "pirs.io/process/grpc"
+	"pirs.io/process/service/models"
 	"strings"
 )
 
@@ -26,12 +27,6 @@ type StorageService struct {
 	Host      string
 	ChunkSize int
 	client    mygrpc.StorageClient
-}
-
-// A ResourceAdapter is wrapper for metadata and file data. It is intended for StorageService.SaveFiles.
-type ResourceAdapter struct {
-	Metadata domain.Metadata
-	FileData []byte
 }
 
 // NewStorageService constructs StorageService instance with a client for Process-Storage microservice.
@@ -50,9 +45,9 @@ func NewStorageService(host string, port string, chunkSize int) (*StorageService
 }
 
 // SaveFiles runs in a separate goroutine. It waits for resources coming through the forResource channel. Resource is
-// ResourceAdapter, which is a wrapper for metadata and []bytes. On success no error is sent to the caller (more likely
+// models.ResourceAdapter, which is a wrapper for metadata and []bytes. On success no error is sent to the caller (more likely
 // ImportService). If it fails, an error is sent through the forResponse channel.
-func (ss *StorageService) SaveFiles(reqCtx context.Context, forResource <-chan ResourceAdapter, forResponse chan<- error) {
+func (ss *StorageService) SaveFiles(reqCtx context.Context, forResource <-chan models.ResourceAdapter, forResponse chan<- error) {
 	defer close(forResponse)
 	stream, err := ss.establishConnection(reqCtx)
 	if err != nil {
@@ -110,7 +105,7 @@ func (ss *StorageService) destroyConnection(stream mygrpc.Storage_UploadProcessC
 	return ss.checkResponse(stream)
 }
 
-// sendMetadataRequest takes stream and metadata. This data get wrapped and sent through the stream. todo
+// sendMetadataRequest takes stream and metadata. This data get wrapped and sent through the stream.
 func (ss *StorageService) sendMetadataRequest(stream mygrpc.Storage_UploadProcessClient, metadata *mygrpc.ProcessFileData_Metadata) error {
 	if err := stream.Send(&mygrpc.ProcessUploadRequest{
 		Data: &mygrpc.ProcessFileData{

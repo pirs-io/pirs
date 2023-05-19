@@ -5,7 +5,7 @@ import (
 	"github.com/magiconair/properties/assert"
 	"os"
 	"pirs.io/commons"
-	"pirs.io/process/enums"
+	"pirs.io/commons/enums"
 	"testing"
 )
 

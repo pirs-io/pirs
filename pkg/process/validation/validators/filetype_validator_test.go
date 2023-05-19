@@ -7,7 +7,7 @@ import (
 
 func TestFileTypeValidator_Validate(t *testing.T) {
 	// todo use prod config
-	conf, err := GetTestingConfig("../../dev.env", &TestingConfig{})
+	conf, err := GetTestingConfig("../../.env", &TestingConfig{})
 	if err != nil {
 		log_test.Fatal().Msgf("Unable to load application config for FileTypeValidatorTest! %s", err)
 	}

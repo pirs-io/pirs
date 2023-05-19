@@ -6,9 +6,9 @@ import (
 	"google.golang.org/grpc/codes"
 	"google.golang.org/grpc/status"
 	"pirs.io/commons"
-	"pirs.io/process/domain"
+	"pirs.io/commons/db/mongo"
+	"pirs.io/commons/domain"
 	"pirs.io/process/metadata/extractor"
-	"pirs.io/process/metadata/repository/mongo"
 	"pirs.io/process/service/models"
 	"time"
 )
@@ -20,12 +20,12 @@ var (
 // A MetadataService is responsible for metadata operations. It stores extractor and repository instances.\
 type MetadataService struct {
 	extractor      extractor.MetadataExtractor
-	repository     mongo.MetadataRepository
+	repository     mongo.Repository
 	contextTimeout time.Duration
 }
 
 // NewMetadataService creates instance pointer of MetadataService. At the same time it passes mappings to extractor.
-func NewMetadataService(r mongo.MetadataRepository, t time.Duration, bMapping map[string]string, pfMapping map[string]string, bpmnMapping map[string]string) *MetadataService {
+func NewMetadataService(r mongo.Repository, t time.Duration, bMapping map[string]string, pfMapping map[string]string, bpmnMapping map[string]string) *MetadataService {
 	return &MetadataService{
 		extractor: extractor.MetadataExtractor{
 			BasicDataMapping:           bMapping,
@@ -57,7 +57,7 @@ func (ms *MetadataService) InsertOne(c context.Context, m *domain.Metadata) prim
 func (ms *MetadataService) FindNewestVersionByURI(ctx context.Context, uri string) uint32 {
 	ver, err := ms.repository.FindNewestVersionByURI(ctx, uri)
 	if err != nil {
-		log.Error().Msg(status.Errorf(codes.Internal, "could not find the newest version in database: %v", err).Error())
+		log.Error().Msg(status.Errorf(codes.Internal, "could not find the latest version in database: %v", err).Error())
 		return 0
 	}
 	return ver

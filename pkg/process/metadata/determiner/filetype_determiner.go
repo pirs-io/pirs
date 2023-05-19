@@ -2,7 +2,7 @@ package determiner
 
 import (
 	"github.com/antchfx/xmlquery"
-	"pirs.io/process/enums"
+	"pirs.io/commons/enums"
 )
 
 // DetermineProcessType takes pointer of xmlquery.Node to represent XML content and determines the enums.ProcessType.
