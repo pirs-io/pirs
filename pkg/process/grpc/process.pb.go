@@ -7,9 +7,9 @@
 package grpc
 
 import (
+	_struct "github.com/golang/protobuf/ptypes/struct"
 	protoreflect "google.golang.org/protobuf/reflect/protoreflect"
 	protoimpl "google.golang.org/protobuf/runtime/protoimpl"
-	structpb "google.golang.org/protobuf/types/known/structpb"
 	reflect "reflect"
 	sync "sync"
 )
@@ -280,8 +280,8 @@ type DownloadResponse struct {
 	sizeCache     protoimpl.SizeCache
 	unknownFields protoimpl.UnknownFields
 
-	Message  string           `protobuf:"bytes,1,opt,name=message,proto3" json:"message,omitempty"`
-	Metadata *structpb.Struct `protobuf:"bytes,2,opt,name=metadata,proto3" json:"metadata,omitempty"`
+	Message  string          `protobuf:"bytes,1,opt,name=message,proto3" json:"message,omitempty"`
+	Metadata *_struct.Struct `protobuf:"bytes,2,opt,name=metadata,proto3" json:"metadata,omitempty"`
 }
 
 func (x *DownloadResponse) Reset() {
@@ -323,7 +323,7 @@ func (x *DownloadResponse) GetMessage() string {
 	return ""
 }
 
-func (x *DownloadResponse) GetMetadata() *structpb.Struct {
+func (x *DownloadResponse) GetMetadata() *_struct.Struct {
 	if x != nil {
 		return x.Metadata
 	}
@@ -396,7 +396,7 @@ var file_process_proto_goTypes = []interface{}{
 	(*FileInfo)(nil),         // 2: grpc.FileInfo
 	(*DownloadRequest)(nil),  // 3: grpc.DownloadRequest
 	(*DownloadResponse)(nil), // 4: grpc.DownloadResponse
-	(*structpb.Struct)(nil),  // 5: google.protobuf.Struct
+	(*_struct.Struct)(nil),   // 5: google.protobuf.Struct
 }
 var file_process_proto_depIdxs = []int32{
 	2, // 0: grpc.ImportRequest.file_info:type_name -> grpc.FileInfo
