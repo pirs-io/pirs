@@ -7,8 +7,8 @@ services:
     build:
       context: ./pkg
       dockerfile: process/Dockerfile
-    env_file:
-      - pkg/process/example.env
+    environment:
+      - "MONGO_URI=mongo://localhost:27017"
     ports:
       - "8081:8081"
 

@@ -131,7 +131,7 @@ func createClient() pb.StorageClient {
 	var opts []grpc.DialOption
 	opts = append(opts, grpc.WithTransportCredentials(insecure.NewCredentials()))
 
-	conn, err := grpc.Dial("localhost:8080", opts...)
+	conn, err := grpc.Dial("localhost:50051", opts...)
 	if err != nil {
 		log.Fatalf("fail to dial: %v", err)
 	}

@@ -24,9 +24,9 @@ spec:
           # TODO: saving sensitive data in secrets
           env:
             - name: MONGO_INITDB_ROOT_USERNAME
-              value: xxxx
+              value: admin
             - name: MONGO_INITDB_ROOT_PASSWORD
-              value: xxxx
+              value: admin
           ports:
             - containerPort: 27017
               name: mongodb

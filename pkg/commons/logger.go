@@ -12,7 +12,12 @@ func GetLoggerFor(loggerName string) zerolog.Logger {
 		return logger
 	} else {
 		consoleWriter := zerolog.ConsoleWriter{Out: os.Stdout}
-		multi := zerolog.MultiLevelWriter(consoleWriter) //os.Stdout
+		var multi zerolog.LevelWriter
+		if os.Getenv("DEV") == "1" {
+			multi = zerolog.MultiLevelWriter(consoleWriter) //os.Stdout
+		} else {
+			multi = zerolog.MultiLevelWriter(consoleWriter, os.Stdout) //os.Stdout
+		}
 
 		logger := zerolog.New(multi).
 			With().
